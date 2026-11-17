@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>MediaKit — บีบอัดวิดีโอ รูปภาพ และแปลงไฟล์ออนไลน์</title>
+  <meta name="description" content="บีบอัดวิดีโอ รูปภาพ แปลงไฟล์ ตัดวิดีโอ แปลงเป็น GIF และแยกเสียง ครั้งละ 20 ไฟล์ กำหนดขนาด MB ได้ ประมวลผลในเครื่อง 100% ไม่อัปโหลดไฟล์" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='16' fill='%235b5bf0'/><text x='50%25' y='56%25' text-anchor='middle' dominant-baseline='middle' fill='white' font-family='sans-serif' font-weight='700' font-size='28'>MK</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- ===== Sidebar ===== -->
+    <aside class="sidebar" id="sidebar" aria-label="เมนูเครื่องมือ">
+      <div class="sidebar__brand">
+        <div class="logo">MK</div>
+        <div>
+          <div class="brand__name">MediaKit</div>
+          <div class="brand__tag">เครื่องมือไฟล์มีเดียครบวงจร</div>
+        </div>
+        <button class="icon-btn sidebar__close" id="sidebarClose" aria-label="ปิดเมนู">✕</button>
+      </div>
+
+      <nav class="nav" id="nav"><!-- สร้างจาก TOOLS ใน js/app.js --></nav>
+
+      <div class="sidebar__foot">
+        <div class="privacy">
+          <span>🔒</span>
+          <span>ประมวลผลบนเครื่องของคุณ 100%<br />ไม่อัปโหลดไฟล์ขึ้นเซิร์ฟเวอร์</span>
+        </div>
+      </div>
+    </aside>
+    <div class="backdrop" id="backdrop"></div>
+
+    <!-- ===== Main ===== -->
+    <div class="main">
+      <header class="topbar">
+        <button class="icon-btn menu-btn" id="menuBtn" aria-label="เปิดเมนู">☰</button>
+        <div>
+          <h1 class="topbar__title" id="pageTitle">บีบอัดวิดีโอ</h1>
+          <p class="topbar__desc" id="pageDesc">ลดขนาดไฟล์วิดีโอ กำหนดขนาด MB ได้ตามต้องการโดยไม่ให้ภาพแตก</p>
+        </div>
+      </header>
+
+      <div class="banner banner--error" id="unsupported" hidden>
+        ⚠️ เบราว์เซอร์นี้ไม่รองรับการประมวลผลวิดีโอ (WebCodecs) — กรุณาใช้ Chrome / Edge เวอร์ชันล่าสุด, Safari 16.4+ หรือ Firefox 130+
+        และเปิดผ่าน https:// หรือ localhost
+      </div>
+
+      <section class="tool">
+        <div class="layout">
+          <!-- ===== คอลัมน์ซ้าย: Dropzone + รายการไฟล์ + ดาวน์โหลด ===== -->
+          <div class="col-main">
+            <div class="dropzone" id="dropzone" role="button" tabindex="0">
+              <input type="file" id="fileInput" accept="video/*,.mkv,.mov,.webm,.mp4,.m4v" multiple hidden />
+              <div class="dropzone__icon" id="dropIcon">🎬</div>
+              <div class="dropzone__title" id="dropTitle">ลากไฟล์วิดีโอมาวาง หรือ <u>คลิกเลือกไฟล์</u></div>
+              <div class="dropzone__sub" id="dropSub">สูงสุด <b>20 ไฟล์</b> ต่อครั้ง · MP4, MOV, WebM, MKV</div>
+              <div class="dropzone__demo">
+                <button type="button" class="btn btn--sm btn--ghost demo-btn" id="demoBtn">✨ ทดลองสร้างไฟล์ตัวอย่าง</button>
+              </div>
+            </div>
+
+            <div class="card list-card" id="listCard" hidden>
+              <div class="list-head">
+                <div class="list-head__left">
+                  <label class="check">
+                    <input type="checkbox" id="selectAll" />
+                    <span>เลือกทั้งหมด</span>
+                  </label>
+                  <span class="muted" id="countLabel">0/20 ไฟล์</span>
+                </div>
+                <div class="list-head__right">
+                  <button class="btn btn--ghost btn--sm" id="addMoreBtn">+ เพิ่มไฟล์</button>
+                  <button class="btn btn--ghost btn--sm danger" id="clearBtn">ล้างทั้งหมด</button>
+                </div>
+              </div>
+
+              <details class="rename">
+                <summary>✏️ ตั้งชื่อไฟล์ทั้งหมดพร้อมกัน</summary>
+                <div class="rename__body">
+                  <input type="text" class="input" id="renamePattern" value="{name}_compressed" />
+                  <button class="btn btn--sm" id="renameApply">ใช้กับทุกไฟล์</button>
+                  <div class="hint">ตัวแปร: <code>{name}</code> ชื่อเดิม · <code>{n}</code> ลำดับ (01, 02…) · <code>{date}</code> วันที่ · <code>{size}</code> ขนาดผลลัพธ์ เช่น 10MB</div>
+                </div>
+              </details>
+
+              <ul class="file-list" id="fileList"></ul>
+
+              <div class="overall" id="overall" hidden>
+                <div class="overall__row">
+                  <span id="overallText">กำลังประมวลผล…</span>
+                  <span id="overallPct">0%</span>
+                </div>
+                <div class="bar"><div class="bar__fill" id="overallBar"></div></div>
+              </div>
+            </div>
+
+            <div class="card download-card" id="downloadCard" hidden>
+              <div class="download-card__title">ดาวน์โหลดผลลัพธ์</div>
+              <div class="download-row">
+                <label class="switch">
+                  <input type="checkbox" id="zipToggle" checked />
+                  <span class="switch__ui"></span>
+                  <span>รวมเป็นไฟล์ ZIP</span>
+                </label>
+                <div class="zipname" id="zipNameWrap">
+                  <input type="text" class="input" id="zipName" value="mediakit-files" />
+                  <span class="suffix">.zip</span>
+                </div>
+              </div>
+              <div class="download-actions">
+                <button class="btn btn--outline" id="dlSelected" disabled>ดาวน์โหลดที่เลือก (0)</button>
+                <button class="btn btn--primary" id="dlAll" disabled>⬇ ดาวน์โหลดทั้งหมด</button>
+              </div>
+              <div class="hint" id="dlHint"></div>
+            </div>
+          </div>
+
+          <!-- ===== คอลัมน์ขวา: แผงตั้งค่าตามเครื่องมือ ===== -->
+          <aside class="col-side">
+            <div class="card settings">
+              <div class="settings__title" id="settingsTitle">ตั้งค่าการบีบอัดวิดีโอ</div>
+
+              <!-- 1. แผงตั้งค่า: บีบอัดวิดีโอ (video-compress) -->
+              <div class="tool-panel" data-panel="video-compress">
+                <div class="field">
+                  <label for="codec">Video Codec</label>
+                  <select id="codec" class="select"></select>
+                  <p class="hint">Sets the encoder for the video stream. H.265/AV1 ลดขนาดไฟล์ได้มากกว่า H.264 20–75% โดยเฉพาะวิดีโอความละเอียดสูง</p>
+                </div>
+
+                <div class="field">
+                  <label for="method">วิธีบีบอัด (Compression Method)</label>
+                  <select id="method" class="select">
+                    <option value="size">Target a file size (MB) — กำหนดขนาด MB</option>
+                    <option value="percent">Target a file size (%) — กำหนดเปอร์เซ็นต์</option>
+                    <option value="quality">Target a video quality — กำหนดคุณภาพ</option>
+                    <option value="resolution">Target a video resolution — กำหนดความละเอียด</option>
+                    <option value="bitrate">Target a max bitrate — กำหนด Bitrate สูงสุด</option>
+                  </select>
+                </div>
+
+                <div class="field" data-show="size">
+                  <label for="targetMB">ขนาดเป้าหมายต่อไฟล์ (MB)</label>
+                  <div class="input-group">
+                    <input type="number" id="targetMB" class="input" min="0.5" step="0.5" value="10" inputmode="decimal" />
+                    <span class="suffix">MB</span>
+                  </div>
+                  <div class="chips" id="mbChips">
+                    <button type="button" data-mb="5">5 MB</button>
+                    <button type="button" data-mb="8">8 MB</button>
+                    <button type="button" data-mb="10">10 MB</button>
+                    <button type="button" data-mb="25">25 MB</button>
+                    <button type="button" data-mb="50">50 MB</button>
+                    <button type="button" data-mb="100">100 MB</button>
+                  </div>
+                  <p class="hint">เช่น ของเดิม 400 MB กรอก 10 MB ระบบจะคำนวณ Bitrate และปรับความละเอียดให้ภาพไม่แตก</p>
+                </div>
+
+                <div class="field" data-show="percent">
+                  <label for="percent">Select Target Size: <b id="percentLabel">40%</b> ของไฟล์เดิม</label>
+                  <input type="range" id="percent" min="5" max="95" step="5" value="40" />
+                </div>
+
+                <div class="field" data-show="quality">
+                  <label for="quality">ระดับคุณภาพวิดีโอ</label>
+                  <select id="quality" class="select">
+                    <option value="high">สูง (คมชัดมาก)</option>
+                    <option value="medium" selected>กลาง (สมดุล — แนะนำ)</option>
+                    <option value="low">ต่ำ (ประหยัดพื้นที่สูงสุด)</option>
+                  </select>
+                </div>
+
+                <div class="field" data-show="bitrate">
+                  <label for="maxMbps">Bitrate วิดีโอสูงสุด</label>
+                  <div class="input-group">
+                    <input type="number" id="maxMbps" class="input" min="0.1" step="0.1" value="2" inputmode="decimal" />
+                    <span class="suffix">Mbps</span>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label for="resMode">การปรับความละเอียด (Change Resolution)</label>
+                  <select id="resMode" class="select">
+                    <option value="preset" selected>Preset Resolutions (เลือกจากค่ามาตรฐาน)</option>
+                    <option value="scale">Scale (%) ย่อตามสัดส่วน</option>
+                    <option value="custom">Custom (กำหนดกว้าง × สูงเอง)</option>
+                  </select>
+                </div>
+
+                <div class="field" data-resmode="preset">
+                  <label for="resolution">Select Preset Size</label>
+                  <select id="resolution" class="select">
+                    <option value="auto">อัตโนมัติ — ลดเมื่อจำเป็นเพื่อไม่ให้ภาพแตก (แนะนำ)</option>
+                    <option value="original">คงความละเอียดเดิม (Original)</option>
+                    <option value="2160">2160p (4K)</option>
+                    <option value="1440">1440p (2K)</option>
+                    <option value="1080">1080p (1920×1080)</option>
+                    <option value="720">720p (1280×720)</option>
+                    <option value="540">540p (960×540)</option>
+                    <option value="480">480p (854×480)</option>
+                    <option value="360">360p (640×360)</option>
+                  </select>
+                </div>
+
+                <div class="field" data-resmode="scale" hidden>
+                  <label for="resScale">ย่อขนาดภาพ: <b id="resScaleLabel">75%</b> ของขนาดเดิม</label>
+                  <input type="range" id="resScale" min="20" max="100" step="5" value="75" />
+                </div>
+
+                <div class="field" data-resmode="custom" hidden>
+                  <label>กำหนดขนาด (กว้าง × สูง px)</label>
+                  <div class="row-2">
+                    <div class="input-group">
+                      <input type="number" id="customW" class="input" min="64" step="2" value="1280" placeholder="กว้าง" />
+                      <span class="suffix">W</span>
+                    </div>
+                    <div class="input-group">
+                      <input type="number" id="customH" class="input" min="64" step="2" value="720" placeholder="สูง" />
+                      <span class="suffix">H</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label class="check compat-check">
+                    <input type="checkbox" id="compatOld" />
+                    <span>Make video compatible with old devices (รองรับมือถือ/ทีวีรุ่นเก่า)</span>
+                  </label>
+                </div>
+
+                <details class="advanced">
+                  <summary>ตั้งค่าขั้นสูง (Frame rate & เสียง)</summary>
+                  <div class="field">
+                    <label for="fps">Frame rate</label>
+                    <select id="fps" class="select">
+                      <option value="auto">อัตโนมัติ (ลดเหลือ 30 fps เมื่อจำเป็น)</option>
+                      <option value="original">คงเดิม</option>
+                      <option value="30">30 fps</option>
+                      <option value="25">25 fps</option>
+                      <option value="24">24 fps</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="audio">เสียง (Audio Bitrate)</label>
+                    <select id="audio" class="select">
+                      <option value="128">128 kbps (ดี)</option>
+                      <option value="96" selected>96 kbps (แนะนำ)</option>
+                      <option value="64">64 kbps (ประหยัด)</option>
+                      <option value="none">ตัดเสียงออก (Mute)</option>
+                    </select>
+                  </div>
+                </details>
+              </div>
+
+              <!-- 2. แผงตั้งค่า: แปลงไฟล์วิดีโอ (video-convert) -->
+              <div class="tool-panel" data-panel="video-convert" hidden>
+                <div class="field">
+                  <label for="vcFormat">ฟอร์แมตปลายทาง (Output Format)</label>
+                  <select id="vcFormat" class="select">
+                    <option value="mp4" selected>MP4 (เล่นได้ทุกอุปกรณ์ — แนะนำ)</option>
+                    <option value="mov">MOV (QuickTime / Apple)</option>
+                    <option value="webm">WebM (สำหรับเว็บไซต์)</option>
+                    <option value="mkv">MKV (Matroska)</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="vcQuality">คุณภาพวิดีโอ</label>
+                  <select id="vcQuality" class="select">
+                    <option value="high">สูง (คมชัดพิเศษ)</option>
+                    <option value="medium" selected>กลาง (สมดุล — แนะนำ)</option>
+                    <option value="low">ต่ำ (ไฟล์เล็ก)</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="vcRes">ความละเอียด</label>
+                  <select id="vcRes" class="select">
+                    <option value="original" selected>คงความละเอียดเดิม</option>
+                    <option value="1080">1080p (Full HD)</option>
+                    <option value="720">720p (HD)</option>
+                    <option value="480">480p</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="vcAudio">เสียง</label>
+                  <select id="vcAudio" class="select">
+                    <option value="128" selected>128 kbps (มาตรฐาน)</option>
+                    <option value="96">96 kbps</option>
+                    <option value="none">ตัดเสียงออก</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- 3. แผงตั้งค่า: ตัดวิดีโอ (video-trim) -->
+              <div class="tool-panel" data-panel="video-trim" hidden>
+                <div class="field">
+                  <label>ช่วงเวลาที่ต้องการตัด (วินาที)</label>
+                  <div class="row-2">
+                    <div>
+                      <label class="sub-label" for="vtStart">เริ่ม (วินาที)</label>
+                      <input type="number" id="vtStart" class="input" min="0" step="0.5" value="0" />
+                    </div>
+                    <div>
+                      <label class="sub-label" for="vtEnd">สิ้นสุด (0 = จบคลิป)</label>
+                      <input type="number" id="vtEnd" class="input" min="0" step="0.5" value="10" />
+                    </div>
+                  </div>
+                  <p class="hint">สามารถกำหนดแยกแต่ละไฟล์ได้ที่การ์ดของไฟล์ หรือใช้ค่านี้กับทุกไฟล์</p>
+                </div>
+                <div class="field">
+                  <label for="vtFormat">ฟอร์แมตผลลัพธ์</label>
+                  <select id="vtFormat" class="select">
+                    <option value="mp4" selected>MP4 (H.264)</option>
+                    <option value="mov">MOV</option>
+                    <option value="webm">WebM</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- 4. แผงตั้งค่า: วิดีโอเป็น GIF (video-to-gif) -->
+              <div class="tool-panel" data-panel="video-to-gif" hidden>
+                <div class="field">
+                  <label>ช่วงเวลาที่จะทำ GIF (วินาที)</label>
+                  <div class="row-2">
+                    <div>
+                      <label class="sub-label" for="vgStart">เริ่มที่ (วินาที)</label>
+                      <input type="number" id="vgStart" class="input" min="0" step="0.5" value="0" />
+                    </div>
+                    <div>
+                      <label class="sub-label" for="vgDur">ความยาว (วินาที)</label>
+                      <input type="number" id="vgDur" class="input" min="0.5" max="30" step="0.5" value="5" />
+                    </div>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="vgWidth">ความกว้าง (Width)</label>
+                  <select id="vgWidth" class="select">
+                    <option value="640">640 px (ใหญ่)</option>
+                    <option value="480" selected>480 px (มาตรฐาน — แนะนำ)</option>
+                    <option value="360">360 px (ขนาดเล็ก)</option>
+                    <option value="240">240 px (จิ๋ว)</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="vgFps">ความลื่นไหล (Frame rate)</label>
+                  <select id="vgFps" class="select">
+                    <option value="15">15 fps (ลื่นมาก)</option>
+                    <option value="10" selected>10 fps (สมดุล — แนะนำ)</option>
+                    <option value="8">8 fps (ไฟล์เล็ก)</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="vgColors">จำนวนสีสูงสุด</label>
+                  <select id="vgColors" class="select">
+                    <option value="256" selected>256 สี (คมชัดสูงสุด)</option>
+                    <option value="128">128 สี (ประหยัดขนาด)</option>
+                    <option value="64">64 สี (เล็กมาก)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- 5. แผงตั้งค่า: บีบอัดรูปภาพ / แปลงไฟล์รูปภาพ (image-compress & image-convert) -->
+              <div class="tool-panel" data-panel="image-tools" hidden>
+                <div class="field">
+                  <label for="imgFormat">ฟอร์แมตรูปภาพผลลัพธ์</label>
+                  <select id="imgFormat" class="select">
+                    <option value="webp" selected>WebP (เล็กและชัดที่สุด — แนะนำ)</option>
+                    <option value="jpeg">JPG / JPEG (รองรับทุกระบบ)</option>
+                    <option value="png">PNG (คงความโปร่งใส)</option>
+                    <option value="original">คงฟอร์แมตเดิม</option>
+                  </select>
+                </div>
+
+                <div class="field" id="imgMethodField">
+                  <label for="imgMethod">วิธีบีบอัดรูปภาพ</label>
+                  <select id="imgMethod" class="select">
+                    <option value="quality" selected>กำหนดคุณภาพ (%)</option>
+                    <option value="size">กำหนดขนาดไฟล์เป้าหมาย (KB)</option>
+                    <option value="percent">กำหนดขนาดเป็น % ของไฟล์เดิม</option>
+                  </select>
+                </div>
+
+                <div class="field" data-imgshow="quality">
+                  <label for="imgQuality">คุณภาพรูปภาพ: <b id="imgQualityLabel">80%</b></label>
+                  <input type="range" id="imgQuality" min="10" max="100" step="5" value="80" />
+                </div>
+
+                <div class="field" data-imgshow="size" hidden>
+                  <label for="imgTargetKB">ขนาดเป้าหมายต่อรูป (KB)</label>
+                  <div class="input-group">
+                    <input type="number" id="imgTargetKB" class="input" min="10" step="10" value="200" inputmode="decimal" />
+                    <span class="suffix">KB</span>
+                  </div>
+                  <div class="chips" id="kbChips">
+                    <button type="button" data-kb="50">50 KB</button>
+                    <button type="button" data-kb="100">100 KB</button>
+                    <button type="button" data-kb="200">200 KB</button>
+                    <button type="button" data-kb="500">500 KB</button>
+                    <button type="button" data-kb="1024">1 MB</button>
+                  </div>
+                </div>
+
+                <div class="field" data-imgshow="percent" hidden>
+                  <label for="imgPercent">ขนาดเป้าหมาย: <b id="imgPercentLabel">50%</b> ของไฟล์เดิม</label>
+                  <input type="range" id="imgPercent" min="10" max="90" step="5" value="50" />
+                </div>
+
+                <div class="field">
+                  <label for="imgMaxDim">จำกัดความกว้าง/สูงสูงสุด</label>
+                  <select id="imgMaxDim" class="select">
+                    <option value="original" selected>คงขนาดพิกเซลเดิม</option>
+                    <option value="3840">3840 px (4K)</option>
+                    <option value="1920">1920 px (Full HD)</option>
+                    <option value="1280">1280 px (HD)</option>
+                    <option value="800">800 px (เว็บทั่วไป)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- 6. แผงตั้งค่า: แยกเสียงจากวิดีโอ (audio-extract) -->
+              <div class="tool-panel" data-panel="audio-extract" hidden>
+                <div class="field">
+                  <label for="aeFormat">ฟอร์แมตไฟล์เสียง</label>
+                  <select id="aeFormat" class="select">
+                    <option value="mp3" selected>MP3 (ยอดนิยม เล่นได้ทุกที่)</option>
+                    <option value="m4a">M4A / AAC (คุณภาพสูง)</option>
+                    <option value="wav">WAV (ไม่สูญเสียคุณภาพ / ไฟล์ใหญ่)</option>
+                    <option value="ogg">OGG (Opus)</option>
+                  </select>
+                </div>
+                <div class="field" id="aeBitrateField">
+                  <label for="aeBitrate">คุณภาพเสียง (Bitrate)</label>
+                  <select id="aeBitrate" class="select">
+                    <option value="192">192 kbps (คุณภาพสูง)</option>
+                    <option value="128" selected>128 kbps (มาตรฐาน — แนะนำ)</option>
+                    <option value="96">96 kbps (ขนาดเล็ก)</option>
+                    <option value="64">64 kbps (สำหรับเสียงพูด)</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="aeChannels">ช่องสัญญาณเสียง (Channels)</label>
+                  <select id="aeChannels" class="select">
+                    <option value="original" selected>คงตามต้นฉบับ</option>
+                    <option value="2">Stereo (2 ช่อง)</option>
+                    <option value="1">Mono (1 ช่อง — ประหยัดพื้นที่)</option>
+                  </select>
+                </div>
+              </div>
+
+              <button class="btn btn--primary btn--block btn--lg" id="startBtn" disabled>🚀 เริ่มประมวลผล</button>
+              <button class="btn btn--ghost btn--block danger" id="cancelBtn" hidden>หยุด</button>
+              <p class="hint center">เปิดหน้านี้ไว้ระหว่างทำงาน · ประมวลผลในเครื่อง ปลอดภัย 100%</p>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

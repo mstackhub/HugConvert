@@ -1,0 +1,10 @@
+{
+  "name": "mediakit-web",
+  "version": "1.0.0",
+  "description": "เว็บบีบอัดวิดีโอ บีบอัดรูปภาพ แปลงไฟล์ ตัดวิดีโอ ทำ GIF และแยกเสียง (ทำงานในเบราว์เซอร์ 100%)",
+  "private": true,
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "dev": "npx --yes serve -l 8080 ."
+  }
+}
