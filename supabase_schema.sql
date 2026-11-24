@@ -9,6 +9,7 @@ create table if not exists public.wallets (
   user_id uuid primary key references auth.users(id) on delete cascade,
   wallet_code text unique not null,
   balance numeric(10,1) not null default 15 check (balance >= 0),
+  lifetime_topup numeric(10,1) not null default 0 check (lifetime_topup >= 0),
   unlimited_until timestamptz,
   last_check_in date,
   used_coupons text[] not null default '{}',
@@ -26,8 +27,9 @@ create table if not exists public.coin_transactions (
   created_at timestamptz not null default now()
 );
 
--- รองรับกรณีสร้างตารางไว้แล้ว ให้แปลงคอลัมน์เป็น numeric(10,1) เพื่อรองรับ 0.5 HugCoin
+-- รองรับกรณีสร้างตารางไว้แล้ว ให้แปลงคอลัมน์เป็น numeric(10,1) เพื่อรองรับ 0.5 HugCoin และเพิ่ม lifetime_topup สำหรับ VIP Tier
 alter table public.wallets alter column balance type numeric(10,1) using balance::numeric(10,1);
+alter table public.wallets add column if not exists lifetime_topup numeric(10,1) not null default 0;
 alter table public.coin_transactions alter column delta type numeric(10,1) using delta::numeric(10,1);
 
 create index if not exists idx_coin_tx_user_created

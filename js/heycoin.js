@@ -178,6 +178,39 @@ export function hasUnlimitedPass(w = loadWallet()) {
   return !w.isGuest && typeof w.unlimitedUntil === 'number' && w.unlimitedUntil > Date.now();
 }
 
+export const VIP_TIERS = [
+  { id: 'member',   min: 0,    badge: 'Member',          topupBonusPct: 0,  batchDiscount: 0, costMult: 1,   perk: 'สิทธิ์มาตรฐาน · เติมครบ 500 เหรียญขึ้นระดับ Silver' },
+  { id: 'silver',   min: 500,  badge: '🥈 Silver',       topupBonusPct: 5,  batchDiscount: 0, costMult: 1,   perk: 'เติมเงินแถมโบนัสเพิ่ม +5%' },
+  { id: 'gold',     min: 1500, badge: '🥇 Gold',         topupBonusPct: 10, batchDiscount: 1, costMult: 1,   perk: 'เติมเงินแถม +10% · ลดค่าทำ Batch เหลือ 4 เหรียญ' },
+  { id: 'platinum', min: 5000, badge: '💎 Platinum VIP', topupBonusPct: 15, batchDiscount: 1, costMult: 0.7, perk: 'เติมเงินแถม +15% · ลดค่าใช้เหรียญ 30% · รับ Pass 30 วันฟรีเมื่อขึ้นระดับ' },
+];
+
+export function getLifetimeTopup(w = loadWallet()) {
+  if (w.isGuest) return 0;
+  if (typeof w.lifetimeTopup === 'number') return roundCoins(w.lifetimeTopup);
+  // คำนวณย้อนหลังจากประวัติเก่ากรณีผู้ใช้อัปเดตจากเวอร์ชันก่อน
+  const inferred = (w.history || []).reduce((sum, h) => {
+    if (typeof h.label === 'string' && h.label.includes('เติมแพ็กเกจ') && h.delta > 0) return sum + h.delta;
+    if (typeof h.label === 'string' && h.label.includes('Unlimited 30 วัน')) return sum + 450;
+    return sum;
+  }, 0);
+  return roundCoins(inferred);
+}
+
+export function getVipTier(w = loadWallet()) {
+  const total = getLifetimeTopup(w);
+  let idx = 0;
+  for (let i = 0; i < VIP_TIERS.length; i++) {
+    if (total >= VIP_TIERS[i].min) idx = i;
+  }
+  const current = VIP_TIERS[idx];
+  const next = VIP_TIERS[idx + 1] || null;
+  const pct = next
+    ? Math.min(100, Math.max(0, Math.round(((total - current.min) / (next.min - current.min)) * 100)))
+    : 100;
+  return { current, next, lifetimeTopup: total, pct };
+}
+
 export function addCoinsFromPurchase(pkgId, refNote = '') {
   const w = loadWallet();
   if (w.isGuest) {
@@ -185,6 +218,12 @@ export function addCoinsFromPurchase(pkgId, refNote = '') {
   }
   const pkg = COIN_PACKAGES.find((p) => p.id === pkgId);
   if (!pkg) return { ok: false, msg: 'ไม่พบแพ็กเกจ' };
+
+  const prevTopup = getLifetimeTopup(w);
+  const tierBefore = getVipTier(w).current;
+  const topupCredit = pkg.passDays ? 450 : pkg.coins;
+  w.lifetimeTopup = roundCoins(prevTopup + topupCredit);
+  const crossedPlatinum = prevTopup < 5000 && w.lifetimeTopup >= 5000;
 
   if (pkg.passDays) {
     const base = Math.max(Date.now(), w.unlimitedUntil || 0);
@@ -198,14 +237,29 @@ export function addCoinsFromPurchase(pkgId, refNote = '') {
     return { ok: true, added: 0, passDays: pkg.passDays, wallet: w };
   }
 
-  w.balance += pkg.coins;
+  const vipBonus = tierBefore.topupBonusPct > 0
+    ? Math.round(pkg.coins * (tierBefore.topupBonusPct / 100))
+    : 0;
+  const totalAdded = pkg.coins + vipBonus;
+  w.balance = roundCoins(w.balance + totalAdded);
   w.history.unshift({
     ts: Date.now(),
-    delta: pkg.coins,
-    label: `💳 เติมแพ็กเกจ ${pkg.name}${refNote ? ` (${refNote})` : ''}`,
+    delta: totalAdded,
+    label: `💳 เติมแพ็กเกจ ${pkg.name}${vipBonus > 0 ? ` (+โบนัส ${tierBefore.badge} +${vipBonus})` : ''}${refNote ? ` (${refNote})` : ''}`,
   });
+
+  if (crossedPlatinum) {
+    const base = Math.max(Date.now(), w.unlimitedUntil || 0);
+    w.unlimitedUntil = base + 30 * 86400 * 1000;
+    w.history.unshift({
+      ts: Date.now(),
+      delta: 0,
+      label: '💎 ของขวัญขึ้นระดับ Platinum VIP: ฟรี Unlimited Pass 30 วัน!',
+    });
+  }
+
   saveWallet(w);
-  return { ok: true, added: pkg.coins, wallet: w };
+  return { ok: true, added: totalAdded, vipBonus, crossedPlatinum, wallet: w };
 }
 
 export function spendCoins(amount, reason) {
@@ -236,39 +290,50 @@ export function calculateJobCost(toolId, count, s) {
     return { cost: 0, reason: '👑 Unlimited Pass (ใช้ฟรีไม่อั้น)', isPass: true };
   }
 
+  const tier = getVipTier().current;
+  const applyVipCost = (rawCost, baseReason) => {
+    if (rawCost <= 0) return { cost: 0, reason: baseReason };
+    let finalCost = rawCost;
+    if (count >= 3 && tier.batchDiscount > 0) {
+      finalCost = Math.max(1, finalCost - tier.batchDiscount);
+    }
+    if (tier.costMult < 1) {
+      finalCost = Math.max(0.5, Math.round(finalCost * tier.costMult * 2) / 2);
+    }
+    const suffix = finalCost < rawCost ? ` · ส่วนลด ${tier.badge}` : '';
+    return { cost: finalCost, reason: `${baseReason}${suffix}` };
+  };
+
   const proCodecs = ['avc-gpu', 'hevc', 'hevc-gpu', 'av1'];
   const isProVideoCodec = toolId === 'video-compress' && !s.compatOld && proCodecs.includes(s.codec);
 
   // Batch Mode ตั้งแต่ 3 ไฟล์ขึ้นไป: เหมาจ่ายสุดคุ้ม 5 เหรียญ (หรือ +2 ถ้าเปิด Pro GPU Codec)
   if (count >= 3) {
     const batchCost = isProVideoCodec ? 7 : 5;
-    return {
-      cost: batchCost,
-      reason: `Batch ${count} ไฟล์พร้อมกัน${isProVideoCodec ? ' + GPU/Pro Codec' : ''}`,
-    };
+    return applyVipCost(batchCost, `Batch ${count} ไฟล์พร้อมกัน${isProVideoCodec ? ' + GPU/Pro Codec' : ''}`);
   }
 
   // กรณี 1–2 ไฟล์
   if (toolId === 'video-compress') {
-    if (isProVideoCodec) return { cost: 2 * count, reason: `เข้ารหัส Pro Codec (${s.codec.toUpperCase()})` };
-    if (s.method === 'size') return { cost: 1 * count, reason: `ล็อกขนาดไฟล์ ${s.targetMB} MB (2-Pass)` };
+    if (isProVideoCodec) return applyVipCost(2 * count, `เข้ารหัส Pro Codec (${s.codec.toUpperCase()})`);
+    if (s.method === 'size') return applyVipCost(1 * count, `ล็อกขนาดไฟล์ ${s.targetMB} MB (2-Pass)`);
     return { cost: 0, reason: 'โหมดมาตรฐานฟรี' };
   }
   if (toolId === 'pdf-edit') {
-    return { cost: 1 * count, reason: 'บันทึกการแก้ไข & ลายเซ็น PDF' };
+    return applyVipCost(1 * count, 'บันทึกการแก้ไข & ลายเซ็น PDF');
   }
   if (toolId === 'pdf-security') {
-    return { cost: 1 * count, reason: s.psMode === 'unlock' ? 'ปลดล็อกรหัสผ่าน PDF' : 'คาดลายน้ำเอกสาร PDF' };
+    return applyVipCost(1 * count, s.psMode === 'unlock' ? 'ปลดล็อกรหัสผ่าน PDF' : 'คาดลายน้ำเอกสาร PDF');
   }
   if (toolId === 'pdf-compress') {
-    if (s.pcMethod === 'size') return { cost: 1 * count, reason: `บีบอัด PDF ล็อกขนาด ${s.pcTargetMB} MB` };
+    if (s.pcMethod === 'size') return applyVipCost(1 * count, `บีบอัด PDF ล็อกขนาด ${s.pcTargetMB} MB`);
     return { cost: 0, reason: 'โหมดมาตรฐานฟรี' };
   }
   if (toolId === 'video-to-gif') {
-    return { cost: 1 * count, reason: 'สร้างไฟล์ภาพเคลื่อนไหว GIF' };
+    return applyVipCost(1 * count, 'สร้างไฟล์ภาพเคลื่อนไหว GIF');
   }
   if (toolId === 'audio-extract' && s.aeFormat === 'mp3') {
-    return { cost: 1 * count, reason: 'แปลงและแยกเสียง MP3' };
+    return applyVipCost(1 * count, 'แปลงและแยกเสียง MP3');
   }
 
   return { cost: 0, reason: 'ใช้งานฟรี' };

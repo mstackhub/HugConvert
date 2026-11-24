@@ -16,7 +16,7 @@ import {
 import {
   COIN_PACKAGES, DAILY_BONUS_COINS, FREE_DAILY_CAP, SEO_CONTENT,
   loadWallet, canClaimDaily, claimDailyBonus, redeemCoupon,
-  addCoinsFromPurchase, spendCoins, calculateJobCost, hasUnlimitedPass,
+  addCoinsFromPurchase, spendCoins, calculateJobCost, hasUnlimitedPass, getVipTier,
 } from './heycoin.js';
 import {
   initAuth, getCurrentUser, onAuthStateChange,
@@ -2645,7 +2645,9 @@ function renderWalletBadge() {
 
   const dashStatus = $('#memberDashStatus');
   if (dashStatus) {
-    dashStatus.textContent = isPass ? '👑 VIP Unlimited Pass' : `${w.balance} HugCoins`;
+    const tier = getVipTier(w).current;
+    const tierPrefix = tier.id !== 'member' ? `${tier.badge} · ` : '';
+    dashStatus.textContent = isPass ? `${tierPrefix}👑 VIP Unlimited Pass` : `${tierPrefix}${w.balance} HugCoins`;
   }
   const memberDailyBtn = $('#memberDailyBtn');
   if (memberDailyBtn) {
@@ -2686,6 +2688,20 @@ function renderCoinModal() {
   }
   $('#modalCoinBal').textContent = w.balance;
   $('#coinGuestBanner').hidden = !w.isGuest;
+
+  const vipCard = $('#vipTierCard');
+  if (vipCard) {
+    vipCard.hidden = w.isGuest;
+    if (!w.isGuest) {
+      const { current, next, lifetimeTopup, pct } = getVipTier(w);
+      $('#vipTierBadge').textContent = current.badge;
+      $('#vipTierPerk').textContent = current.perk;
+      $('#vipTierTotal').innerHTML = next
+        ? `ยอดเติมสะสม: <b>${lifetimeTopup.toLocaleString()}</b> / ${next.min.toLocaleString()} HugCoins (อีก ${(next.min - lifetimeTopup).toLocaleString()} ขึ้น ${next.badge})`
+        : `ยอดเติมสะสม: <b>${lifetimeTopup.toLocaleString()}</b> HugCoins (ระดับสูงสุดแล้ว)`;
+      $('#vipTierFill').style.width = `${pct}%`;
+    }
+  }
 
   const dailyBtn = $('#dailyClaimBtn');
   if (w.isGuest) {
@@ -2947,9 +2963,11 @@ $('#qrConfirmSimBtn').onclick = () => {
   if (!activeCheckoutPkg) return;
   const res = addCoinsFromPurchase(activeCheckoutPkg.id, 'PromptPay');
   if (res.ok) {
+    const bonusNote = res.vipBonus > 0 ? ` (รวมโบนัส VIP +${res.vipBonus})` : '';
+    const platNote = res.crossedPlatinum ? ' + 💎 ปลดล็อก Platinum VIP รับ Pass ฟรี 30 วัน!' : '';
     toast(res.passDays
       ? `👑 เปิดใช้งาน Unlimited Pass ${res.passDays} วัน สำเร็จ! ใช้ฟรีทุกฟีเจอร์ไม่อั้น`
-      : `🎉 ชำระเงินสำเร็จ! เติม +${res.added} HugCoins เข้ากระเป๋าแล้ว`);
+      : `🎉 ชำระเงินสำเร็จ! เติม +${res.added} HugCoins${bonusNote}${platNote}`);
     $('#qrCheckoutBox').hidden = true;
     $('#coinModalReason').hidden = true;
     activeCheckoutPkg = null;
