@@ -2420,6 +2420,10 @@ $('#ddOpenCoinBtn').onclick = () => {
   $('#profileDropdown').hidden = true;
   openCoinModal();
 };
+$('#ddOpenHistoryBtn')?.addEventListener('click', () => {
+  $('#profileDropdown').hidden = true;
+  openCoinModal('', 'history');
+});
 
 $('#ddLogoutBtn').onclick = async () => {
   $('#profileDropdown').hidden = true;
@@ -2469,6 +2473,7 @@ $('#memberDailyBtn')?.addEventListener('click', async () => {
   toast(res.msg);
 });
 $('#memberTopupBtn')?.addEventListener('click', () => openCoinModal());
+$('#memberHistoryBtn')?.addEventListener('click', () => openCoinModal('', 'history'));
 
 function renderCoinModal() {
   const w = loadWallet();
@@ -2592,7 +2597,7 @@ $('#coinModalTabs')?.addEventListener('click', (e) => {
   switchCoinTab(btn.dataset.cointab);
 });
 
-function openCoinModal(reasonMsg = '') {
+function openCoinModal(reasonMsg = '', initialTab = 'topup') {
   const alertEl = $('#coinModalReason');
   if (reasonMsg) {
     alertEl.hidden = false;
@@ -2602,7 +2607,7 @@ function openCoinModal(reasonMsg = '') {
   }
   $('#qrCheckoutBox').hidden = true;
   activeCheckoutPkg = null;
-  switchCoinTab('topup');
+  switchCoinTab(initialTab);
   renderCoinModal();
   $('#coinModal').hidden = false;
 }
