@@ -319,6 +319,8 @@ function route() {
   const histSec = $('#historyPageSection');
   if (histSec) histSec.hidden = !isHistory;
   $('#toolWorkspaceSection').hidden = isHome || isHistory;
+  const seoSec = $('#seoSection');
+  if (seoSec) seoSec.hidden = isHistory;
   if (isHome) {
     $('#smartPdfChoice').hidden = true;
     renderHubCards();
