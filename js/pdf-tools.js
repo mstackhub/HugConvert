@@ -514,6 +514,7 @@ export const PDF_FONTS = {
   prompt:      '"Prompt", sans-serif',
   kanit:       '"Kanit", sans-serif',
   ibm:         '"IBM Plex Sans Thai", sans-serif',
+  poppins:     '"Poppins", "Sarabun", sans-serif',
   times:       '"Times New Roman", "Noto Serif Thai", serif',
   arial:       'Arial, Helvetica, "Sarabun", sans-serif',
   courier:     '"Courier New", Courier, monospace',
