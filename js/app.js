@@ -8,7 +8,7 @@ import {
   compress, convertOrTrimVideo, extractAudio, videoToGif, processImage, fmtSize,
 } from './compressor.js';
 import {
-  probePdf, createSamplePdfFile, makePdfCompressPlan, compressPdf,
+  PDF_FONTS, probePdf, createSamplePdfFile, makePdfCompressPlan, compressPdf,
   mergePdfItems, splitPdfFile, pdfToImages, imagesToPdf,
   loadPdfEditorSession, renderEditorPageToCanvas, renderAnnotationsToCanvas, exportEditedPdf,
 } from './pdf-tools.js';
@@ -17,6 +17,10 @@ import {
   loadWallet, canClaimDaily, claimDailyBonus, redeemCoupon,
   addCoinsFromPurchase, spendCoins, calculateJobCost,
 } from './heycoin.js';
+import {
+  initAuth, getCurrentUser, onAuthStateChange,
+  registerWithEmail, loginWithEmail, loginWithGoogle, requestPasswordReset, logoutUser,
+} from './auth.js';
 
 // ------------------------------------------------------------
 //  รายการเครื่องมือใน Sidebar — ใช้งานได้จริงครบทุกตัว (12 เครื่องมือ)
@@ -326,7 +330,7 @@ const settingIds = [
   'vgStart', 'vgDur', 'vgWidth', 'vgFps', 'vgColors',
   'imgFormat', 'imgMethod', 'imgQuality', 'imgTargetKB', 'imgPercent', 'imgMaxDim',
   'aeFormat', 'aeBitrate', 'aeChannels',
-  'edColor', 'edFontSize', 'edBold', 'edStrokeSize',
+  'edFontFamily', 'edColor', 'edFontSize', 'edBold', 'edStrokeSize',
   'pcMethod', 'pcTargetMB', 'pcPercent', 'pcQuality', 'pcGrayscale',
   'pmMode', 'pmRange',
   'p2iFormat', 'p2iScale', 'p2iRange',
@@ -377,6 +381,7 @@ function readSettings() {
     aeChannels: $('#aeChannels').value,
     // pdf-edit
     edTextVal: $('#edTextVal').value || '',
+    edFontFamily: $('#edFontFamily').value || 'sarabun',
     edColor: $('#edColor').value || '#000000',
     edFontSize: Math.max(8, Number($('#edFontSize').value) || 16),
     edBold: $('#edBold').checked,
@@ -551,15 +556,17 @@ function onSettingsChange() {
     const pageObj = currentEditorPageObj();
     const ann = pageObj?.annotations.find((a) => a.id === state.editor.selectedAnnId);
     if (ann && ann.type === 'text') {
+      ann.font = s.edFontFamily;
       ann.color = s.edColor;
       ann.fontSize = s.edFontSize;
       ann.bold = s.edBold;
       const ta = $(`.pdf-item[data-annid="${ann.id}"] .pdf-textarea`);
       if (ta) {
         const w = $('#pdfBaseCanvas').width || 700;
+        ta.style.fontFamily = PDF_FONTS[ann.font] || PDF_FONTS.sarabun;
         ta.style.color = ann.color;
         ta.style.fontSize = `${Math.round(ann.fontSize * (w / 700))}px`;
-        ta.style.fontWeight = ann.bold ? '700' : '500';
+        ta.style.fontWeight = ann.bold ? '700' : '400';
         autoGrowTextarea(ta);
       }
     }
@@ -901,6 +908,7 @@ function autoGrowTextarea(ta) {
 function syncSidebarWithSelectedAnn(ann) {
   if (!ann || ann.type !== 'text') return;
   $('#edTextVal').value = ann.text || '';
+  if (ann.font && PDF_FONTS[ann.font]) $('#edFontFamily').value = ann.font;
   if (ann.color) $('#edColor').value = ann.color;
   if (ann.fontSize) $('#edFontSize').value = ann.fontSize;
   $('#edBold').checked = !!ann.bold;
@@ -935,11 +943,12 @@ async function renderEditorOverlay(focusAnnId = null) {
     const isSel = ann.id === state.editor.selectedAnnId ? 'selected' : '';
     if (ann.type === 'text') {
       const fs = Math.round((ann.fontSize || 16) * (w / 700));
-      const fw = ann.bold ? '700' : '500';
+      const fw = ann.bold ? '700' : '400';
+      const ff = PDF_FONTS[ann.font] || PDF_FONTS.sarabun;
       const rw = ((ann.w || 0.32) * 100).toFixed(2) + '%';
       return `<div class="pdf-item pdf-item--text ${isSel}" data-annid="${ann.id}" style="left:${left};top:${top};width:${rw};">
         <span class="pdf-item__drag" title="ลากย้ายตำแหน่ง">✥ ลากย้าย</span>
-        <textarea class="pdf-textarea" rows="1" placeholder="พิมพ์ข้อความ..." style="color:${esc(ann.color || '#000000')};font-size:${fs}px;font-weight:${fw};">${esc(ann.text || '')}</textarea>
+        <textarea class="pdf-textarea" rows="1" placeholder="พิมพ์ข้อความ..." style="font-family:${esc(ff)};color:${esc(ann.color || '#000000')};font-size:${fs}px;font-weight:${fw};">${esc(ann.text || '')}</textarea>
         <button type="button" class="pdf-item__del" title="ลบกล่องข้อความ">✕</button>
         <span class="pdf-item__resize" title="ดึงเพื่อปรับความกว้างกล่องข้อความ"></span>
       </div>`;
@@ -1006,6 +1015,7 @@ $('#pdfStage').addEventListener('click', async (e) => {
       y: Math.max(0, y - 0.012),
       w: defaultW,
       text: '',
+      font: s.edFontFamily || 'sarabun',
       color: s.edColor || '#000000',
       fontSize: s.edFontSize || 16,
       bold: !!s.edBold,
@@ -1774,6 +1784,10 @@ $('#startBtn').onclick = async () => {
   const jobCost = calculateJobCost(tool.id, queue.length, settings);
   if (jobCost.cost > 0) {
     const w = loadWallet();
+    if (w.isGuest) {
+      openAuthModal('signup', `ฟีเจอร์นี้ใช้ 🪙 ${jobCost.cost} HeyCoins (${jobCost.reason}) — สมัครสมาชิกหรือเข้าสู่ระบบฟรีเพื่อรับโบนัส +15 HeyCoins ทันที!`);
+      return;
+    }
     if (w.balance < jobCost.cost) {
       openCoinModal(`รอบนี้ใช้ 🪙 ${jobCost.cost} HeyCoins (${jobCost.reason}) — ตอนนี้คุณมี ${w.balance} เหรียญ สามารถกดรับโบนัสรายวันฟรี กรอกคูปอง หรือเติมเหรียญด้านล่างได้เลยครับ`);
       return;
@@ -1992,6 +2006,171 @@ $('#dlAll').onclick = () => download(getItems().filter((it) => it.status === 'do
 $('#dlSelected').onclick = () => download(getItems().filter((it) => it.status === 'done' && it.selected));
 
 // ============================================================
+//  Authentication & User Profile Logic
+// ============================================================
+let currentAuthMode = 'signin'; // 'signin' | 'signup' | 'reset'
+
+function renderAuthUI() {
+  const user = getCurrentUser();
+  const w = loadWallet();
+  const guestBtn = $('#authGuestBtn');
+  const userWrap = $('#userMenuWrap');
+
+  if (!user) {
+    guestBtn.hidden = false;
+    userWrap.hidden = true;
+    $('#profileDropdown').hidden = true;
+  } else {
+    guestBtn.hidden = true;
+    userWrap.hidden = false;
+    const initial = (user.name || user.email || 'U').trim().charAt(0).toUpperCase();
+    $('#userAvatar').textContent = initial;
+    $('#userNameText').textContent = user.name || user.email.split('@')[0];
+    $('#ddUserName').textContent = user.name || 'สมาชิก HeyConvert';
+    $('#ddUserEmail').textContent = user.email;
+    $('#ddWalletId').textContent = w.walletId;
+  }
+}
+
+function showAuthFeedback(msg, isOk = false) {
+  const fb = $('#authFeedback');
+  if (!msg) { fb.hidden = true; return; }
+  fb.hidden = false;
+  fb.className = `auth-feedback ${isOk ? 'ok' : 'err'}`;
+  fb.textContent = msg;
+}
+
+function setAuthMode(mode, infoMsg = '') {
+  currentAuthMode = mode;
+  $$('.auth-tab').forEach((t) => t.classList.toggle('active', t.dataset.authtab === mode));
+  $('#authTabs').hidden = mode === 'reset';
+  $('#googleLoginBtn').hidden = mode === 'reset';
+  $('.auth-divider').hidden = mode === 'reset';
+  $('#authNameField').hidden = mode !== 'signup';
+  $('#authPasswordField').hidden = mode === 'reset';
+  $('#forgotPwLink').hidden = mode !== 'signin';
+  $('#authResetBackWrap').hidden = mode !== 'reset';
+
+  if (mode === 'signin') {
+    $('#authModalTitle').textContent = 'เข้าสู่ระบบ HeyConvert';
+    $('#authModalSub').textContent = 'ซิงก์เหรียญ HeyCoin และประวัติการใช้งานของคุณ';
+    $('#authSubmitBtn').textContent = 'เข้าสู่ระบบ';
+    $('#authPassword').setAttribute('autocomplete', 'current-password');
+  } else if (mode === 'signup') {
+    $('#authModalTitle').textContent = 'สมัครสมาชิกฟรี (+15 🪙)';
+    $('#authModalSub').textContent = 'รับโบนัสต้อนรับ 15 HeyCoins ทันที ไม่มีค่าใช้จ่าย';
+    $('#authSubmitBtn').textContent = '🎁 สมัครสมาชิกและรับ 15 HeyCoins';
+    $('#authPassword').setAttribute('autocomplete', 'new-password');
+  } else {
+    $('#authModalTitle').textContent = 'รีเซ็ตรหัสผ่าน';
+    $('#authModalSub').textContent = 'กรอกอีเมลของคุณเพื่อรับลิงก์ตั้งรหัสผ่านใหม่';
+    $('#authSubmitBtn').textContent = 'ส่งลิงก์รีเซ็ตรหัสผ่าน';
+  }
+  showAuthFeedback(infoMsg, Boolean(infoMsg));
+}
+
+function openAuthModal(mode = 'signin', infoMsg = '') {
+  $('#coinModal').hidden = true;
+  setAuthMode(mode, infoMsg);
+  $('#authModal').hidden = false;
+  setTimeout(() => (mode === 'signup' ? $('#authName') : $('#authEmail'))?.focus(), 60);
+}
+
+$('#authGuestBtn').onclick = () => openAuthModal('signin');
+$('#coinOpenAuthBtn').onclick = () => openAuthModal('signup');
+$('#authCloseBtn').onclick = () => ($('#authModal').hidden = true);
+$('#authModal').addEventListener('click', (e) => {
+  if (e.target === $('#authModal')) $('#authModal').hidden = true;
+});
+
+$$('.auth-tab').forEach((btn) => {
+  btn.addEventListener('click', () => setAuthMode(btn.dataset.authtab));
+});
+$('#forgotPwLink').onclick = () => setAuthMode('reset');
+$('#backToSignInBtn').onclick = () => setAuthMode('signin');
+
+$('#pwToggleBtn').onclick = () => {
+  const pw = $('#authPassword');
+  pw.type = pw.type === 'password' ? 'text' : 'password';
+};
+
+$('#googleLoginBtn').onclick = async () => {
+  const res = await loginWithGoogle();
+  if (!res.ok) return showAuthFeedback(res.msg, false);
+  if (res.redirecting) return;
+  $('#authModal').hidden = true;
+  toast(res.msg);
+};
+
+$('#authForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const name = $('#authName').value;
+  const email = $('#authEmail').value;
+  const password = $('#authPassword').value;
+  const btn = $('#authSubmitBtn');
+  btn.disabled = true;
+
+  try {
+    if (currentAuthMode === 'reset') {
+      const res = await requestPasswordReset(email);
+      showAuthFeedback(res.msg, res.ok);
+      return;
+    }
+    const res = currentAuthMode === 'signup'
+      ? await registerWithEmail({ name, email, password })
+      : await loginWithEmail({ email, password });
+
+    if (!res.ok) {
+      showAuthFeedback(res.msg, false);
+      return;
+    }
+    $('#authPassword').value = '';
+    $('#authModal').hidden = true;
+    toast(res.msg);
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+// เมนูโปรไฟล์ Dropdown
+$('#userMenuBtn').onclick = (e) => {
+  e.stopPropagation();
+  const dd = $('#profileDropdown');
+  dd.hidden = !dd.hidden;
+};
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#userMenuWrap')) $('#profileDropdown').hidden = true;
+});
+
+$('#copyWalletBtn').onclick = async () => {
+  const w = loadWallet();
+  try {
+    await navigator.clipboard.writeText(w.walletId);
+    toast(`คัดลอกรหัส ${w.walletId} แล้ว`);
+  } catch {
+    toast(w.walletId);
+  }
+};
+
+$('#ddOpenCoinBtn').onclick = () => {
+  $('#profileDropdown').hidden = true;
+  openCoinModal();
+};
+
+$('#ddLogoutBtn').onclick = async () => {
+  $('#profileDropdown').hidden = true;
+  const res = await logoutUser();
+  toast(res.msg);
+};
+
+onAuthStateChange(() => {
+  renderAuthUI();
+  renderWalletBadge();
+  if (!$('#coinModal').hidden) renderCoinModal();
+  refreshUI();
+});
+
+// ============================================================
 //  HeyCoin Wallet Modal & Top-up Logic
 // ============================================================
 let activeCheckoutPkg = null;
@@ -2000,6 +2179,8 @@ function renderWalletBadge() {
   const w = loadWallet();
   const balEl = $('#coinBalanceText');
   if (balEl) balEl.textContent = w.balance;
+  const actionEl = $('#coinPillAction');
+  if (actionEl) actionEl.textContent = w.isGuest ? 'รับฟรี 15 🪙' : '+ เติมเหรียญ';
   const dot = $('#coinDailyDot');
   if (dot) dot.hidden = !canClaimDaily(w);
 }
@@ -2007,11 +2188,15 @@ function renderWalletBadge() {
 function renderCoinModal() {
   const w = loadWallet();
   renderWalletBadge();
-  $('#walletIdText').textContent = `Wallet ID: ${w.walletId}`;
+  $('#walletIdText').textContent = w.isGuest ? 'สถานะ: ผู้เยี่ยมชม (Guest)' : `Wallet ID: ${w.walletId}`;
   $('#modalCoinBal').textContent = w.balance;
+  $('#coinGuestBanner').hidden = !w.isGuest;
 
   const dailyBtn = $('#dailyClaimBtn');
-  if (canClaimDaily(w)) {
+  if (w.isGuest) {
+    dailyBtn.disabled = false;
+    dailyBtn.textContent = '🔐 เข้าสู่ระบบเพื่อรับ +15 🪙 ฟรี';
+  } else if (canClaimDaily(w)) {
     dailyBtn.disabled = false;
     dailyBtn.textContent = `☀️ รับฟรี +${DAILY_BONUS_COINS} HeyCoins วันนี้`;
   } else {
@@ -2032,13 +2217,16 @@ function renderCoinModal() {
     </div>
   `).join('');
 
-  $('#coinHistoryList').innerHTML = (w.history || []).map((h) => {
-    const d = new Date(h.ts);
-    const timeTxt = `${d.toLocaleDateString('th-TH', { day: '2-digit', month: 'short' })} ${d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}`;
-    const sign = h.delta >= 0 ? `+${h.delta}` : `${h.delta}`;
-    const cls = h.delta >= 0 ? 'coin-plus' : 'coin-minus';
-    return `<li><span>${esc(h.label)} <small class="muted">(${timeTxt})</small></span><span class="${cls}">${sign} 🪙</span></li>`;
-  }).join('');
+  const hist = w.history || [];
+  $('#coinHistoryList').innerHTML = hist.length
+    ? hist.map((h) => {
+        const d = new Date(h.ts);
+        const timeTxt = `${d.toLocaleDateString('th-TH', { day: '2-digit', month: 'short' })} ${d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}`;
+        const sign = h.delta >= 0 ? `+${h.delta}` : `${h.delta}`;
+        const cls = h.delta >= 0 ? 'coin-plus' : 'coin-minus';
+        return `<li><span>${esc(h.label)} <small class="muted">(${timeTxt})</small></span><span class="${cls}">${sign} 🪙</span></li>`;
+      }).join('')
+    : '<li class="muted">ยังไม่มีประวัติรายการ (เข้าสู่ระบบเพื่อรับโบนัสเริ่มต้น +15 HeyCoins)</li>';
 }
 
 function openCoinModal(reasonMsg = '') {
@@ -2062,6 +2250,11 @@ $('#coinModal').addEventListener('click', (e) => {
 });
 
 $('#dailyClaimBtn').onclick = () => {
+  const w = loadWallet();
+  if (w.isGuest) {
+    openAuthModal('signup', 'สมัครสมาชิกฟรีเพื่อรับโบนัสเริ่มต้น +15 HeyCoins และเช็คอินรายวัน +3 เหรียญทุกวัน!');
+    return;
+  }
   const res = claimDailyBonus();
   toast(res.msg);
   renderCoinModal();
@@ -2069,6 +2262,11 @@ $('#dailyClaimBtn').onclick = () => {
 };
 
 $('#couponApplyBtn').onclick = () => {
+  const w = loadWallet();
+  if (w.isGuest) {
+    openAuthModal('signin', 'กรุณาเข้าสู่ระบบหรือสมัครสมาชิกก่อนใช้รหัสคูปองครับ');
+    return;
+  }
   const input = $('#couponInput');
   const res = redeemCoupon(input.value);
   toast(res.msg);
@@ -2083,12 +2281,16 @@ $('#couponApplyBtn').onclick = () => {
 $('#pkgGrid').addEventListener('click', (e) => {
   const btn = e.target.closest('[data-pkg]');
   if (!btn) return;
+  const w = loadWallet();
+  if (w.isGuest) {
+    openAuthModal('signup', 'กรุณาเข้าสู่ระบบหรือสมัครสมาชิกก่อนเติมเหรียญ เพื่อผูกเหรียญไว้กับบัญชีของคุณครับ');
+    return;
+  }
   const pkg = COIN_PACKAGES.find((p) => p.id === btn.dataset.pkg);
   if (!pkg) return;
 
   // ถ้าตั้งค่า paymentUrl (เช่น Stripe Payment Link) ไว้แล้ว ให้เปิดหน้าชำระเงินจริงทันที
   if (pkg.paymentUrl) {
-    const w = loadWallet();
     const sep = pkg.paymentUrl.includes('?') ? '&' : '?';
     window.open(`${pkg.paymentUrl}${sep}client_reference_id=${encodeURIComponent(w.walletId)}`, '_blank');
     return;
@@ -2123,6 +2325,8 @@ $('#qrConfirmSimBtn').onclick = () => {
 // ---------------- Init ----------------
 (async function init() {
   buildNav();
+  await initAuth();
+  renderAuthUI();
   if (!isSupported()) {
     $('#unsupported').hidden = false;
   } else {

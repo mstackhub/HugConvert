@@ -1,10 +1,11 @@
 // ============================================================
 //  heycoin.js — ระบบกระเป๋าเหรียญ HeyCoin, โบนัสรายวัน, คูปอง, แพ็กเกจเติมเงิน
-//  และข้อมูล SEO รายเครื่องมือสำหรับ HeyConvert
+//  และข้อมูล SEO รายเครื่องมือสำหรับ HeyConvert (ผูกกับบัญชีผู้ใช้งานใน auth.js)
 // ============================================================
+import { getCurrentUser } from './auth.js';
 
-const WALLET_KEY = 'hc.wallet.v1';
-const WELCOME_COINS = 15;
+const WALLET_PREFIX = 'hc.wallet.u.';
+export const WELCOME_COINS = 15;
 export const DAILY_BONUS_COINS = 3;
 
 /**
@@ -67,17 +68,35 @@ function todayStr() {
 }
 
 export function loadWallet() {
+  const user = getCurrentUser();
+  if (!user) {
+    return {
+      isGuest: true,
+      walletId: 'GUEST-MODE',
+      balance: 0,
+      lastCheckIn: '',
+      usedCoupons: [],
+      history: [],
+    };
+  }
+  const key = WALLET_PREFIX + user.id;
   try {
-    const raw = JSON.parse(localStorage.getItem(WALLET_KEY) || 'null');
-    if (raw && typeof raw.balance === 'number') return raw;
+    const raw = JSON.parse(localStorage.getItem(key) || 'null');
+    if (raw && typeof raw.balance === 'number') {
+      raw.isGuest = false;
+      return raw;
+    }
   } catch { /* ignore */ }
   const fresh = {
+    isGuest: false,
+    userId: user.id,
+    email: user.email,
     walletId: randomWalletId(),
     balance: WELCOME_COINS,
     lastCheckIn: '',
     usedCoupons: [],
     history: [
-      { ts: Date.now(), delta: WELCOME_COINS, label: '🎁 โบนัสต้อนรับสมาชิกใหม่' },
+      { ts: Date.now(), delta: WELCOME_COINS, label: `🎁 โบนัสต้อนรับสมาชิกใหม่ (${user.email})` },
     ],
   };
   saveWallet(fresh);
@@ -85,16 +104,22 @@ export function loadWallet() {
 }
 
 export function saveWallet(w) {
+  const user = getCurrentUser();
+  if (!user || w.isGuest) return;
   w.history = (w.history || []).slice(0, 30);
-  localStorage.setItem(WALLET_KEY, JSON.stringify(w));
+  localStorage.setItem(WALLET_PREFIX + user.id, JSON.stringify(w));
 }
 
 export function canClaimDaily(w = loadWallet()) {
+  if (w.isGuest) return false;
   return w.lastCheckIn !== todayStr();
 }
 
 export function claimDailyBonus() {
   const w = loadWallet();
+  if (w.isGuest) {
+    return { ok: false, requireAuth: true, msg: 'กรุณาเข้าสู่ระบบก่อนเพื่อรับโบนัสรายวันฟรี!', wallet: w };
+  }
   const today = todayStr();
   if (w.lastCheckIn === today) {
     return { ok: false, msg: 'วันนี้คุณรับโบนัสรายวันไปแล้ว พรุ่งนี้แวะมารับใหม่นะครับ!', wallet: w };
@@ -107,12 +132,15 @@ export function claimDailyBonus() {
 }
 
 export function redeemCoupon(codeRaw) {
+  const w = loadWallet();
+  if (w.isGuest) {
+    return { ok: false, requireAuth: true, msg: 'กรุณาเข้าสู่ระบบก่อนใช้รหัสคูปองครับ', wallet: w };
+  }
   const code = String(codeRaw || '').trim().toUpperCase();
   if (!code) return { ok: false, msg: 'กรุณากรอกรหัสคูปอง' };
   const promo = PROMO_CODES[code];
   if (!promo) return { ok: false, msg: 'ไม่พบรหัสคูปองนี้ หรือคูปองหมดอายุแล้ว' };
 
-  const w = loadWallet();
   if (w.usedCoupons.includes(code)) {
     return { ok: false, msg: 'คุณใช้รหัสคูปองนี้ไปแล้ว' };
   }
@@ -124,9 +152,12 @@ export function redeemCoupon(codeRaw) {
 }
 
 export function addCoinsFromPurchase(pkgId, refNote = '') {
+  const w = loadWallet();
+  if (w.isGuest) {
+    return { ok: false, requireAuth: true, msg: 'กรุณาเข้าสู่ระบบก่อนเติมเหรียญ เพื่อผูกเหรียญไว้กับบัญชีของคุณครับ' };
+  }
   const pkg = COIN_PACKAGES.find((p) => p.id === pkgId);
   if (!pkg) return { ok: false, msg: 'ไม่พบแพ็กเกจ' };
-  const w = loadWallet();
   w.balance += pkg.coins;
   w.history.unshift({
     ts: Date.now(),
@@ -140,6 +171,9 @@ export function addCoinsFromPurchase(pkgId, refNote = '') {
 export function spendCoins(amount, reason) {
   if (amount <= 0) return { ok: true, wallet: loadWallet() };
   const w = loadWallet();
+  if (w.isGuest) {
+    return { ok: false, requireAuth: true, msg: 'กรุณาเข้าสู่ระบบเพื่อรับฟรี +15 HeyCoins สำหรับใช้งานฟีเจอร์นี้ครับ', wallet: w };
+  }
   if (w.balance < amount) {
     return { ok: false, msg: `เหรียญ HeyCoin ไม่พอ (ต้องการ ${amount} เหรียญ แต่มี ${w.balance} เหรียญ)`, wallet: w };
   }

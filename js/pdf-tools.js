@@ -465,10 +465,27 @@ export async function renderEditorPageToCanvas(session, pageObj, canvas, maxDisp
   return { width: canvas.width, height: canvas.height, scale };
 }
 
+export const PDF_FONTS = {
+  sarabun:     '"Sarabun", sans-serif',
+  'noto-serif':'"Noto Serif Thai", serif',
+  'th-sarabun':'"TH Sarabun New", "TH SarabunPSK", "Sarabun", sans-serif',
+  angsana:     '"Angsana New", "Cordia New", "Noto Serif Thai", serif',
+  tahoma:      'Tahoma, "Sarabun", sans-serif',
+  prompt:      '"Prompt", sans-serif',
+  kanit:       '"Kanit", sans-serif',
+  ibm:         '"IBM Plex Sans Thai", sans-serif',
+  times:       '"Times New Roman", "Noto Serif Thai", serif',
+  arial:       'Arial, Helvetica, "Sarabun", sans-serif',
+  courier:     '"Courier New", Courier, monospace',
+};
+
 /**
  * เรนเดอร์ Annotations ทั้งหมดของหน้านั้นลงบน Overlay Canvas (ใช้ทั้งตอนแสดงผลและตอนฝังลง PDF จริง)
  */
 export async function renderAnnotationsToCanvas(annotations, width, height) {
+  if (typeof document !== 'undefined' && document.fonts?.ready) {
+    try { await document.fonts.ready; } catch { /* ignore */ }
+  }
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -505,8 +522,9 @@ export async function renderAnnotationsToCanvas(annotations, width, height) {
       const rawText = String(ann.text || '');
       if (!rawText.trim()) { ctx.restore(); continue; }
       const fontSize = Math.round((ann.fontSize || 16) * (width / 700));
-      const weight = ann.bold ? '700' : '500';
-      ctx.font = `${weight} ${fontSize}px "IBM Plex Sans Thai", sans-serif`;
+      const weight = ann.bold ? '700' : '400';
+      const fontStack = PDF_FONTS[ann.font] || PDF_FONTS.sarabun;
+      ctx.font = `${weight} ${fontSize}px ${fontStack}`;
       ctx.fillStyle = ann.color || '#000000';
       ctx.textBaseline = 'top';
 
