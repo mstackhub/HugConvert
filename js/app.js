@@ -20,7 +20,7 @@ import {
 } from './heycoin.js';
 import {
   initAuth, getCurrentUser, onAuthStateChange,
-  registerWithEmail, loginWithEmail, requestPasswordReset, logoutUser,
+  sendSignUpOtp, verifySignUpOtp, loginWithEmail, requestPasswordReset, logoutUser,
 } from './auth.js';
 import { renderLandingAds } from './ads.js';
 
@@ -2550,6 +2550,7 @@ $('#dlSelected').onclick = () => download(getItems().filter((it) => it.status ==
 //  Authentication & User Profile Logic
 // ============================================================
 let currentAuthMode = 'signin'; // 'signin' | 'signup' | 'reset'
+let pendingOtpToken = '';
 
 function renderAuthUI() {
   const user = getCurrentUser();
@@ -2588,10 +2589,13 @@ function showAuthFeedback(msg, isOk = false) {
 
 function setAuthMode(mode, infoMsg = '') {
   currentAuthMode = mode;
+  pendingOtpToken = '';
   $$('.auth-tab').forEach((t) => t.classList.toggle('active', t.dataset.authtab === mode));
   $('#authTabs').hidden = mode === 'reset';
   $('#authNameField').hidden = mode !== 'signup';
   $('#authPasswordField').hidden = mode === 'reset';
+  $('#authOtpField').hidden = true;
+  if ($('#authOtpCode')) $('#authOtpCode').value = '';
   $('#forgotPwLink').hidden = mode !== 'signin';
   $('#authResetBackWrap').hidden = mode !== 'reset';
 
@@ -2639,6 +2643,16 @@ $('#pwToggleBtn').onclick = (e) => {
   e.currentTarget.classList.toggle('is-shown', show);
 };
 
+$('#resendOtpBtn')?.addEventListener('click', async () => {
+  const res = await sendSignUpOtp({
+    name: $('#authName').value,
+    email: $('#authEmail').value,
+    password: $('#authPassword').value,
+  });
+  if (res.otpToken) pendingOtpToken = res.otpToken;
+  showAuthFeedback(res.msg, res.ok);
+});
+
 $('#authForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const name = $('#authName').value;
@@ -2653,10 +2667,48 @@ $('#authForm').addEventListener('submit', async (e) => {
       showAuthFeedback(res.msg, res.ok);
       return;
     }
-    const res = currentAuthMode === 'signup'
-      ? await registerWithEmail({ name, email, password })
-      : await loginWithEmail({ email, password });
 
+    if (currentAuthMode === 'signup') {
+      if (!pendingOtpToken) {
+        const res = await sendSignUpOtp({ name, email, password });
+        if (!res.ok) {
+          showAuthFeedback(res.msg, false);
+          return;
+        }
+        if (res.otpRequired && res.otpToken) {
+          pendingOtpToken = res.otpToken;
+          $('#authOtpField').hidden = false;
+          $('#authSubmitBtn').textContent = '✓ ยืนยันรหัส 6 หลัก & รับ 15 HugCoins';
+          showAuthFeedback(res.msg, true);
+          $('#authOtpCode')?.focus();
+          return;
+        }
+        // Fallback (localhost/static): สมัครเสร็จทันที
+        $('#authPassword').value = '';
+        $('#authModal').hidden = true;
+        toast(res.msg);
+        return;
+      }
+
+      const res = await verifySignUpOtp({
+        otpToken: pendingOtpToken,
+        code: $('#authOtpCode').value,
+        email,
+        password,
+      });
+      if (!res.ok) {
+        showAuthFeedback(res.msg, false);
+        return;
+      }
+      pendingOtpToken = '';
+      $('#authPassword').value = '';
+      $('#authOtpCode').value = '';
+      $('#authModal').hidden = true;
+      toast(res.msg);
+      return;
+    }
+
+    const res = await loginWithEmail({ email, password });
     if (!res.ok || res.needsConfirm) {
       showAuthFeedback(res.msg, Boolean(res.ok));
       if (res.ok) $('#authPassword').value = '';

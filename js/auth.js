@@ -110,6 +110,68 @@ function mapSupabaseUser(u) {
   };
 }
 
+/** ส่งรหัส OTP 6 หลักทางอีเมลก่อนสมัครสมาชิก (ผ่าน Resend API บน Vercel) */
+export async function sendSignUpOtp({ name, email, password }) {
+  const cleanEmail = String(email || '').trim().toLowerCase();
+  const cleanName = String(name || '').trim() || cleanEmail.split('@')[0];
+  if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+    return { ok: false, msg: 'กรุณากรอกอีเมลให้ถูกต้อง' };
+  }
+  if (!password || password.length < 6) {
+    return { ok: false, msg: 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร' };
+  }
+
+  const sb = await getSupabase();
+  if (!sb) {
+    // Local mode fallback
+    return await registerWithEmail({ name: cleanName, email: cleanEmail, password });
+  }
+
+  try {
+    const res = await fetch('/api/auth-send-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: cleanName, email: cleanEmail, password }),
+    });
+    const text = await res.text();
+    let data = null;
+    try { data = JSON.parse(text); } catch { /* static server fallback */ }
+    if (!data) {
+      return await registerWithEmail({ name: cleanName, email: cleanEmail, password });
+    }
+    if (!res.ok) return { ok: false, msg: data.error || 'ส่งรหัส OTP ไม่สำเร็จ' };
+    return { ok: true, otpRequired: true, otpToken: data.otpToken, msg: `ส่งรหัส 6 หลักไปที่ ${cleanEmail} แล้ว กรุณาเช็กอีเมลครับ` };
+  } catch {
+    return await registerWithEmail({ name: cleanName, email: cleanEmail, password });
+  }
+}
+
+/** ตรวจรหัส OTP 6 หลักแล้วสร้างบัญชีใน Supabase + ล็อกอินทันที */
+export async function verifySignUpOtp({ otpToken, code, email, password }) {
+  const cleanCode = String(code || '').trim();
+  if (!/^\d{6}$/.test(cleanCode)) {
+    return { ok: false, msg: 'กรุณากรอกรหัส OTP ตัวเลข 6 หลัก' };
+  }
+  const res = await fetch('/api/auth-verify-otp', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ otpToken, code: cleanCode, password }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) return { ok: false, msg: data.error || 'ยืนยันรหัส OTP ไม่สำเร็จ' };
+
+  const sb = await getSupabase();
+  if (sb) {
+    const cleanEmail = String(data.email || email || '').trim().toLowerCase();
+    const { data: signData, error: signErr } = await sb.auth.signInWithPassword({ email: cleanEmail, password });
+    if (signErr) return { ok: false, msg: signErr.message };
+    const u = signData.user ? mapSupabaseUser(signData.user) : null;
+    if (u) setCurrentUser(u);
+    return { ok: true, user: u, isNew: true, msg: 'ยืนยันอีเมล & สมัครสมาชิกสำเร็จ! รับฟรี +15 HugCoins 🎉' };
+  }
+  return { ok: true, msg: 'สมัครสมาชิกสำเร็จ!' };
+}
+
 /** สมัครสมาชิกใหม่ด้วยอีเมลและรหัสผ่าน */
 export async function registerWithEmail({ name, email, password }) {
   const cleanEmail = String(email || '').trim().toLowerCase();
