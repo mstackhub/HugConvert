@@ -238,18 +238,65 @@
 
       const token = await getAccessToken();
       const range = $('#adminRangeSelect').value;
-      const res = await fetch(`/api/admin-data?range=${encodeURIComponent(range)}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (!res.ok) {
+      const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+      let data = null;
+
+      try {
+        const res = await fetch(`/api/admin-data?range=${encodeURIComponent(range)}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const text = await res.text();
+        let parsed = null;
+        try { parsed = JSON.parse(text); } catch { /* HTML response from static server */ }
+
+        if (res.ok && parsed) {
+          data = parsed;
+          $('#adminErrorBanner').hidden = true;
+        } else if (isLocal && !parsed) {
+          // Localhost static server: แสดงข้อมูลตัวอย่างเพื่อให้ดูหน้าตา Dashboard ได้
+          $('#adminErrorBanner').hidden = false;
+          $('#adminErrorBanner').style.cssText = 'background:#eff6ff;color:#1e40af;border-color:#bfdbfe;';
+          $('#adminErrorBanner').textContent = '💡 กำลังแสดงข้อมูลจำลอง (Localhost Demo) — เมื่อเปิดผ่าน Vercel หลังตั้งค่า ADMIN_EMAILS จะแสดงข้อมูลจริงจาก Supabase';
+          data = {
+            summary: {
+              totalUsers: 128, activePassCount: 14, totalLifetimeTopup: 24850,
+              tierCounts: { member: 96, silver: 22, gold: 8, platinum: 2 },
+              totalRuns: 842, totalFiles: 2150, totalCoinsBalance: 9420,
+            },
+            topTools: [
+              { toolId: 'pdf-security', runs: 264, files: 510, coinsSpent: 264 },
+              { toolId: 'video-compress', runs: 198, files: 340, coinsSpent: 245 },
+              { toolId: 'pdf-edit', runs: 142, files: 195, coinsSpent: 142 },
+              { toolId: 'image-convert', runs: 108, files: 620, coinsSpent: 45 },
+              { toolId: 'pdf-compress', runs: 76, files: 280, coinsSpent: 38 },
+              { toolId: 'audio-extract', runs: 54, files: 205, coinsSpent: 54 },
+            ],
+            users: [
+              { id: 'u1', email: user.email, name: user.name || 'Admin Demo', walletCode: 'HC-4WGX-CBJL', tier: '💎 Platinum VIP', balance: 618, lifetimeTopup: 5200 },
+              { id: 'u2', email: 'somchai.hr@company.co.th', name: 'สมชาย ฝ่ายบุคคล', walletCode: 'HC-91AB-20CD', tier: '🥇 Gold', balance: 340, lifetimeTopup: 1800 },
+              { id: 'u3', email: 'nicha.design@gmail.com', name: 'ณิชา ครีเอเตอร์', walletCode: 'HC-77EF-11GH', tier: '🥈 Silver', balance: 120, lifetimeTopup: 600 },
+            ],
+            recentTx: [
+              { email: 'somchai.hr@company.co.th', label: '💳 เติมแพ็กเกจ Pro Studio (+โบนัส 🥇 Gold +60)', delta: 660, createdAt: new Date().toISOString() },
+              { email: 'nicha.design@gmail.com', label: '⚡ บีบอัดวิดีโอ (Batch 12 ไฟล์พร้อมกัน)', delta: -5, createdAt: new Date(Date.now() - 1800000).toISOString() },
+              { email: user.email, label: '⚡ ปลดล็อก & ลายน้ำ PDF (คาดลายน้ำเอกสาร PDF)', delta: -1, createdAt: new Date(Date.now() - 3600000).toISOString() },
+            ],
+          };
+        } else {
+          $('#adminDashContent').hidden = true;
+          $('#adminErrorBanner').hidden = false;
+          $('#adminErrorBanner').style.cssText = '';
+          $('#adminErrorBanner').textContent = `⚠️ ${parsed?.error || `ไม่สามารถโหลดข้อมูลหลังบ้านได้ (HTTP ${res.status})`}`;
+          return;
+        }
+      } catch (err) {
         $('#adminDashContent').hidden = true;
         $('#adminErrorBanner').hidden = false;
-        $('#adminErrorBanner').textContent = `⚠️ ${data.error || 'ไม่สามารถโหลดข้อมูลหลังบ้านได้'}`;
+        $('#adminErrorBanner').style.cssText = '';
+        $('#adminErrorBanner').textContent = `⚠️ เกิดข้อผิดพลาดในการเชื่อมต่อ: ${err.message}`;
         return;
       }
 
-      $('#adminErrorBanner').hidden = true;
       $('#adminDashContent').hidden = false;
 
       const s = data.summary;
