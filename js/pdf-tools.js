@@ -712,6 +712,65 @@ export async function unlockPdf(file, password, { onProgress }) {
   }
 }
 
+export function drawWatermarkOnCtx(ctx, cw, ch, opts = {}) {
+  const text = String(opts.text || 'สำเนาถูกต้อง').trim();
+  if (!text) return;
+  const opacity = Math.min(0.9, Math.max(0.08, (Number(opts.opacity) || 28) / 100));
+  const angleDeg = opts.angle === 'horizontal' ? 0 : -32;
+  const color = opts.color || '#dc2626';
+  const fontSizeBase = Number(opts.fontSize) || 34;
+
+  ctx.save();
+  ctx.globalAlpha = opacity;
+  ctx.translate(cw / 2, ch / 2);
+  ctx.rotate((angleDeg * Math.PI) / 180);
+
+  const fs = Math.round(fontSizeBase * (cw / 600));
+  ctx.font = `700 ${fs}px "Sarabun", "IBM Plex Sans Thai", sans-serif`;
+  ctx.fillStyle = color;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  const lines = text.split('\n');
+  const lh = fs * 1.35;
+  const startY = -((lines.length - 1) * lh) / 2;
+  lines.forEach((line, idx) => {
+    ctx.fillText(line, 0, startY + idx * lh);
+  });
+
+  // ตีเส้นคู่ขนานคร่อมข้อความลายน้ำแบบสำเนาบัตรประชาชนไทย (ถ้าเปิดโหมดเส้นคู่)
+  if (opts.doubleLine) {
+    const maxLineW = Math.max(...lines.map((l) => ctx.measureText(l).width), 160 * (cw / 600)) + 40 * (cw / 600);
+    const boxHalfH = (lines.length * lh) / 2 + 12 * (cw / 600);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = Math.max(1.5, Math.round(cw / 320));
+    ctx.beginPath();
+    ctx.moveTo(-maxLineW / 2, -boxHalfH);
+    ctx.lineTo(maxLineW / 2, -boxHalfH);
+    ctx.moveTo(-maxLineW / 2, boxHalfH);
+    ctx.lineTo(maxLineW / 2, boxHalfH);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+export async function renderPdfPageCanvas(file, maxWidth = 640) {
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  const page = await pdf.getPage(1);
+  const vp0 = page.getViewport({ scale: 1 });
+  const scale = Math.min(2, maxWidth / vp0.width);
+  const vp = page.getViewport({ scale });
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(vp.width);
+  canvas.height = Math.round(vp.height);
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  await page.render({ canvasContext: ctx, viewport: vp }).promise;
+  return canvas;
+}
+
 export async function watermarkPdf(file, opts, { onProgress }) {
   const text = String(opts.text || 'สำเนาถูกต้อง').trim();
   if (!text) throw new Error('กรุณากรอกข้อความลายน้ำ');
@@ -722,10 +781,6 @@ export async function watermarkPdf(file, opts, { onProgress }) {
   const buf = await file.arrayBuffer();
   const doc = await PDFDocument.load(buf, { ignoreEncryption: true });
   const pages = doc.getPages();
-  const opacity = Math.min(0.9, Math.max(0.08, (Number(opts.opacity) || 28) / 100));
-  const angleDeg = opts.angle === 'horizontal' ? 0 : -32;
-  const color = opts.color || '#dc2626';
-  const fontSizeBase = Number(opts.fontSize) || 34;
 
   for (let i = 0; i < pages.length; i++) {
     const page = pages[i];
@@ -737,39 +792,7 @@ export async function watermarkPdf(file, opts, { onProgress }) {
     canvas.width = cw;
     canvas.height = ch;
     const ctx = canvas.getContext('2d');
-
-    ctx.save();
-    ctx.globalAlpha = opacity;
-    ctx.translate(cw / 2, ch / 2);
-    ctx.rotate((angleDeg * Math.PI) / 180);
-
-    const fs = Math.round(fontSizeBase * (cw / 600));
-    ctx.font = `700 ${fs}px "Sarabun", "IBM Plex Sans Thai", sans-serif`;
-    ctx.fillStyle = color;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    const lines = text.split('\n');
-    const lh = fs * 1.35;
-    const startY = -((lines.length - 1) * lh) / 2;
-    lines.forEach((line, idx) => {
-      ctx.fillText(line, 0, startY + idx * lh);
-    });
-
-    // ตีเส้นคู่ขนานคร่อมข้อความลายน้ำแบบสำเนาบัตรประชาชนไทย (ถ้าเปิดโหมดเส้นคู่)
-    if (opts.doubleLine) {
-      const maxLineW = Math.max(...lines.map((l) => ctx.measureText(l).width), 200) + 40;
-      const boxHalfH = (lines.length * lh) / 2 + 14;
-      ctx.strokeStyle = color;
-      ctx.lineWidth = Math.max(2, Math.round(cw / 320));
-      ctx.beginPath();
-      ctx.moveTo(-maxLineW / 2, -boxHalfH);
-      ctx.lineTo(maxLineW / 2, -boxHalfH);
-      ctx.moveTo(-maxLineW / 2, boxHalfH);
-      ctx.lineTo(maxLineW / 2, boxHalfH);
-      ctx.stroke();
-    }
-    ctx.restore();
+    drawWatermarkOnCtx(ctx, cw, ch, { ...opts, text });
 
     const pngBlob = await canvasToBlob(canvas, 'image/png');
     const embedded = await doc.embedPng(await pngBlob.arrayBuffer());

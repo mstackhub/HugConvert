@@ -11,7 +11,7 @@ import {
   PDF_FONTS, probePdf, createSamplePdfFile, makePdfCompressPlan, compressPdf,
   mergePdfItems, splitPdfFile, pdfToImages, imagesToPdf,
   loadPdfEditorSession, renderEditorPageToCanvas, renderAnnotationsToCanvas, exportEditedPdf,
-  unlockPdf, watermarkPdf,
+  unlockPdf, watermarkPdf, drawWatermarkOnCtx, renderPdfPageCanvas,
 } from './pdf-tools.js';
 import {
   COIN_PACKAGES, DAILY_BONUS_COINS, FREE_DAILY_CAP, SEO_CONTENT,
@@ -796,6 +796,7 @@ function onSettingsChange() {
   $$('#pdfMbChips button').forEach((b) => b.classList.toggle('on', Number(b.dataset.mb) === s.pcTargetMB));
   $$('[data-psshow]').forEach((el) => (el.hidden = el.dataset.psshow !== s.psMode));
   $('#psWmOpacityLabel').textContent = `${s.psWmOpacity}%`;
+  renderWatermarkPreview();
 
   // pdf-edit
   $('#edStrokeLabel').textContent = `${s.edStrokeSize} px`;
@@ -1118,6 +1119,96 @@ function syncEditorVisibility() {
   } else {
     $('#pdfEditorCard').hidden = true;
   }
+  renderWatermarkPreview();
+}
+
+const wmPreviewCache = { itemId: null, baseCanvas: null, loadingId: null };
+
+function drawSampleDocMock(canvas, w = 520, h = 680) {
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = '#e2e8f0';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(28, 28, w - 56, h - 56);
+  ctx.fillStyle = '#f1f5f9';
+  ctx.fillRect(48, 52, w - 96, 46);
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '600 14px "IBM Plex Sans Thai", sans-serif';
+  ctx.fillText('ตัวอย่างเอกสาร PDF (สำเนาเอกสาร / บัตรประชาชน)', 64, 80);
+  // Mock ID card box
+  ctx.fillStyle = '#f8fafc';
+  ctx.fillRect(80, 140, w - 160, 210);
+  ctx.strokeStyle = '#cbd5e1';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(80, 140, w - 160, 210);
+  ctx.fillStyle = '#e2e8f0';
+  ctx.fillRect(104, 172, 86, 108);
+  for (let i = 0; i < 4; i++) {
+    ctx.fillRect(212, 180 + i * 26, (w - 340) * (i === 3 ? 0.6 : 0.9), 12);
+  }
+  for (let i = 0; i < 6; i++) {
+    ctx.fillStyle = '#f1f5f9';
+    ctx.fillRect(56, 390 + i * 32, (w - 112) * (i % 2 === 0 ? 0.95 : 0.78), 12);
+  }
+}
+
+async function renderWatermarkPreview() {
+  const card = $('#wmPreviewCard');
+  const canvas = $('#wmPreviewCanvas');
+  if (!card || !canvas) return;
+
+  const isWm = currentTool().id === 'pdf-security' && $('#psMode')?.value === 'watermark';
+  card.hidden = !isWm;
+  if (!isWm) return;
+
+  const items = getItems();
+  const firstPdf = items.find((x) => x.file);
+  const tagEl = $('#wmPreviewSourceTag');
+  const s = currentSettings();
+
+  let baseCanvas = null;
+  if (firstPdf) {
+    if (wmPreviewCache.itemId === firstPdf.id && wmPreviewCache.baseCanvas) {
+      baseCanvas = wmPreviewCache.baseCanvas;
+      if (tagEl) tagEl.textContent = `หน้า 1 · ${firstPdf.name}.pdf`;
+    } else if (wmPreviewCache.loadingId !== firstPdf.id) {
+      wmPreviewCache.loadingId = firstPdf.id;
+      if (tagEl) tagEl.textContent = 'กำลังโหลดตัวอย่างหน้า 1…';
+      try {
+        const rendered = await renderPdfPageCanvas(firstPdf.file, 560);
+        wmPreviewCache.itemId = firstPdf.id;
+        wmPreviewCache.baseCanvas = rendered;
+        wmPreviewCache.loadingId = null;
+        if (currentTool().id === 'pdf-security' && $('#psMode')?.value === 'watermark') {
+          renderWatermarkPreview();
+        }
+        return;
+      } catch {
+        wmPreviewCache.loadingId = null;
+      }
+    }
+  } else {
+    if (tagEl) tagEl.textContent = 'ตัวอย่างจำลอง (โยนไฟล์ PDF เพื่อดูบนเอกสารจริง)';
+  }
+
+  if (baseCanvas) {
+    canvas.width = baseCanvas.width;
+    canvas.height = baseCanvas.height;
+    canvas.getContext('2d').drawImage(baseCanvas, 0, 0);
+  } else {
+    drawSampleDocMock(canvas);
+  }
+
+  drawWatermarkOnCtx(canvas.getContext('2d'), canvas.width, canvas.height, {
+    text: s.psWmText,
+    color: s.psWmColor,
+    angle: s.psWmAngle,
+    opacity: s.psWmOpacity,
+    doubleLine: s.psWmDoubleLine,
+  });
 }
 
 function setEditorTool(toolName) {

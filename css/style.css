@@ -196,6 +196,28 @@ code {
 .has-files .dropzone__sub { display: none; }
 .has-files .dropzone__demo { margin-top: 0; margin-left: auto; }
 
+/* ===== Watermark Live Preview ===== */
+.wm-preview-card { overflow: hidden; }
+.wm-preview-card__head {
+  display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 12px 18px; border-bottom: 1px solid var(--line); background: var(--surface);
+}
+.wm-preview-card__title { font-weight: 700; font-size: 14px; color: var(--text); }
+.wm-preview-card__tag {
+  font-size: 12px; font-weight: 600; color: var(--primary);
+  background: var(--primary-soft); padding: 2px 10px; border-radius: 99px;
+  max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.wm-preview-card__stage {
+  padding: 18px; background: var(--surface-2);
+  display: flex; justify-content: center; align-items: center;
+}
+#wmPreviewCanvas {
+  max-width: 100%; max-height: 440px; height: auto; width: auto;
+  border-radius: 8px; box-shadow: 0 6px 20px rgba(15, 23, 42, .12);
+  background: #fff; display: block;
+}
+
 /* ===== File List ===== */
 .list-card { padding: 4px 0 0; overflow: hidden; }
 .list-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 18px; flex-wrap: wrap; }
