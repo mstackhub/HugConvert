@@ -11,7 +11,7 @@ export const AD_CONFIG = {
   // mode: 'placeholder' (ตัวอย่างให้เห็นตำแหน่ง), 'adsense' (Google AdSense), 'sponsor' (แบนเนอร์/Affiliate เอง), 'off' (ปิด)
   slots: {
     'hub-top': {
-      mode: 'placeholder',
+      mode: 'off',
       label: 'Ad · พื้นที่โฆษณาส่วนบน (728×90 Leaderboard)',
       adsenseSlot: '',
       sponsor: {
@@ -24,7 +24,7 @@ export const AD_CONFIG = {
       },
     },
     'hub-mid': {
-      mode: 'placeholder',
+      mode: 'off',
       label: 'Ad · พื้นที่โฆษณาแนะนำเครื่องมือ (Native / Partner Banner)',
       adsenseSlot: '',
       sponsor: {
@@ -37,7 +37,7 @@ export const AD_CONFIG = {
       },
     },
     'hub-bottom': {
-      mode: 'placeholder',
+      mode: 'off',
       label: 'Ad · พื้นที่โฆษณาส่วนล่าง (Responsive Banner)',
       adsenseSlot: '',
       sponsor: {
