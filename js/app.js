@@ -2275,6 +2275,8 @@ function renderAuthUI() {
   const guestBtn = $('#authGuestBtn');
   const userWrap = $('#userMenuWrap');
 
+  document.body.classList.toggle('is-member', !!user);
+
   if (!user) {
     guestBtn.hidden = false;
     userWrap.hidden = true;
@@ -2282,12 +2284,15 @@ function renderAuthUI() {
   } else {
     guestBtn.hidden = true;
     userWrap.hidden = false;
-    const initial = (user.name || user.email || 'U').trim().charAt(0).toUpperCase();
+    const displayName = user.name || user.email.split('@')[0];
+    const initial = (displayName || 'U').trim().charAt(0).toUpperCase();
     $('#userAvatar').textContent = initial;
-    $('#userNameText').textContent = user.name || user.email.split('@')[0];
+    $('#userNameText').textContent = displayName;
     $('#ddUserName').textContent = user.name || 'สมาชิก HugConvert';
     $('#ddUserEmail').textContent = user.email;
     $('#ddWalletId').textContent = w.walletId;
+    const dashName = $('#memberDashName');
+    if (dashName) dashName.textContent = displayName;
   }
 }
 
@@ -2443,10 +2448,27 @@ function renderWalletBadge() {
   if (actionEl) actionEl.textContent = w.isGuest ? 'รับฟรี 15 🪙' : isPass ? '👑 VIP Pass' : '+ เติมเหรียญ';
   const dot = $('#coinDailyDot');
   if (dot) dot.hidden = !canClaimDaily(w);
+
+  const dashStatus = $('#memberDashStatus');
+  if (dashStatus) {
+    dashStatus.textContent = isPass ? '👑 VIP Unlimited Pass' : `🪙 ${w.balance} HeyCoins`;
+  }
+  const memberDailyBtn = $('#memberDailyBtn');
+  if (memberDailyBtn) {
+    memberDailyBtn.hidden = w.isGuest || !canClaimDaily(w);
+  }
+
   if (state.toolId === 'home') {
     renderLandingAds(isPass, (msg) => openCoinModal(msg));
   }
 }
+
+$('#memberDailyBtn')?.addEventListener('click', async () => {
+  const res = await claimDailyBonus();
+  renderWalletBadge();
+  toast(res.msg);
+});
+$('#memberTopupBtn')?.addEventListener('click', () => openCoinModal());
 
 function renderCoinModal() {
   const w = loadWallet();

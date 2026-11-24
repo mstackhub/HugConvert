@@ -171,9 +171,24 @@
       <section class="home-hub" id="homeHubSection" hidden>
         <div class="hub-strip card">
           <div class="hub-strip__info">
-            <span class="hub-strip__badge">🔒 PDPA 100% · ประมวลผลในเครื่อง ไม่ส่งไฟล์ขึ้นเซิร์ฟเวอร์</span>
-            <h1 class="hub-strip__title">จัดการไฟล์ PDF, วิดีโอ และรูปภาพ ในเครื่องคุณเอง</h1>
-            <p class="hub-strip__sub">ลากไฟล์มาวางเพื่อตรวจจับอัตโนมัติ (สูงสุด 20 ไฟล์) หรือเลือกเครื่องมือด้านล่าง</p>
+            <div class="hub-strip__guest">
+              <span class="hub-strip__badge">🔒 PDPA 100% · ประมวลผลในเครื่อง ไม่ส่งไฟล์ขึ้นเซิร์ฟเวอร์</span>
+              <h1 class="hub-strip__title">จัดการไฟล์ PDF, วิดีโอ และรูปภาพ ในเครื่องคุณเอง</h1>
+              <p class="hub-strip__sub">ลากไฟล์มาวางเพื่อตรวจจับอัตโนมัติ (สูงสุด 20 ไฟล์) หรือเลือกเครื่องมือด้านล่าง</p>
+            </div>
+            <div class="hub-strip__member">
+              <div class="member-dash__greet">
+                <span class="member-dash__wave">👋</span>
+                <span>สวัสดีคุณ <b id="memberDashName">Member</b></span>
+                <span class="member-dash__status" id="memberDashStatus">15 HeyCoins</span>
+              </div>
+              <h1 class="hub-strip__title">พร้อมทำงานได้เลย</h1>
+              <p class="hub-strip__sub">โยนไฟล์ลงกล่องด้านขวา หรือเลือกเครื่องมือที่ต้องการใช้งานด้านล่าง</p>
+              <div class="member-dash__actions">
+                <button type="button" class="btn btn--sm btn--primary" id="memberDailyBtn">🎁 รับโบนัสรายวัน +3 🪙</button>
+                <button type="button" class="btn btn--sm btn--outline" id="memberTopupBtn">🪙 เติมเหรียญ / แพ็กเกจ</button>
+              </div>
+            </div>
           </div>
           <div class="smart-dropzone" id="smartDropzone" role="button" tabindex="0">
             <input type="file" id="smartFileInput" accept="video/*,image/*,audio/*,application/pdf,.pdf,.heic,.heif,.jfif,.mkv,.mov,.webm,.mp4,.mp3,.wav,.m4a" multiple hidden />
