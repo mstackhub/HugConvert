@@ -26,7 +26,7 @@ export const COIN_PACKAGES = [
     bonusText: 'สำหรับงานด่วน',
     priceTHB: 29,
     popular: false,
-    desc: 'บีบอัดวิดีโอ/PDF แบบล็อกขนาด MB ได้สูงสุด 50 ไฟล์ เหรียญไม่มีวันหมดอายุ',
+    desc: 'ใช้บีบอัด/แก้ไขไฟล์ระดับโปรได้สูงสุด 50 ไฟล์ ไม่มีวันหมดอายุ',
     paymentUrl: '', // ใส่ลิงก์ Stripe Payment Link ที่นี่เมื่อพร้อมรับเงินจริง
   },
   {
@@ -36,7 +36,7 @@ export const COIN_PACKAGES = [
     bonusText: 'แถมฟรี +20 เหรียญ',
     priceTHB: 79,
     popular: true,
-    desc: 'ขายดีสุด! เหมาะสำหรับพนักงานออฟฟิศ นักศึกษา เซ็น PDF & บีบไฟล์ Batch 20 ไฟล์',
+    desc: 'เหมาะสำหรับงานเอกสาร เซ็น PDF และทำ Batch 20 ไฟล์พร้อมกัน',
     paymentUrl: '',
   },
   {
@@ -46,7 +46,7 @@ export const COIN_PACKAGES = [
     bonusText: 'แถมฟรี +100 เหรียญ',
     priceTHB: 199,
     popular: false,
-    desc: 'คุ้มสำหรับแอดมินเพจ สายตัดต่อ HR เหรียญเก็บไว้ใช้ได้ตลอดชีพ ไม่มีวันหมดอายุ',
+    desc: 'คุ้มสำหรับแอดมินเพจ สายตัดต่อ และ HR เก็บไว้ใช้ได้ตลอดชีพ',
     paymentUrl: '',
   },
   {
@@ -54,11 +54,11 @@ export const COIN_PACKAGES = [
     name: 'Unlimited 30 วัน',
     coins: 0,
     passDays: 30,
-    bonusText: '🔥 ใช้ไม่อั้นทุกฟีเจอร์',
+    bonusText: 'ใช้ไม่อั้นทุกฟีเจอร์',
     priceTHB: 149,
     popular: false,
     isPass: true,
-    desc: 'ใช้ GPU / Batch 20 ไฟล์ / แก้ไข & ปลดล็อก PDF ไม่อั้นตลอด 30 วัน (ถูกกว่าคู่แข่ง 7 เท่า!)',
+    desc: 'ใช้ GPU, Batch 20 ไฟล์, แก้ไข & ปลดล็อก PDF ได้ไม่จำกัด 30 วัน',
     paymentUrl: '',
   },
 ];

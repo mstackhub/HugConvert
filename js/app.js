@@ -2539,7 +2539,7 @@ function renderCoinModal() {
       <div class="pkg-card__bonus">${esc(p.bonusText)}</div>
       <div class="pkg-card__desc">${esc(p.desc)}</div>
       <button type="button" class="btn ${p.popular || p.isPass ? 'btn--primary' : 'btn--outline'} pkg-card__btn" data-pkg="${p.id}">
-        ${p.isPass ? `สมัครแพ็กเกจ ฿${p.priceTHB}` : `เติมเงิน ฿${p.priceTHB} (PromptPay)`}
+        ${p.isPass ? 'สมัครแพ็กเกจนี้ (30 วัน)' : 'เติมแพ็กเกจนี้ (PromptPay)'}
       </button>
     </div>
   `).join('');
