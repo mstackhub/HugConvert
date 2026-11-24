@@ -1,5 +1,5 @@
 // ============================================================
-//  heycoin.js — ระบบกระเป๋าเหรียญ HeyCoin, โบนัสรายวัน, คูปอง, แพ็กเกจเติมเงิน
+//  heycoin.js — ระบบกระเป๋าเหรียญ HugCoin, โบนัสรายวัน, คูปอง, แพ็กเกจเติมเงิน
 //  และข้อมูล SEO รายเครื่องมือสำหรับ HugConvert (ผูกกับบัญชีผู้ใช้งานใน auth.js)
 // ============================================================
 import { getCurrentUser } from './auth.js';
@@ -9,7 +9,7 @@ export const WELCOME_COINS = 15;
 export const DAILY_BONUS_COINS = 3;
 
 /**
- * แพ็กเกจเติมเหรียญ HeyCoin
+ * แพ็กเกจเติมเหรียญ HugCoin
  * เมื่อเปิดใช้งานจริง สามารถนำลิงก์ Stripe Payment Link (รองรับ PromptPay QR อัตโนมัติ)
  * หรือ Lemon Squeezy URL มาใส่ในช่อง paymentUrl ได้ทันที
  */
@@ -140,7 +140,7 @@ export function claimDailyBonus() {
   w.balance += DAILY_BONUS_COINS;
   w.history.unshift({ ts: Date.now(), delta: DAILY_BONUS_COINS, label: `☀️ เช็คอินรายวัน (${today})` });
   saveWallet(w);
-  return { ok: true, added: DAILY_BONUS_COINS, msg: `🎉 รับฟรี +${DAILY_BONUS_COINS} HeyCoins เรียบร้อย!`, wallet: w };
+  return { ok: true, added: DAILY_BONUS_COINS, msg: `🎉 รับฟรี +${DAILY_BONUS_COINS} HugCoins เรียบร้อย!`, wallet: w };
 }
 
 export function redeemCoupon(codeRaw) {
@@ -160,7 +160,7 @@ export function redeemCoupon(codeRaw) {
   w.balance += promo.coins;
   w.history.unshift({ ts: Date.now(), delta: promo.coins, label: `🎟️ ${promo.label}` });
   saveWallet(w);
-  return { ok: true, added: promo.coins, msg: `🎉 เติมสำเร็จ +${promo.coins} HeyCoins!`, wallet: w };
+  return { ok: true, added: promo.coins, msg: `🎉 เติมสำเร็จ +${promo.coins} HugCoins!`, wallet: w };
 }
 
 export function hasUnlimitedPass(w = loadWallet()) {
@@ -201,10 +201,10 @@ export function spendCoins(amount, reason) {
   if (amount <= 0) return { ok: true, wallet: loadWallet() };
   const w = loadWallet();
   if (w.isGuest) {
-    return { ok: false, requireAuth: true, msg: 'กรุณาเข้าสู่ระบบเพื่อรับฟรี +15 HeyCoins สำหรับใช้งานฟีเจอร์นี้ครับ', wallet: w };
+    return { ok: false, requireAuth: true, msg: 'กรุณาเข้าสู่ระบบเพื่อรับฟรี +15 HugCoins สำหรับใช้งานฟีเจอร์นี้ครับ', wallet: w };
   }
   if (w.balance < amount) {
-    return { ok: false, msg: `เหรียญ HeyCoin ไม่พอ (ต้องการ ${amount} เหรียญ แต่มี ${w.balance} เหรียญ)`, wallet: w };
+    return { ok: false, msg: `เหรียญ HugCoin ไม่พอ (ต้องการ ${amount} เหรียญ แต่มี ${w.balance} เหรียญ)`, wallet: w };
   }
   w.balance -= amount;
   w.history.unshift({ ts: Date.now(), delta: -amount, label: reason });
@@ -213,11 +213,11 @@ export function spendCoins(amount, reason) {
 }
 
 /**
- * คำนวณค่าใช้จ่าย HeyCoin ต่อรอบการทำงาน
- * - 1-2 ไฟล์ ในโหมดมาตรฐาน: ฟรี (0 HeyCoin) เพื่อให้ผู้ใช้ทั่วไปติดใจและดีต่อ SEO
- * - Batch Mode (3–20 ไฟล์พร้อมกัน): เหมาจ่าย 5 HeyCoins
- * - โหมด Pro Codec (GPU / H.265 / AV1): 2 HeyCoins / ไฟล์
- * - ล็อกขนาดไฟล์เป๊ะ (Target MB ในวิดีโอ/PDF) หรือแก้ไข/เซ็น PDF / ทำ GIF / แยก MP3: 1 HeyCoin / ไฟล์
+ * คำนวณค่าใช้จ่าย HugCoin ต่อรอบการทำงาน
+ * - 1-2 ไฟล์ ในโหมดมาตรฐาน: ฟรี (0 HugCoin) เพื่อให้ผู้ใช้ทั่วไปติดใจและดีต่อ SEO
+ * - Batch Mode (3–20 ไฟล์พร้อมกัน): เหมาจ่าย 5 HugCoins
+ * - โหมด Pro Codec (GPU / H.265 / AV1): 2 HugCoins / ไฟล์
+ * - ล็อกขนาดไฟล์เป๊ะ (Target MB ในวิดีโอ/PDF) หรือแก้ไข/เซ็น PDF / ทำ GIF / แยก MP3: 1 HugCoin / ไฟล์
  */
 export function calculateJobCost(toolId, count, s) {
   if (count <= 0) return { cost: 0, reason: '' };
@@ -274,7 +274,7 @@ export const SEO_CONTENT = {
     intro: 'HugConvert รวม 13 เครื่องมือสำคัญสำหรับคนทำงาน นักศึกษา และธุรกิจไทย ทั้งบีบอัดวิดีโอกำหนดขนาด MB ไม่ให้แตก แก้ไขและกรอกใบสมัคร PDF ฟอนต์มาตรฐานไทย คาดลายน้ำสำเนาเอกสาร ปลดล็อกรหัส PDF สเตทเมนต์ และแปลงรูป iPhone (.HEIC) ประมวลผลในเครื่องคุณเอง 100% ไม่อัปโหลดไฟล์ขึ้นเซิร์ฟเวอร์',
     faqs: [
       { q: 'ทำไม HugConvert ถึงปลอดภัยกว่าเว็บแปลงไฟล์ทั่วไป?', a: 'เพราะไฟล์ของคุณไม่เคยถูกอัปโหลดออกจากเครื่องเลยแม้แต่ไบต์เดียว ระบบใช้เทคโนโลยี WebCodecs และ WebAssembly ประมวลผลในเบราว์เซอร์ของคุณเอง จึงปลอดภัยต่อข้อมูลส่วนบุคคลและเอกสารสำคัญตามมาตรฐาน PDPA 100%' },
-      { q: 'ต้องเสียค่ารายเดือนไหม?', a: 'ไม่ต้องผูกมัดรายเดือน! โหมดพื้นฐานใช้งานได้ฟรีทุกวัน และหากต้องการใช้ฟีเจอร์ระดับโปรหรือทำพร้อมกัน 20 ไฟล์ สามารถใช้เหรียญ HeyCoin ที่ไม่มีวันหมดอายุ หรือเปิด Unlimited Pass 30 วันในราคาเพียง 149 บาท' },
+      { q: 'ต้องเสียค่ารายเดือนไหม?', a: 'ไม่ต้องผูกมัดรายเดือน! โหมดพื้นฐานใช้งานได้ฟรีทุกวัน และหากต้องการใช้ฟีเจอร์ระดับโปรหรือทำพร้อมกัน 20 ไฟล์ สามารถใช้เหรียญ HugCoin ที่ไม่มีวันหมดอายุ หรือเปิด Unlimited Pass 30 วันในราคาเพียง 149 บาท' },
     ],
   },
   'pdf-security': {

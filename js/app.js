@@ -1851,7 +1851,7 @@ function refreshUI() {
     $('#costPreviewLabel').textContent = jobCost.reason || 'โหมดมาตรฐาน';
     const badge = $('#costPreviewBadge');
     if (jobCost.cost > 0) {
-      badge.textContent = `ใช้ 🪙 ${jobCost.cost} HeyCoin`;
+      badge.textContent = `ใช้ 🪙 ${jobCost.cost} HugCoin`;
       badge.classList.add('paid');
     } else {
       badge.textContent = 'ฟรี 0 🪙';
@@ -2039,16 +2039,16 @@ $('#startBtn').onclick = async () => {
   }
   if (!queue.length) return;
 
-  // ตรวจสอบยอดเหรียญ HeyCoin ก่อนเริ่มทำงาน
+  // ตรวจสอบยอดเหรียญ HugCoin ก่อนเริ่มทำงาน
   const jobCost = calculateJobCost(tool.id, queue.length, settings);
   if (jobCost.cost > 0) {
     const w = loadWallet();
     if (w.isGuest) {
-      openAuthModal('signup', `ฟีเจอร์นี้ใช้ 🪙 ${jobCost.cost} HeyCoins (${jobCost.reason}) — สมัครสมาชิกหรือเข้าสู่ระบบฟรีเพื่อรับโบนัส +15 HeyCoins ทันที!`);
+      openAuthModal('signup', `ฟีเจอร์นี้ใช้ 🪙 ${jobCost.cost} HugCoins (${jobCost.reason}) — สมัครสมาชิกหรือเข้าสู่ระบบฟรีเพื่อรับโบนัส +15 HugCoins ทันที!`);
       return;
     }
     if (w.balance < jobCost.cost) {
-      openCoinModal(`รอบนี้ใช้ 🪙 ${jobCost.cost} HeyCoins (${jobCost.reason}) — ตอนนี้คุณมี ${w.balance} เหรียญ สามารถกดรับโบนัสรายวันฟรี กรอกคูปอง หรือเติมเหรียญด้านล่างได้เลยครับ`);
+      openCoinModal(`รอบนี้ใช้ 🪙 ${jobCost.cost} HugCoins (${jobCost.reason}) — ตอนนี้คุณมี ${w.balance} เหรียญ สามารถกดรับโบนัสรายวันฟรี กรอกคูปอง หรือเติมเหรียญด้านล่างได้เลยครับ`);
       return;
     }
   }
@@ -2164,7 +2164,7 @@ $('#startBtn').onclick = async () => {
     }
     refreshUI();
     if (!state.cancelled) {
-      toast(jobCost.cost > 0 ? `เสร็จเรียบร้อย! (ใช้ไป 🪙 ${jobCost.cost} HeyCoins)` : 'เสร็จเรียบร้อย พร้อมดาวน์โหลด!');
+      toast(jobCost.cost > 0 ? `เสร็จเรียบร้อย! (ใช้ไป 🪙 ${jobCost.cost} HugCoins)` : 'เสร็จเรียบร้อย พร้อมดาวน์โหลด!');
       $('#downloadCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }
@@ -2317,13 +2317,13 @@ function setAuthMode(mode, infoMsg = '') {
 
   if (mode === 'signin') {
     $('#authModalTitle').textContent = 'เข้าสู่ระบบ HugConvert';
-    $('#authModalSub').textContent = 'ซิงก์เหรียญ HeyCoin และประวัติการใช้งานของคุณ';
+    $('#authModalSub').textContent = 'ซิงก์เหรียญ HugCoin และประวัติการใช้งานของคุณ';
     $('#authSubmitBtn').textContent = 'เข้าสู่ระบบ';
     $('#authPassword').setAttribute('autocomplete', 'current-password');
   } else if (mode === 'signup') {
     $('#authModalTitle').textContent = 'สมัครสมาชิกฟรี (+15 🪙)';
-    $('#authModalSub').textContent = 'รับโบนัสต้อนรับ 15 HeyCoins ทันที ไม่มีค่าใช้จ่าย';
-    $('#authSubmitBtn').textContent = '🎁 สมัครสมาชิกและรับ 15 HeyCoins';
+    $('#authModalSub').textContent = 'รับโบนัสต้อนรับ 15 HugCoins ทันที ไม่มีค่าใช้จ่าย';
+    $('#authSubmitBtn').textContent = '🎁 สมัครสมาชิกและรับ 15 HugCoins';
     $('#authPassword').setAttribute('autocomplete', 'new-password');
   } else {
     $('#authModalTitle').textContent = 'รีเซ็ตรหัสผ่าน';
@@ -2435,7 +2435,7 @@ onAuthStateChange(() => {
 });
 
 // ============================================================
-//  HeyCoin Wallet Modal & Top-up Logic
+//  HugCoin Wallet Modal & Top-up Logic
 // ============================================================
 let activeCheckoutPkg = null;
 
@@ -2451,7 +2451,7 @@ function renderWalletBadge() {
 
   const dashStatus = $('#memberDashStatus');
   if (dashStatus) {
-    dashStatus.textContent = isPass ? '👑 VIP Unlimited Pass' : `🪙 ${w.balance} HeyCoins`;
+    dashStatus.textContent = isPass ? '👑 VIP Unlimited Pass' : `🪙 ${w.balance} HugCoins`;
   }
   const memberDailyBtn = $('#memberDailyBtn');
   if (memberDailyBtn) {
@@ -2491,7 +2491,7 @@ function renderCoinModal() {
     dailyBtn.textContent = '🔐 เข้าสู่ระบบเพื่อรับ +15 🪙 ฟรี';
   } else if (canClaimDaily(w)) {
     dailyBtn.disabled = false;
-    dailyBtn.textContent = `☀️ รับฟรี +${DAILY_BONUS_COINS} HeyCoins วันนี้`;
+    dailyBtn.textContent = `☀️ รับฟรี +${DAILY_BONUS_COINS} HugCoins วันนี้`;
   } else {
     dailyBtn.disabled = true;
     dailyBtn.textContent = '✓ รับโบนัสวันนี้แล้ว (พรุ่งนี้รับใหม่ได้)';
@@ -2519,7 +2519,7 @@ function renderCoinModal() {
         const cls = h.delta >= 0 ? 'coin-plus' : 'coin-minus';
         return `<li><span>${esc(h.label)} <small class="muted">(${timeTxt})</small></span><span class="${cls}">${sign} 🪙</span></li>`;
       }).join('')
-    : '<li class="muted">ยังไม่มีประวัติรายการ (เข้าสู่ระบบเพื่อรับโบนัสเริ่มต้น +15 HeyCoins)</li>';
+    : '<li class="muted">ยังไม่มีประวัติรายการ (เข้าสู่ระบบเพื่อรับโบนัสเริ่มต้น +15 HugCoins)</li>';
 }
 
 function openCoinModal(reasonMsg = '') {
@@ -2545,7 +2545,7 @@ $('#coinModal').addEventListener('click', (e) => {
 $('#dailyClaimBtn').onclick = () => {
   const w = loadWallet();
   if (w.isGuest) {
-    openAuthModal('signup', 'สมัครสมาชิกฟรีเพื่อรับโบนัสเริ่มต้น +15 HeyCoins และเช็คอินรายวัน +3 เหรียญทุกวัน!');
+    openAuthModal('signup', 'สมัครสมาชิกฟรีเพื่อรับโบนัสเริ่มต้น +15 HugCoins และเช็คอินรายวัน +3 เหรียญทุกวัน!');
     return;
   }
   const res = claimDailyBonus();
@@ -2593,7 +2593,7 @@ async function checkOpnStatusOnce() {
       const creditRes = addCoinsFromPurchase(pkg.id, 'Opn PromptPay');
       toast(creditRes.passDays
         ? `👑 ชำระเงินสำเร็จ! เปิดใช้งาน Unlimited Pass ${creditRes.passDays} วันแล้ว`
-        : `🎉 ชำระเงินสำเร็จ! เติม +${creditRes.added} HeyCoins เข้ากระเป๋าแล้ว`);
+        : `🎉 ชำระเงินสำเร็จ! เติม +${creditRes.added} HugCoins เข้ากระเป๋าแล้ว`);
       $('#qrCheckoutBox').hidden = true;
       $('#coinModalReason').hidden = true;
       activeCheckoutPkg = null;
@@ -2622,7 +2622,7 @@ $('#pkgGrid').addEventListener('click', async (e) => {
   activeCheckoutPkg = pkg;
   $('#qrPkgTitle').textContent = pkg.isPass
     ? `แพ็กเกจ ${pkg.name} (ใช้งานไม่อั้น 30 วัน)`
-    : `แพ็กเกจ ${pkg.name} (+${pkg.coins} HeyCoins)`;
+    : `แพ็กเกจ ${pkg.name} (+${pkg.coins} HugCoins)`;
   $('#qrAmountText').textContent = `ยอดชำระ ${pkg.priceTHB}.00 บาท`;
   $('#qrCheckoutBox').hidden = false;
 
@@ -2679,7 +2679,7 @@ $('#qrConfirmSimBtn').onclick = () => {
   if (res.ok) {
     toast(res.passDays
       ? `👑 เปิดใช้งาน Unlimited Pass ${res.passDays} วัน สำเร็จ! ใช้ฟรีทุกฟีเจอร์ไม่อั้น`
-      : `🎉 ชำระเงินสำเร็จ! เติม +${res.added} HeyCoins เข้ากระเป๋าแล้ว`);
+      : `🎉 ชำระเงินสำเร็จ! เติม +${res.added} HugCoins เข้ากระเป๋าแล้ว`);
     $('#qrCheckoutBox').hidden = true;
     $('#coinModalReason').hidden = true;
     activeCheckoutPkg = null;

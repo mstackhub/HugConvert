@@ -124,7 +124,7 @@ export async function registerWithEmail({ name, email, password }) {
     if (error) return { ok: false, msg: error.message };
     const u = data.user ? mapSupabaseUser(data.user) : null;
     if (u) setCurrentUser(u);
-    return { ok: true, user: u, isNew: true, msg: 'สมัครสมาชิกสำเร็จ! รับฟรี +15 HeyCoins ต้อนรับสมาชิกใหม่ 🎉' };
+    return { ok: true, user: u, isNew: true, msg: 'สมัครสมาชิกสำเร็จ! รับฟรี +15 HugCoins ต้อนรับสมาชิกใหม่ 🎉' };
   }
 
   // Local Auth Mode
@@ -146,7 +146,7 @@ export async function registerWithEmail({ name, email, password }) {
 
   const sessionUser = { id: newUser.id, email: newUser.email, name: newUser.name, provider: 'email', mode: 'local' };
   setCurrentUser(sessionUser);
-  return { ok: true, user: sessionUser, isNew: true, msg: 'สมัครสมาชิกสำเร็จ! รับฟรี +15 HeyCoins เข้ากระเป๋าแล้ว 🎉' };
+  return { ok: true, user: sessionUser, isNew: true, msg: 'สมัครสมาชิกสำเร็จ! รับฟรี +15 HugCoins เข้ากระเป๋าแล้ว 🎉' };
 }
 
 /** เข้าสู่ระบบด้วยอีเมลและรหัสผ่าน */
@@ -217,7 +217,7 @@ export async function loginWithGoogle(demoEmail = 'demo.user@gmail.com', demoNam
     user: sessionUser,
     isNew,
     msg: isNew
-      ? `เข้าสู่ระบบด้วย Google สำเร็จ! รับโบนัสต้อนรับ +15 HeyCoins 🎉`
+      ? `เข้าสู่ระบบด้วย Google สำเร็จ! รับโบนัสต้อนรับ +15 HugCoins 🎉`
       : `เข้าสู่ระบบด้วยบัญชี Google (${found.email}) สำเร็จ!`,
   };
 }

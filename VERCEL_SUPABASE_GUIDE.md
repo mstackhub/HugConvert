@@ -17,7 +17,7 @@
 1. เข้าเว็บ [supabase.com](https://supabase.com) → กด **New Project** (แนะนำเลือก Region เป็น **Singapore** เพื่อให้คนไทยโหลดเร็วที่สุด)
 2. ไปที่เมนูด้านซ้าย **SQL Editor** → กด **New query**
 3. เปิดไฟล์ `supabase_schema.sql` ในโปรเจกต์นี้ คัดลอกโค้ดทั้งหมดไปวางแล้วกด **Run**
-   - ระบบจะสร้างตาราง `wallets`, `coin_transactions`, ระบบความปลอดภัย `RLS`, ฟังก์ชัน `claim_daily_bonus()`, `spend_heycoins()`, และ Trigger แจก **+15 HeyCoins** ให้สมาชิกใหม่โดยอัตโนมัติ
+   - ระบบจะสร้างตาราง `wallets`, `coin_transactions`, ระบบความปลอดภัย `RLS`, ฟังก์ชัน `claim_daily_bonus()`, `spend_heycoins()`, และ Trigger แจก **+15 HugCoins** ให้สมาชิกใหม่โดยอัตโนมัติ
 4. (ถ้าต้องการปุ่ม Google Login) ไปที่ **Authentication → Providers → Google** แล้วเปิดใช้งานพร้อมใส่ Client ID / Secret จาก Google Cloud Console
 5. ไปที่ **Project Settings → API** แล้วคัดลอกค่า 2 ตัวนี้:
    - **Project URL** (`https://xxxx.supabase.co`)

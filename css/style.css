@@ -486,7 +486,7 @@ input[type="range"] { width: 100%; accent-color: var(--primary); }
 }
 .order-btns button:hover { border-color: var(--primary); color: var(--primary); }
 
-/* ===== HeyCoin Wallet Pill & Auth Topbar ===== */
+/* ===== HugCoin Wallet Pill & Auth Topbar ===== */
 .topbar__actions { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0; }
 .coin-pill {
   position: relative;

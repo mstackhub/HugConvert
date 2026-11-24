@@ -4,7 +4,7 @@
 --  วิธีใช้: คัดลอกทั้งหมดไปวางและกด Run ใน SQL Editor ของ Supabase.com
 -- ============================================================
 
--- 1. ตารางเก็บกระเป๋าเหรียญ HeyCoin & Unlimited Pass ผูกกับ auth.users
+-- 1. ตารางเก็บกระเป๋าเหรียญ HugCoin & Unlimited Pass ผูกกับ auth.users
 create table if not exists public.wallets (
   user_id uuid primary key references auth.users(id) on delete cascade,
   wallet_code text unique not null,
@@ -45,7 +45,7 @@ create policy "Users can view own transactions"
   on public.coin_transactions for select
   using (auth.uid() = user_id);
 
--- 4. Trigger สร้างกระเป๋า + แจกฟรี +15 HeyCoins อัตโนมัติทันทีที่สมัครสมาชิกใหม่
+-- 4. Trigger สร้างกระเป๋า + แจกฟรี +15 HugCoins อัตโนมัติทันทีที่สมัครสมาชิกใหม่
 create or replace function public.handle_new_user_wallet()
 returns trigger
 language plpgsql
@@ -70,7 +70,7 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user_wallet();
 
--- 5. RPC: เช็คอินรับโบนัสรายวัน (+3 HeyCoins) แบบ Atomic กันกดเบิ้ล
+-- 5. RPC: เช็คอินรับโบนัสรายวัน (+3 HugCoins) แบบ Atomic กันกดเบิ้ล
 create or replace function public.claim_daily_bonus()
 returns jsonb
 language plpgsql
@@ -104,7 +104,7 @@ begin
 end;
 $$;
 
--- 6. RPC: หักเหรียญ HeyCoin แบบ Atomic (หักเฉพาะเมื่อมียอดพอหรือมี Unlimited Pass)
+-- 6. RPC: หักเหรียญ HugCoin แบบ Atomic (หักเฉพาะเมื่อมียอดพอหรือมี Unlimited Pass)
 create or replace function public.spend_heycoins(p_amount integer, p_reason text)
 returns jsonb
 language plpgsql
@@ -135,7 +135,7 @@ begin
   returning balance into v_new_bal;
 
   if not found then
-    return jsonb_build_object('ok', false, 'msg', 'เหรียญ HeyCoin ไม่เพียงพอ');
+    return jsonb_build_object('ok', false, 'msg', 'เหรียญ HugCoin ไม่เพียงพอ');
   end if;
 
   insert into public.coin_transactions (user_id, delta, label)
