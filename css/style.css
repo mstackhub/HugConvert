@@ -642,25 +642,43 @@ input[type="range"] { width: 100%; accent-color: var(--primary); }
   background: #fffbeb; border: 1px solid #fde68a; color: #92400e; font-size: 13.5px; font-weight: 500;
 }
 
-.coin-section-title { font-weight: 700; font-size: 13.5px; margin: 12px 0 10px; color: var(--text-2); }
-.pkg-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+.coin-tabs {
+  display: flex; gap: 6px; padding: 4px; border-radius: 12px;
+  background: var(--surface-2); margin-bottom: 14px;
+}
+.coin-tab {
+  flex: 1; border: 0; background: transparent; border-radius: 9px;
+  padding: 9px 14px; font-size: 14px; font-weight: 600; color: var(--muted);
+  cursor: pointer; transition: all .15s;
+}
+.coin-tab:hover { color: var(--text); }
+.coin-tab.active {
+  background: var(--surface); color: var(--text);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, .08);
+}
+
+.coin-section-title { font-weight: 600; font-size: 13.5px; margin: 0 0 12px; color: var(--muted); }
+.pkg-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 14px; }
 .pkg-card {
-  position: relative; border: 1px solid var(--line); border-radius: 12px;
-  padding: 14px 12px; background: #fff; display: flex; flex-direction: column; gap: 6px;
+  position: relative; border: 1px solid var(--line); border-radius: 14px;
+  padding: 16px; background: #fff; display: flex; flex-direction: column; gap: 6px;
   transition: border-color .15s, box-shadow .15s;
 }
 .pkg-card:hover { border-color: var(--primary); }
 .pkg-card.popular { border: 1.5px solid var(--primary); background: #fafaff; box-shadow: 0 4px 16px rgba(79, 70, 229, .08); }
 .pkg-card.pass-card { border: 1.5px solid #f59e0b; background: #fffdf5; }
+.pkg-card__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .pkg-card__tag {
-  position: absolute; top: -10px; right: 10px;
   background: var(--primary); color: #fff;
-  font-size: 10.5px; font-weight: 700; padding: 2px 9px; border-radius: 99px;
+  font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 99px;
 }
-.pkg-card__name { font-weight: 700; font-size: 14px; }
+.pkg-card__tag.warn { background: #d97706; }
+.pkg-card__name { font-weight: 700; font-size: 15px; color: var(--text-2); }
+.pkg-card__mid { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-top: 2px; }
 .pkg-card__coins { font-size: 20px; font-weight: 700; color: var(--primary); }
-.pkg-card__bonus { font-size: 11.5px; color: var(--ok); font-weight: 600; }
-.pkg-card__desc { font-size: 11.5px; color: var(--muted); flex: 1; line-height: 1.45; }
+.pkg-card__price { font-size: 20px; font-weight: 700; color: var(--text); }
+.pkg-card__bonus { font-size: 12.5px; color: var(--ok); font-weight: 600; }
+.pkg-card__desc { font-size: 13px; color: var(--muted); flex: 1; line-height: 1.45; margin-bottom: 4px; }
 .pkg-card__btn { margin-top: 6px; width: 100%; }
 
 .qr-checkout {
@@ -685,13 +703,17 @@ input[type="range"] { width: 100%; accent-color: var(--primary); }
 .coupon-row { display: flex; gap: 8px; margin-bottom: 12px; }
 .coupon-row .input { flex: 1; }
 
-.coin-rules { border: 1px solid var(--line); border-radius: 10px; padding: 0 12px; background: var(--bg); }
-.coin-rules summary { padding: 10px 0; cursor: pointer; font-weight: 600; font-size: 13.5px; color: var(--text-2); }
-.coin-rules__body { padding-bottom: 12px; font-size: 12.5px; }
-.rules-list { margin: 0 0 12px; padding-left: 18px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+.coin-rules-card {
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: var(--bg);
+  font-size: 13px;
+}
+.rules-list { margin: 0 0 12px; padding-left: 18px; color: var(--muted); display: flex; flex-direction: column; gap: 5px; }
 .rules-list b { color: var(--text); }
 .coin-history-box {
-  margin-top: 12px;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--surface);

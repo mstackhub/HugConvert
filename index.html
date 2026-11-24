@@ -1161,61 +1161,70 @@
 
       <div class="coin-alert" id="coinModalReason" hidden></div>
 
-      <div class="coin-section-title">แพ็กเกจเติมเหรียญ & Unlimited Pass (🛡️ การันตีหักเหรียญเฉพาะเมื่อไฟล์สำเร็จเท่านั้น)</div>
-      <div class="pkg-grid" id="pkgGrid"><!-- สร้างจาก COIN_PACKAGES --></div>
+      <!-- แถบสลับหน้าภายในกระเป๋า -->
+      <div class="coin-tabs" id="coinModalTabs">
+        <button type="button" class="coin-tab active" data-cointab="topup">💳 เติมเหรียญ / แพ็กเกจ</button>
+        <button type="button" class="coin-tab" data-cointab="history">📜 ประวัติ & อัตราใช้</button>
+      </div>
 
-      <!-- กล่องสแกนจ่าย PromptPay QR (รองรับ Opn Payments จริง + โหมดทดสอบ) -->
-      <div class="qr-checkout" id="qrCheckoutBox" hidden>
-        <div class="qr-checkout__box">
-          <div class="qr-mock">
-            <div class="qr-mock__head">THAI QR PAYMENT · PromptPay</div>
-            <div class="qr-mock__code" id="qrCodeGraphic">▣ ▤ ▥</div>
-            <img id="qrLiveImg" alt="PromptPay QR Code" style="display:none;width:100%;height:auto;background:#fff;padding:6px;" hidden />
-            <div class="qr-mock__amt" id="qrAmountText">ยอดชำระ 79.00 บาท</div>
-          </div>
-          <div class="qr-checkout__info">
-            <h4 id="qrPkgTitle">แพ็กเกจ Popular Pack (+180 HugCoins)</h4>
-            <p class="hint" id="qrStatusHint">เมื่อเชื่อมต่อ <b>Opn Payments (Omise)</b> บน Vercel แล้ว สแกนจ่ายเสร็จเหรียญจะเข้ากระเป๋าทันทีภายใน 2 วินาที (ไม่ต้องส่งสลิป)</p>
-            <div class="qr-checkout__actions">
-              <button type="button" class="btn btn--primary" id="qrConfirmSimBtn">✓ จำลองการชำระเงินสำเร็จ (รับเหรียญทันที)</button>
-              <button type="button" class="btn btn--outline" id="qrCheckNowBtn" hidden>🔄 ตรวจสอบการโอนเงิน</button>
-              <button type="button" class="btn btn--ghost" id="qrCancelBtn">ยกเลิก</button>
+      <!-- Tab 1: เติมเหรียญ -->
+      <div id="coinTabTopup">
+        <div class="coin-section-title">เลือกแพ็กเกจ (🛡️ หักเหรียญเฉพาะเมื่อไฟล์เสร็จสมบูรณ์เท่านั้น)</div>
+        <div class="pkg-grid" id="pkgGrid"><!-- สร้างจาก COIN_PACKAGES --></div>
+
+        <!-- กล่องสแกนจ่าย PromptPay QR (รองรับ Opn Payments จริง + โหมดทดสอบ) -->
+        <div class="qr-checkout" id="qrCheckoutBox" hidden>
+          <div class="qr-checkout__box">
+            <div class="qr-mock">
+              <div class="qr-mock__head">THAI QR PAYMENT · PromptPay</div>
+              <div class="qr-mock__code" id="qrCodeGraphic">▣ ▤ ▥</div>
+              <img id="qrLiveImg" alt="PromptPay QR Code" style="display:none;width:100%;height:auto;background:#fff;padding:6px;" hidden />
+              <div class="qr-mock__amt" id="qrAmountText">ยอดชำระ 79.00 บาท</div>
+            </div>
+            <div class="qr-checkout__info">
+              <h4 id="qrPkgTitle">แพ็กเกจ Popular Pack (+180 HugCoins)</h4>
+              <p class="hint" id="qrStatusHint">สแกนจ่ายผ่านแอปธนาคาร เหรียญจะเข้ากระเป๋าทันทีภายใน 2 วินาที (ไม่ต้องส่งสลิป)</p>
+              <div class="qr-checkout__actions">
+                <button type="button" class="btn btn--primary" id="qrConfirmSimBtn">✓ จำลองการชำระเงินสำเร็จ (รับเหรียญทันที)</button>
+                <button type="button" class="btn btn--outline" id="qrCheckNowBtn" hidden>🔄 ตรวจสอบการโอนเงิน</button>
+                <button type="button" class="btn btn--ghost" id="qrCancelBtn">ยกเลิก</button>
+              </div>
             </div>
           </div>
         </div>
+
+        <div class="coupon-row">
+          <input type="text" id="couponInput" class="input" placeholder="มีรหัสคูปองไหม? (ลองพิมพ์ HEYFREE20)" />
+          <button type="button" class="btn btn--outline" id="couponApplyBtn">🎟️ ใช้คูปอง</button>
+        </div>
       </div>
 
-      <div class="coupon-row">
-        <input type="text" id="couponInput" class="input" placeholder="มีรหัสคูปองไหม? (ลองพิมพ์ HEYFREE20)" />
-        <button type="button" class="btn btn--outline" id="couponApplyBtn">🎟️ ใช้คูปอง</button>
-      </div>
+      <!-- Tab 2: ประวัติ & อัตราการใช้ -->
+      <div id="coinTabHistory" hidden>
+        <div class="coin-history-box">
+          <div class="coin-history-head">
+            <div>
+              <div class="history-title">📜 ประวัติรายการ HugCoin</div>
+              <div class="history-stats" id="coinHistoryStats"></div>
+            </div>
+            <div class="history-filters" id="coinHistoryFilters">
+              <button type="button" class="hist-tab active" data-hfilter="all">ทั้งหมด</button>
+              <button type="button" class="hist-tab" data-hfilter="in">รับเข้า (+)</button>
+              <button type="button" class="hist-tab" data-hfilter="out">ใช้ไป (-)</button>
+            </div>
+          </div>
+          <ul class="coin-history" id="coinHistoryList"></ul>
+        </div>
 
-      <details class="coin-rules">
-        <summary>📋 อัตราการใช้ HugCoin</summary>
-        <div class="coin-rules__body">
-          <ul class="rules-list">
+        <div class="coin-rules-card">
+          <div class="history-title" style="margin-bottom:8px;">📋 อัตราการใช้ HugCoin</div>
+          <ul class="rules-list" style="margin-bottom:0;">
             <li><b>ฟรี 0 เหรียญ:</b> บีบอัด/แปลงไฟล์ทั่วไปครั้งละ 1–2 ไฟล์ (โหมดมาตรฐาน)</li>
             <li><b>1 HugCoin / ไฟล์:</b> บันทึกการแก้ไข & เซ็น PDF, ล็อกขนาดไฟล์ MB เป๊ะๆ, ทำ GIF, แยกเสียง MP3</li>
             <li><b>2 HugCoins / ไฟล์:</b> เข้ารหัสวิดีโอความเร็วสูงระดับสตูดิโอ (GPU / H.265 / AV1)</li>
             <li><b>เหมา 5 HugCoins / รอบ:</b> ทำแบบกลุ่ม Batch Mode 3–20 ไฟล์พร้อมกัน + ดาวน์โหลดเป็น ZIP</li>
           </ul>
         </div>
-      </details>
-
-      <!-- ประวัติรายการ HugCoin แยกชัดเจน + ตัวกรอง -->
-      <div class="coin-history-box">
-        <div class="coin-history-head">
-          <div>
-            <div class="history-title">📜 ประวัติรายการ HugCoin</div>
-            <div class="history-stats" id="coinHistoryStats"></div>
-          </div>
-          <div class="history-filters" id="coinHistoryFilters">
-            <button type="button" class="hist-tab active" data-hfilter="all">ทั้งหมด</button>
-            <button type="button" class="hist-tab" data-hfilter="in">รับเข้า (+)</button>
-            <button type="button" class="hist-tab" data-hfilter="out">ใช้ไป (-)</button>
-          </div>
-        </div>
-        <ul class="coin-history" id="coinHistoryList"></ul>
       </div>
     </div>
   </div>

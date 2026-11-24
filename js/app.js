@@ -2499,13 +2499,18 @@ function renderCoinModal() {
 
   $('#pkgGrid').innerHTML = COIN_PACKAGES.map((p) => `
     <div class="pkg-card ${p.popular ? 'popular' : ''} ${p.isPass ? 'pass-card' : ''}">
-      ${p.popular ? '<span class="pkg-card__tag">ขายดีสุด ⭐</span>' : p.isPass ? '<span class="pkg-card__tag" style="background:#d97706">คุ้มสายลุย 👑</span>' : ''}
-      <div class="pkg-card__name">${esc(p.name)}</div>
-      <div class="pkg-card__coins">${p.isPass ? '👑 ไม่อั้น' : `🪙 ${p.coins} <small style="font-size:12px;font-weight:500">Coins</small>`}</div>
+      <div class="pkg-card__top">
+        <div class="pkg-card__name">${esc(p.name)}</div>
+        ${p.popular ? '<span class="pkg-card__tag">ขายดีสุด</span>' : p.isPass ? '<span class="pkg-card__tag warn">คุ้มสุด</span>' : ''}
+      </div>
+      <div class="pkg-card__mid">
+        <div class="pkg-card__coins">${p.isPass ? '👑 ใช้ไม่อั้น 30 วัน' : `${p.coins} HugCoins`}</div>
+        <div class="pkg-card__price">฿${p.priceTHB}</div>
+      </div>
       <div class="pkg-card__bonus">${esc(p.bonusText)}</div>
       <div class="pkg-card__desc">${esc(p.desc)}</div>
-      <button type="button" class="btn ${p.popular || p.isPass ? 'btn--primary' : 'btn--outline'} btn--sm pkg-card__btn" data-pkg="${p.id}">
-        ${p.isPass ? `สมัคร ฿${p.priceTHB} (30 วัน)` : `เติม ฿${p.priceTHB} (PromptPay)`}
+      <button type="button" class="btn ${p.popular || p.isPass ? 'btn--primary' : 'btn--outline'} pkg-card__btn" data-pkg="${p.id}">
+        ${p.isPass ? `สมัครแพ็กเกจ ฿${p.priceTHB}` : `เติมเงิน ฿${p.priceTHB} (PromptPay)`}
       </button>
     </div>
   `).join('');
@@ -2573,6 +2578,20 @@ $('#coinHistoryFilters')?.addEventListener('click', (e) => {
   renderCoinHistory(loadWallet().history || []);
 });
 
+function switchCoinTab(tab = 'topup') {
+  $$('#coinModalTabs .coin-tab').forEach((b) => b.classList.toggle('active', b.dataset.cointab === tab));
+  const topupEl = $('#coinTabTopup');
+  const histEl = $('#coinTabHistory');
+  if (topupEl) topupEl.hidden = tab !== 'topup';
+  if (histEl) histEl.hidden = tab !== 'history';
+}
+
+$('#coinModalTabs')?.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-cointab]');
+  if (!btn) return;
+  switchCoinTab(btn.dataset.cointab);
+});
+
 function openCoinModal(reasonMsg = '') {
   const alertEl = $('#coinModalReason');
   if (reasonMsg) {
@@ -2583,6 +2602,7 @@ function openCoinModal(reasonMsg = '') {
   }
   $('#qrCheckoutBox').hidden = true;
   activeCheckoutPkg = null;
+  switchCoinTab('topup');
   renderCoinModal();
   $('#coinModal').hidden = false;
 }
