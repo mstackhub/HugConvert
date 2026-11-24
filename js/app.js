@@ -1805,6 +1805,23 @@ $('#selectAll').addEventListener('change', (e) => {
 });
 
 // bulk rename
+$('#renameKeyChips')?.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-key]');
+  if (!btn) return;
+  const input = $('#renamePattern');
+  const key = btn.dataset.key;
+  const start = input.selectionStart ?? input.value.length;
+  const end = input.selectionEnd ?? input.value.length;
+  const before = input.value.slice(0, start);
+  const after = input.value.slice(end);
+  const needUnderscore = before && !before.endsWith('_') && !before.endsWith('-') && !before.endsWith(' ');
+  const insert = (needUnderscore ? '_' : '') + key;
+  input.value = before + insert + after;
+  input.focus();
+  const pos = before.length + insert.length;
+  input.setSelectionRange(pos, pos);
+});
+
 $('#renameApply').onclick = () => {
   const items = getItems();
   const pattern = $('#renamePattern').value || '{name}';

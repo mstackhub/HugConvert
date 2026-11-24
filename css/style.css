@@ -207,6 +207,16 @@ code {
 .rename__body { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 12px 12px; }
 .rename__body .input { flex: 1; min-width: 180px; }
 .rename__body .hint { width: 100%; margin: 0; }
+.rename-chips {
+  width: 100%; display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+  font-size: 12.5px;
+}
+.rename-chip {
+  border: 1px solid #c7d2fe; background: var(--primary-soft); color: var(--primary);
+  border-radius: 99px; padding: 3px 10px; font-size: 12.5px; font-weight: 600;
+  cursor: pointer; transition: all .15s;
+}
+.rename-chip:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
 
 .file-list { list-style: none; margin: 0; padding: 0; }
 .file {

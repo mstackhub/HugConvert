@@ -412,7 +412,13 @@
                 <div class="rename__body">
                   <input type="text" class="input" id="renamePattern" value="{name}_compressed" />
                   <button class="btn btn--sm" id="renameApply">ใช้กับทุกไฟล์</button>
-                  <div class="hint">ตัวแปร: <code>{name}</code> ชื่อเดิม · <code>{n}</code> ลำดับ (01, 02…) · <code>{date}</code> วันที่ · <code>{size}</code> ขนาดผลลัพธ์ เช่น 10MB</div>
+                  <div class="rename-chips" id="renameKeyChips">
+                    <span class="muted">คลิกเพื่อแทรกตัวแปร:</span>
+                    <button type="button" class="rename-chip" data-key="{name}">+ {name} ชื่อเดิม</button>
+                    <button type="button" class="rename-chip" data-key="{n}">+ {n} ลำดับ (01, 02…)</button>
+                    <button type="button" class="rename-chip" data-key="{date}">+ {date} วันที่</button>
+                    <button type="button" class="rename-chip" data-key="{size}">+ {size} ขนาด (10MB)</button>
+                  </div>
                 </div>
               </details>
 
