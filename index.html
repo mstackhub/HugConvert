@@ -433,6 +433,67 @@
         </div>
       </section>
 
+      <!-- ===== หน้ากระเป๋าเหรียญ & เติมเงิน HugCoin แยกเป็นหน้าเต็ม ===== -->
+      <section class="topup-page" id="topupPageSection" hidden>
+        <div class="workspace-head">
+          <a href="?tool=home" class="workspace-back">← กลับหน้าหลัก</a>
+          <div class="workspace-head__titles">
+            <h1 class="topbar__title">กระเป๋าเหรียญ & เติมเงิน HugCoin</h1>
+            <p class="topbar__desc" id="walletIdText">Wallet ID: HC-0000-0000</p>
+          </div>
+          <a href="?tool=history" class="btn btn--outline">📜 ดูประวัติรายการ</a>
+        </div>
+
+        <div class="coin-hero">
+          <div>
+            <div class="coin-hero__label">ยอดเหรียญคงเหลือ (ไม่มีวันหมดอายุ)</div>
+            <div class="coin-hero__val"><span id="modalCoinBal">15</span> <small>HugCoins</small></div>
+          </div>
+          <button type="button" class="btn btn--primary" id="dailyClaimBtn">☀️ รับฟรี +0.5 HugCoin วันนี้</button>
+        </div>
+
+        <div class="coin-guest-banner" id="coinGuestBanner" hidden>
+          <div>
+            <strong>🎁 สมัครสมาชิกหรือเข้าสู่ระบบฟรี รับโบนัสต้อนรับ +15 HugCoins!</strong>
+            <p>ผูกเหรียญไว้กับบัญชีของคุณ เปิดใช้งานได้ทั้งในคอมพิวเตอร์และมือถือ เหรียญไม่หายแม้ล้างแคช</p>
+          </div>
+          <button type="button" class="btn btn--primary" id="coinOpenAuthBtn">👤 เข้าสู่ระบบ / สมัครรับ 15 <span class="hc-coin"></span></button>
+        </div>
+
+        <div class="coin-alert" id="coinModalReason" hidden></div>
+
+        <div class="card topup-card">
+          <div class="coin-section-title">เลือกแพ็กเกจ (🛡️ หักเหรียญเฉพาะเมื่อไฟล์เสร็จสมบูรณ์เท่านั้น)</div>
+          <div class="pkg-grid" id="pkgGrid"><!-- สร้างจาก COIN_PACKAGES --></div>
+
+          <!-- กล่องสแกนจ่าย PromptPay QR (รองรับ Opn Payments จริง + โหมดทดสอบ) -->
+          <div class="qr-checkout" id="qrCheckoutBox" hidden>
+            <div class="qr-checkout__box">
+              <div class="qr-mock">
+                <div class="qr-mock__head">THAI QR PAYMENT · PromptPay</div>
+                <div class="qr-mock__code" id="qrCodeGraphic">▣ ▤ ▥</div>
+                <img id="qrLiveImg" alt="PromptPay QR Code" style="display:none;width:100%;height:auto;background:#fff;padding:6px;" hidden />
+                <div class="qr-mock__amt" id="qrAmountText">ยอดชำระ 79.00 บาท</div>
+              </div>
+              <div class="qr-checkout__info">
+                <h4 id="qrPkgTitle">แพ็กเกจ Popular Pack (+180 HugCoins)</h4>
+                <p class="hint" id="qrStatusHint">สแกนจ่ายผ่านแอปธนาคาร เหรียญจะเข้ากระเป๋าทันทีภายใน 2 วินาที (ไม่ต้องส่งสลิป)</p>
+                <div class="qr-checkout__actions">
+                  <button type="button" class="btn btn--primary" id="qrConfirmSimBtn">✓ จำลองการชำระเงินสำเร็จ (รับเหรียญทันที)</button>
+                  <button type="button" class="btn btn--outline" id="qrCheckNowBtn" hidden>🔄 ตรวจสอบการโอนเงิน</button>
+                  <button type="button" class="btn btn--ghost" id="qrCancelBtn">ยกเลิก</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="coupon-row" style="margin-bottom:0;">
+            <input type="text" id="couponInput" class="input" placeholder="กรอกรหัสคูปอง (เช่น HEYFREE20)" />
+            <button type="button" class="btn btn--outline" id="couponApplyBtn">ใช้คูปอง</button>
+          </div>
+        </div>
+      </section>
+
       <section class="tool" id="toolWorkspaceSection">
         <div class="workspace-head">
           <a href="?tool=home" class="workspace-back">← หน้ารวมเครื่องมือ</a>
@@ -1220,69 +1281,6 @@
         </div>
       </div>
     </footer>
-  </div>
-
-  <!-- ===== Modal กระเป๋าเหรียญ HugCoin & เติมเหรียญ ===== -->
-  <div class="modal-backdrop" id="coinModal" hidden>
-    <div class="modal modal--lg card">
-      <div class="modal__head">
-        <div class="coin-modal-title">
-          <div class="coin-badge-icon">HC</div>
-          <div>
-            <h3>กระเป๋าเหรียญ HugCoin</h3>
-            <span class="muted" id="walletIdText">Wallet ID: HC-0000-0000</span>
-          </div>
-        </div>
-        <button type="button" class="icon-btn" id="coinCloseBtn">✕</button>
-      </div>
-
-      <div class="coin-hero">
-        <div>
-          <div class="coin-hero__label">ยอดเหรียญคงเหลือ (ไม่มีวันหมดอายุ)</div>
-          <div class="coin-hero__val"><span id="modalCoinBal">15</span> <small>HugCoins</small></div>
-        </div>
-        <button type="button" class="btn btn--primary" id="dailyClaimBtn">☀️ รับฟรี +0.5 HugCoin วันนี้</button>
-      </div>
-
-      <div class="coin-guest-banner" id="coinGuestBanner" hidden>
-        <div>
-          <strong>🎁 สมัครสมาชิกหรือเข้าสู่ระบบฟรี รับโบนัสต้อนรับ +15 HugCoins!</strong>
-          <p>ผูกเหรียญไว้กับบัญชีของคุณ เปิดใช้งานได้ทั้งในคอมพิวเตอร์และมือถือ เหรียญไม่หายแม้ล้างแคช</p>
-        </div>
-        <button type="button" class="btn btn--primary" id="coinOpenAuthBtn">👤 เข้าสู่ระบบ / สมัครรับ 15 <span class="hc-coin"></span></button>
-      </div>
-
-      <div class="coin-alert" id="coinModalReason" hidden></div>
-
-      <div class="coin-section-title">เลือกแพ็กเกจ (🛡️ หักเหรียญเฉพาะเมื่อไฟล์เสร็จสมบูรณ์เท่านั้น)</div>
-      <div class="pkg-grid" id="pkgGrid"><!-- สร้างจาก COIN_PACKAGES --></div>
-
-      <!-- กล่องสแกนจ่าย PromptPay QR (รองรับ Opn Payments จริง + โหมดทดสอบ) -->
-      <div class="qr-checkout" id="qrCheckoutBox" hidden>
-        <div class="qr-checkout__box">
-          <div class="qr-mock">
-            <div class="qr-mock__head">THAI QR PAYMENT · PromptPay</div>
-            <div class="qr-mock__code" id="qrCodeGraphic">▣ ▤ ▥</div>
-            <img id="qrLiveImg" alt="PromptPay QR Code" style="display:none;width:100%;height:auto;background:#fff;padding:6px;" hidden />
-            <div class="qr-mock__amt" id="qrAmountText">ยอดชำระ 79.00 บาท</div>
-          </div>
-          <div class="qr-checkout__info">
-            <h4 id="qrPkgTitle">แพ็กเกจ Popular Pack (+180 HugCoins)</h4>
-            <p class="hint" id="qrStatusHint">สแกนจ่ายผ่านแอปธนาคาร เหรียญจะเข้ากระเป๋าทันทีภายใน 2 วินาที (ไม่ต้องส่งสลิป)</p>
-            <div class="qr-checkout__actions">
-              <button type="button" class="btn btn--primary" id="qrConfirmSimBtn">✓ จำลองการชำระเงินสำเร็จ (รับเหรียญทันที)</button>
-              <button type="button" class="btn btn--outline" id="qrCheckNowBtn" hidden>🔄 ตรวจสอบการโอนเงิน</button>
-              <button type="button" class="btn btn--ghost" id="qrCancelBtn">ยกเลิก</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="coupon-row">
-        <input type="text" id="couponInput" class="input" placeholder="กรอกรหัสคูปอง (เช่น HEYFREE20)" />
-        <button type="button" class="btn btn--outline" id="couponApplyBtn">ใช้คูปอง</button>
-      </div>
-    </div>
   </div>
 
   <!-- ===== Modal เข้าสู่ระบบ / สมัครสมาชิก (Authentication) ===== -->

@@ -1129,10 +1129,12 @@ body.is-member .hub-strip {
 
 .home-hub:not([hidden]),
 .history-page:not([hidden]),
+.topup-page:not([hidden]),
 .tool:not([hidden]),
 .wm-preview-card:not([hidden]) {
   animation: pageFadeIn .22s cubic-bezier(.22, 1, .36, 1);
 }
+.topup-card { padding: 24px 26px; }
 .topnav__drop.open .topnav__menu {
   animation: dropFadeIn .16s cubic-bezier(.22, 1, .36, 1);
   transform-origin: top left;

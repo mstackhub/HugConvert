@@ -132,6 +132,11 @@ const TOOLS = [
     desc: 'ตรวจสอบรายการรับเข้า ใช้เหรียญ และสถานะแพ็กเกจของคุณ',
     settingsTitle: '', actionLabel: '', suffix: '', tags: '',
   },
+  {
+    id: 'topup', icon: '💳', label: 'กระเป๋าเหรียญ & เติมเงิน', kind: 'topup', cat: 'account', panel: 'none',
+    desc: 'เติมเหรียญ HugCoins หรือสมัคร Unlimited Pass 30 วัน',
+    settingsTitle: '', actionLabel: '', suffix: '', tags: '',
+  },
 ];
 
 const $ = (s, el = document) => el.querySelector(s);
@@ -179,7 +184,7 @@ function setItems(arr) {
 
 // ---------------- Sidebar / SEO Router ----------------
 function buildNav() {
-  $('#nav').innerHTML = TOOLS.filter((t) => t.id !== 'history').map((t) =>
+  $('#nav').innerHTML = TOOLS.filter((t) => t.id !== 'history' && t.id !== 'topup').map((t) =>
     t.group
       ? `<div class="nav__group">${t.group}</div>`
       : `<a class="nav__item" href="?tool=${t.id}" data-id="${t.id}">
@@ -346,15 +351,19 @@ function route() {
   $('#settingsTitle').textContent = tool.settingsTitle;
   updateSeoForTool(tool);
 
-  // สลับระหว่างหน้าแรก (Home Hub), หน้าประวัติ (History) และหน้าเครื่องมือ (Tool Workspace)
+  // สลับระหว่างหน้าแรก (Home Hub), หน้าประวัติ (History), หน้าเติมเงิน (Topup) และหน้าเครื่องมือ (Tool Workspace)
   const isHome = tool.id === 'home';
   const isHistory = tool.id === 'history';
+  const isTopup = tool.id === 'topup';
+  if (!isTopup) stopOpnPolling();
   $('#homeHubSection').hidden = !isHome;
   const histSec = $('#historyPageSection');
   if (histSec) histSec.hidden = !isHistory;
-  $('#toolWorkspaceSection').hidden = isHome || isHistory;
+  const topupSec = $('#topupPageSection');
+  if (topupSec) topupSec.hidden = !isTopup;
+  $('#toolWorkspaceSection').hidden = isHome || isHistory || isTopup;
   const seoSec = $('#seoSection');
-  if (seoSec) seoSec.hidden = isHistory;
+  if (seoSec) seoSec.hidden = isHistory || isTopup;
   if (isHome) {
     $('#smartPdfChoice').hidden = true;
     renderHubCards();
@@ -365,6 +374,12 @@ function route() {
   }
   if (isHistory) {
     renderHistoryPage();
+    toggleSidebar(false);
+    renderWalletBadge();
+    return;
+  }
+  if (isTopup) {
+    renderCoinModal();
     toggleSidebar(false);
     renderWalletBadge();
     return;
@@ -457,7 +472,7 @@ let pendingSmartPdfFiles = null;
 function renderHubCards() {
   const q = ($('#hubSearchInput')?.value || '').trim().toLowerCase();
   const list = TOOLS.filter((t) => {
-    if (!t.id || t.id === 'home' || t.id === 'history') return false;
+    if (!t.id || t.id === 'home' || t.id === 'history' || t.id === 'topup') return false;
     if (hubActiveCat !== 'all' && t.cat !== hubActiveCat) return false;
     if (q) {
       const hay = `${t.label} ${t.desc} ${t.tags || ''}`.toLowerCase();
@@ -2507,7 +2522,6 @@ function setAuthMode(mode, infoMsg = '') {
 }
 
 function openAuthModal(mode = 'signin', infoMsg = '') {
-  $('#coinModal').hidden = true;
   setAuthMode(mode, infoMsg);
   $('#authModal').hidden = false;
   setTimeout(() => (mode === 'signup' ? $('#authName') : $('#authEmail'))?.focus(), 60);
@@ -2610,7 +2624,7 @@ $('#ddLogoutBtn').onclick = async () => {
 onAuthStateChange(() => {
   renderAuthUI();
   renderWalletBadge();
-  if (!$('#coinModal').hidden) renderCoinModal();
+  if (state.toolId === 'topup') renderCoinModal();
   refreshUI();
 });
 
@@ -2790,15 +2804,15 @@ function openCoinModal(reasonMsg = '') {
   }
   $('#qrCheckoutBox').hidden = true;
   activeCheckoutPkg = null;
-  renderCoinModal();
-  $('#coinModal').hidden = false;
+  if (state.toolId !== 'topup') {
+    navigateToTool('topup');
+  } else {
+    renderCoinModal();
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 $('#coinWalletBtn').onclick = () => openCoinModal();
-$('#coinCloseBtn').onclick = () => ($('#coinModal').hidden = true);
-$('#coinModal').addEventListener('click', (e) => {
-  if (e.target === $('#coinModal')) $('#coinModal').hidden = true;
-});
 
 $('#dailyClaimBtn').onclick = () => {
   const w = loadWallet();
@@ -2928,8 +2942,6 @@ $('#qrCancelBtn').onclick = () => {
   $('#qrCheckoutBox').hidden = true;
   activeCheckoutPkg = null;
 };
-
-$('#coinCloseBtn').addEventListener('click', stopOpnPolling);
 
 $('#qrConfirmSimBtn').onclick = () => {
   if (!activeCheckoutPkg) return;
