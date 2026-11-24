@@ -690,11 +690,54 @@ input[type="range"] { width: 100%; accent-color: var(--primary); }
 .coin-rules__body { padding-bottom: 12px; font-size: 12.5px; }
 .rules-list { margin: 0 0 12px; padding-left: 18px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
 .rules-list b { color: var(--text); }
-.history-title { font-weight: 700; margin-bottom: 6px; }
-.coin-history { list-style: none; margin: 0; padding: 0; max-height: 130px; overflow-y: auto; border-top: 1px solid var(--line); }
-.coin-history li { display: flex; justify-content: space-between; padding: 6px 2px; border-bottom: 1px dashed var(--line); }
+.coin-history-box {
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.coin-history-head {
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
+  padding: 12px 14px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+.history-title { font-weight: 700; font-size: 14px; color: var(--text); }
+.history-stats { font-size: 12.5px; margin-top: 2px; }
+.history-filters { display: flex; gap: 4px; }
+.hist-tab {
+  border: 1px solid var(--line); background: #fff; border-radius: 99px;
+  padding: 4px 10px; font-size: 12px; font-weight: 600; color: var(--muted);
+  cursor: pointer; transition: all .15s;
+}
+.hist-tab:hover { color: var(--text); border-color: #cbd5e1; }
+.hist-tab.active { background: var(--text); color: #fff; border-color: var(--text); }
+
+.coin-history { list-style: none; margin: 0; padding: 0; max-height: 220px; overflow-y: auto; }
+.coin-hist-row {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  padding: 10px 14px; border-bottom: 1px solid var(--line);
+}
+.coin-hist-row:last-child { border-bottom: 0; }
+.coin-hist-left { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+.coin-hist-badge {
+  font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; flex-shrink: 0;
+}
+.coin-hist-badge.in { background: #dcfce7; color: #166534; }
+.coin-hist-badge.out { background: #ffe4e6; color: #be123c; }
+.coin-hist-badge.pass { background: #fef3c7; color: #92400e; }
+.coin-hist-meta { min-width: 0; }
+.coin-hist-title {
+  font-size: 13.5px; font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.coin-hist-time { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+.coin-hist-amt { font-size: 13.5px; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+.coin-hist-empty { padding: 18px 14px; text-align: center; font-size: 13px; }
 .coin-plus { color: var(--ok); font-weight: 700; }
 .coin-minus { color: var(--danger); font-weight: 700; }
+.coin-pass { color: #b45309; font-weight: 700; }
 
 /* ===== Clean Home Landing Hub (แบบที่ 2: Clean Top-Nav + Compact Cards) ===== */
 .home-hub { display: flex; flex-direction: column; gap: 20px; }

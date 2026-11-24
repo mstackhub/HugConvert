@@ -1191,7 +1191,7 @@
       </div>
 
       <details class="coin-rules">
-        <summary>📋 อัตราการใช้ HugCoin & ประวัติรายการล่าสุด</summary>
+        <summary>📋 อัตราการใช้ HugCoin</summary>
         <div class="coin-rules__body">
           <ul class="rules-list">
             <li><b>ฟรี 0 เหรียญ:</b> บีบอัด/แปลงไฟล์ทั่วไปครั้งละ 1–2 ไฟล์ (โหมดมาตรฐาน)</li>
@@ -1199,10 +1199,24 @@
             <li><b>2 HugCoins / ไฟล์:</b> เข้ารหัสวิดีโอความเร็วสูงระดับสตูดิโอ (GPU / H.265 / AV1)</li>
             <li><b>เหมา 5 HugCoins / รอบ:</b> ทำแบบกลุ่ม Batch Mode 3–20 ไฟล์พร้อมกัน + ดาวน์โหลดเป็น ZIP</li>
           </ul>
-          <div class="history-title">ประวัติเหรียญล่าสุด</div>
-          <ul class="coin-history" id="coinHistoryList"></ul>
         </div>
       </details>
+
+      <!-- ประวัติรายการ HugCoin แยกชัดเจน + ตัวกรอง -->
+      <div class="coin-history-box">
+        <div class="coin-history-head">
+          <div>
+            <div class="history-title">📜 ประวัติรายการ HugCoin</div>
+            <div class="history-stats" id="coinHistoryStats"></div>
+          </div>
+          <div class="history-filters" id="coinHistoryFilters">
+            <button type="button" class="hist-tab active" data-hfilter="all">ทั้งหมด</button>
+            <button type="button" class="hist-tab" data-hfilter="in">รับเข้า (+)</button>
+            <button type="button" class="hist-tab" data-hfilter="out">ใช้ไป (-)</button>
+          </div>
+        </div>
+        <ul class="coin-history" id="coinHistoryList"></ul>
+      </div>
     </div>
   </div>
 
