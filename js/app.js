@@ -22,6 +22,7 @@ import {
   initAuth, getCurrentUser, onAuthStateChange,
   registerWithEmail, loginWithEmail, loginWithGoogle, requestPasswordReset, logoutUser,
 } from './auth.js';
+import { renderLandingAds } from './ads.js';
 
 // ------------------------------------------------------------
 //  รายการเครื่องมือใน Sidebar — ใช้งานได้จริงครบทุกตัว (12 เครื่องมือ)
@@ -312,6 +313,7 @@ function route() {
   if (isHome) {
     $('#smartPdfChoice').hidden = true;
     renderHubCards();
+    renderLandingAds(hasUnlimitedPass(), (msg) => openCoinModal(msg));
     toggleSidebar(false);
     renderWalletBadge();
     return;
@@ -2426,6 +2428,9 @@ function renderWalletBadge() {
   if (actionEl) actionEl.textContent = w.isGuest ? 'รับฟรี 15 🪙' : isPass ? '👑 VIP Pass' : '+ เติมเหรียญ';
   const dot = $('#coinDailyDot');
   if (dot) dot.hidden = !canClaimDaily(w);
+  if (state.toolId === 'home') {
+    renderLandingAds(isPass, (msg) => openCoinModal(msg));
+  }
 }
 
 function renderCoinModal() {
