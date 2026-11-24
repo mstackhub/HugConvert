@@ -123,12 +123,38 @@ export async function registerWithEmail({ name, email, password }) {
 
   const sb = await getSupabase();
   if (sb) {
+    // ลองสมัครผ่าน /api/auth-register ก่อน เพื่อไม่ให้ติดโควตาส่งอีเมลของ Supabase Free Tier
+    try {
+      const apiRes = await fetch('/api/auth-register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: cleanName, email: cleanEmail, password }),
+      });
+      const text = await apiRes.text();
+      let apiData = null;
+      try { apiData = JSON.parse(text); } catch { /* not JSON (e.g. static server) */ }
+      if (apiData) {
+        if (!apiRes.ok) return { ok: false, msg: apiData.error || 'สมัครสมาชิกไม่สำเร็จ' };
+        const { data: signData, error: signErr } = await sb.auth.signInWithPassword({ email: cleanEmail, password });
+        if (signErr) return { ok: false, msg: signErr.message };
+        const u = signData.user ? mapSupabaseUser(signData.user) : null;
+        if (u) setCurrentUser(u);
+        return { ok: true, user: u, isNew: true, msg: 'สมัครสมาชิกสำเร็จและบันทึกลง Supabase แล้ว! รับฟรี +15 HugCoins 🎉' };
+      }
+    } catch { /* fallback to sb.auth.signUp */ }
+
     const { data, error } = await sb.auth.signUp({
       email: cleanEmail,
       password,
       options: { data: { full_name: cleanName } },
     });
-    if (error) return { ok: false, msg: error.message };
+    if (error) {
+      const em = String(error.message || '').toLowerCase();
+      if (em.includes('rate limit')) {
+        return { ok: false, msg: 'ระบบส่งอีเมลเต็มโควตาชั่วคราว (กรุณาปิด Confirm email ใน Supabase หรือใช้งานผ่าน Vercel)' };
+      }
+      return { ok: false, msg: error.message };
+    }
     const u = data.user ? mapSupabaseUser(data.user) : null;
     if (data.session && u) {
       setCurrentUser(u);
