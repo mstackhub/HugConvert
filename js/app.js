@@ -1216,7 +1216,7 @@ async function renderWatermarkPreview() {
   const items = getItems();
   const firstPdf = items.find((x) => x.file);
   const tagEl = $('#wmPreviewSourceTag');
-  const s = currentSettings();
+  const s = readSettings();
 
   const hasCached = firstPdf && wmPreviewCache.itemId === firstPdf.id && wmPreviewCache.baseCanvas;
   if (hasCached) {
