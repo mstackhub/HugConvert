@@ -452,6 +452,10 @@ document.addEventListener('click', (e) => {
     $$('.topnav__drop.open').forEach((d) => d.classList.remove('open'));
   }
 
+  if (e.target.closest('.tool-fav-btn')) {
+    e.preventDefault();
+    return;
+  }
   const link = e.target.closest('a[href^="?tool="]');
   if (!link) return;
   $$('.topnav__drop.open').forEach((d) => d.classList.remove('open'));
@@ -469,11 +473,79 @@ document.addEventListener('click', (e) => {
 let hubActiveCat = 'all';
 let pendingSmartPdfFiles = null;
 
+function getHuggedKey() {
+  const user = getCurrentUser();
+  return `hc.hugged.${user?.id || 'guest'}`;
+}
+
+function getHuggedIds() {
+  try {
+    const arr = JSON.parse(localStorage.getItem(getHuggedKey()) || '[]');
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+function toggleHugTool(toolId) {
+  const ids = getHuggedIds();
+  const idx = ids.indexOf(toolId);
+  if (idx >= 0) {
+    ids.splice(idx, 1);
+    toast('นำออกจากเครื่องมือที่คุณ Hug แล้ว');
+  } else {
+    ids.unshift(toolId);
+    toast('❤️ เพิ่มในเครื่องมือที่คุณ Hug แล้ว');
+  }
+  localStorage.setItem(getHuggedKey(), JSON.stringify(ids));
+  renderHubCards();
+}
+
+function renderToolCardHtml(t, isHugged) {
+  return `
+    <a class="tool-card" href="?tool=${t.id}" data-cat="${t.cat}">
+      <span class="tool-card__icon">${t.icon}</span>
+      <div class="tool-card__body">
+        <div class="tool-card__title">${esc(t.label)}</div>
+        <div class="tool-card__desc">${esc(t.desc)}</div>
+      </div>
+      <button type="button" class="tool-fav-btn ${isHugged ? 'active' : ''}" data-hug="${t.id}" title="${isHugged ? 'เลิกถูกใจ' : 'ถูกใจ (เพิ่มในเครื่องมือที่คุณ Hug)'}" aria-label="ถูกใจเครื่องมือนี้">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="${isHugged ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+      </button>
+    </a>
+  `;
+}
+
 function renderHubCards() {
   const q = ($('#hubSearchInput')?.value || '').trim().toLowerCase();
+  const huggedIds = getHuggedIds();
+  const huggedSet = new Set(huggedIds);
+
+  const countEl = $('#huggedTabCount');
+  if (countEl) countEl.textContent = huggedIds.length;
+
+  // ส่วน "เครื่องมือที่คุณ Hug" แสดงด้านบนเมื่อมีรายการโปรดและอยู่ในหน้าทั้งหมด
+  const huggedSec = $('#huggedSection');
+  const huggedGrid = $('#huggedGrid');
+  const huggedTools = huggedIds
+    .map((id) => TOOLS.find((t) => t.id === id))
+    .filter(Boolean);
+  if (huggedSec && huggedGrid) {
+    const showHuggedTop = huggedTools.length > 0 && hubActiveCat === 'all' && !q;
+    huggedSec.hidden = !showHuggedTop;
+    if (showHuggedTop) {
+      $('#huggedCountLabel').textContent = `${huggedTools.length} เครื่องมือ`;
+      huggedGrid.innerHTML = huggedTools.map((t) => renderToolCardHtml(t, true)).join('');
+    }
+  }
+
   const list = TOOLS.filter((t) => {
     if (!t.id || t.id === 'home' || t.id === 'history' || t.id === 'topup') return false;
-    if (hubActiveCat !== 'all' && t.cat !== hubActiveCat) return false;
+    if (hubActiveCat === 'hugged') {
+      if (!huggedSet.has(t.id)) return false;
+    } else if (hubActiveCat !== 'all' && t.cat !== hubActiveCat) {
+      return false;
+    }
     if (q) {
       const hay = `${t.label} ${t.desc} ${t.tags || ''}`.toLowerCase();
       return hay.includes(q);
@@ -484,19 +556,21 @@ function renderHubCards() {
   const grid = $('#hubGrid');
   if (!grid) return;
   if (!list.length) {
-    grid.innerHTML = '<div class="card" style="padding:28px;text-align:center;grid-column:1/-1" class="muted">ไม่พบเครื่องมือที่ค้นหา ลองพิมพ์คำอื่นดูนะครับ</div>';
+    grid.innerHTML = hubActiveCat === 'hugged'
+      ? '<div class="card" style="padding:28px;text-align:center;grid-column:1/-1"><span class="muted">ยังไม่มีเครื่องมือที่คุณ Hug — กดรูปหัวใจ ❤️ มุมขวาบนของเครื่องมือที่ชอบได้เลยครับ</span></div>'
+      : '<div class="card" style="padding:28px;text-align:center;grid-column:1/-1"><span class="muted">ไม่พบเครื่องมือที่ค้นหา ลองพิมพ์คำอื่นดูนะครับ</span></div>';
     return;
   }
-  grid.innerHTML = list.map((t) => `
-    <a class="tool-card" href="?tool=${t.id}" data-cat="${t.cat}">
-      <span class="tool-card__icon">${t.icon}</span>
-      <div class="tool-card__body">
-        <div class="tool-card__title">${esc(t.label)}</div>
-        <div class="tool-card__desc">${esc(t.desc)}</div>
-      </div>
-    </a>
-  `).join('');
+  grid.innerHTML = list.map((t) => renderToolCardHtml(t, huggedSet.has(t.id))).join('');
 }
+
+$('#homeHubSection')?.addEventListener('click', (e) => {
+  const favBtn = e.target.closest('.tool-fav-btn');
+  if (!favBtn) return;
+  e.preventDefault();
+  e.stopPropagation();
+  toggleHugTool(favBtn.dataset.hug);
+});
 
 $('#hubCatTabs')?.addEventListener('click', (e) => {
   const btn = e.target.closest('[data-hubcat]');
@@ -2614,6 +2688,19 @@ $('#ddOpenHistoryBtn')?.addEventListener('click', () => {
   $('#profileDropdown').hidden = true;
   navigateToTool('history');
   window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+$('#ddOpenHuggedBtn')?.addEventListener('click', () => {
+  $('#profileDropdown').hidden = true;
+  hubActiveCat = 'hugged';
+  $$('#hubCatTabs .hub-tab').forEach((b) => b.classList.toggle('active', b.dataset.hubcat === 'hugged'));
+  if (state.toolId !== 'home') {
+    navigateToTool('home');
+  } else {
+    renderHubCards();
+  }
+  requestAnimationFrame(() => {
+    $('#hubCatTabs')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
 });
 
 $('#ddLogoutBtn').onclick = async () => {

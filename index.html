@@ -201,6 +201,7 @@
               </div>
               <button type="button" class="user-dropdown__item" id="ddOpenCoinBtn"><span class="hc-coin"></span> กระเป๋า HugCoin & เติมเหรียญ</button>
               <button type="button" class="user-dropdown__item" id="ddOpenHistoryBtn">📜 ประวัติรายการ HugCoin</button>
+              <button type="button" class="user-dropdown__item" id="ddOpenHuggedBtn">❤️ เครื่องมือที่คุณ Hug</button>
               <button type="button" class="user-dropdown__item danger" id="ddLogoutBtn">🚪 ออกจากระบบ</button>
             </div>
           </div>
@@ -258,10 +259,20 @@
           </div>
         </div>
 
+        <!-- ===== เครื่องมือที่คุณ Hug (รายการโปรด) ===== -->
+        <div class="hugged-section" id="huggedSection" hidden>
+          <div class="hugged-section__head">
+            <span class="hugged-section__title">❤️ เครื่องมือที่คุณ Hug</span>
+            <span class="muted" id="huggedCountLabel"></span>
+          </div>
+          <div class="hub-grid" id="huggedGrid"></div>
+        </div>
+
         <!-- แถบค้นหาและตัวกรองหมวดหมู่ -->
         <div class="hub-filter-bar">
           <div class="hub-tabs" id="hubCatTabs">
             <button type="button" class="hub-tab active" data-hubcat="all">ทั้งหมด (13)</button>
+            <button type="button" class="hub-tab" data-hubcat="hugged" id="hubTabHugged">❤️ ที่ Hug ไว้ (<span id="huggedTabCount">0</span>)</button>
             <button type="button" class="hub-tab" data-hubcat="pdf">PDF</button>
             <button type="button" class="hub-tab" data-hubcat="video">วิดีโอ</button>
             <button type="button" class="hub-tab" data-hubcat="image">รูปภาพ & HEIC</button>
