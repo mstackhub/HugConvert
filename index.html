@@ -1014,19 +1014,21 @@
       <div class="coin-section-title">แพ็กเกจเติมเหรียญ & Unlimited Pass (🛡️ การันตีหักเหรียญเฉพาะเมื่อไฟล์สำเร็จเท่านั้น)</div>
       <div class="pkg-grid" id="pkgGrid"><!-- สร้างจาก COIN_PACKAGES --></div>
 
-      <!-- กล่องจำลองสแกนจ่าย PromptPay QR เมื่อเลือกแพ็กเกจ -->
+      <!-- กล่องสแกนจ่าย PromptPay QR (รองรับ Opn Payments จริง + โหมดทดสอบ) -->
       <div class="qr-checkout" id="qrCheckoutBox" hidden>
         <div class="qr-checkout__box">
           <div class="qr-mock">
             <div class="qr-mock__head">THAI QR PAYMENT · PromptPay</div>
             <div class="qr-mock__code" id="qrCodeGraphic">▣ ▤ ▥</div>
+            <img id="qrLiveImg" alt="PromptPay QR Code" style="display:none;width:100%;height:auto;background:#fff;padding:6px;" hidden />
             <div class="qr-mock__amt" id="qrAmountText">ยอดชำระ 79.00 บาท</div>
           </div>
           <div class="qr-checkout__info">
             <h4 id="qrPkgTitle">แพ็กเกจ Popular Pack (+180 HeyCoins)</h4>
-            <p class="hint">ในโหมดใช้งานจริง ปุ่มนี้จะเชื่อมต่อกับ <b>Stripe PromptPay / Webhook อัตโนมัติ</b> เมื่อสแกนโอนเสร็จ เหรียญจะเข้ากระเป๋าทันทีภายใน 2 วินาที</p>
+            <p class="hint" id="qrStatusHint">เมื่อเชื่อมต่อ <b>Opn Payments (Omise)</b> บน Vercel แล้ว สแกนจ่ายเสร็จเหรียญจะเข้ากระเป๋าทันทีภายใน 2 วินาที (ไม่ต้องส่งสลิป)</p>
             <div class="qr-checkout__actions">
               <button type="button" class="btn btn--primary" id="qrConfirmSimBtn">✓ จำลองการชำระเงินสำเร็จ (รับเหรียญทันที)</button>
+              <button type="button" class="btn btn--outline" id="qrCheckNowBtn" hidden>🔄 ตรวจสอบการโอนเงิน</button>
               <button type="button" class="btn btn--ghost" id="qrCancelBtn">ยกเลิก</button>
             </div>
           </div>

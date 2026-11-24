@@ -37,7 +37,11 @@ export const SUPABASE_CONFIG = {
 
 ---
 
-## (เสริม) เชื่อมต่อรับเงินอัตโนมัติ PromptPay QR
-1. สมัคร **Stripe Thailand** (รองรับ PromptPay QR + บัตรเครดิต ไม่มีค่ารายเดือน)
-2. สร้าง **Payment Links** สำหรับแพ็กเกจ `29฿`, `79฿`, `199฿`, `149฿` แล้วนำลิงก์มาวางในช่อง `paymentUrl` ในไฟล์ `js/heycoin.js`
-3. สร้าง Vercel Serverless Function (`/api/stripe-webhook.js`) เพื่อรับแจ้งเตือนเมื่อลูกค้าสแกนจ่ายสำเร็จ แล้วเรียก Supabase Service Key บวกเหรียญเข้า `public.wallets` อัตโนมัติภายใน 2 วินาทีครับ
+## (เสริม) เชื่อมต่อรับเงินอัตโนมัติ PromptPay QR ผ่าน Opn Payments (Omise)
+โปรเจกต์เตรียม Serverless Functions (`/api/opn-create-qr.js`, `/api/opn-webhook.js`, `/api/opn-check-status.js`) ไว้ให้เรียบร้อยแล้ว เพียงทำ 3 ขั้นตอน:
+1. สมัครบัญชี **Opn Payments (omise.co)** (เปิดใช้งาน PromptPay ค่าธรรมเนียม 1.65%, 0฿ รายเดือน)
+2. นำ Key ไปใส่ใน **Vercel → Project Settings → Environment Variables**:
+   - `OMISE_SECRET_KEY` = Secret Key จากหน้า Dashboard ของ Opn (`skey_test_...` หรือ `skey_...`)
+   - `SUPABASE_URL` = Project URL จาก Supabase
+   - `SUPABASE_SERVICE_ROLE_KEY` = Service Role Key จาก Supabase (สำหรับให้ Backend บวกเหรียญเข้ากระเป๋าอย่างปลอดภัย)
+3. ในหน้า Dashboard ของ Opn → **Webhooks** → เพิ่ม URL: `https://<ชื่อเว็บของคุณ>.vercel.app/api/opn-webhook` (เลือก Event: `charge.complete`) — เสร็จสมบูรณ์ครับ!

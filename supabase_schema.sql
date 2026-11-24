@@ -29,6 +29,10 @@ create table if not exists public.coin_transactions (
 create index if not exists idx_coin_tx_user_created
   on public.coin_transactions (user_id, created_at desc);
 
+create unique index if not exists idx_coin_tx_payment_ref
+  on public.coin_transactions (payment_ref)
+  where payment_ref is not null;
+
 -- 3. เปิด Row Level Security (ผู้ใช้อ่านได้เฉพาะของตัวเอง แก้ตัวเลขตรงๆ ไม่ได้)
 alter table public.wallets enable row level security;
 alter table public.coin_transactions enable row level security;
@@ -136,6 +140,47 @@ begin
 
   insert into public.coin_transactions (user_id, delta, label)
   values (v_uid, -p_amount, coalesce(p_reason, '⚡ ใช้งานฟีเจอร์ HeyConvert'));
+
+  return jsonb_build_object('ok', true, 'balance', v_new_bal);
+end;
+$$;
+
+-- 7. RPC: เติมเหรียญ / เปิด Unlimited Pass จาก Opn Payments Webhook (Idempotent 100%)
+create or replace function public.credit_opn_purchase(
+  p_user_id uuid,
+  p_coins integer,
+  p_pass_days integer,
+  p_label text,
+  p_payment_ref text
+)
+returns jsonb
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_new_bal integer;
+begin
+  -- ป้องกันการเติมซ้ำหาก Webhook และ Polling เรียกพร้อมกัน
+  if exists (select 1 from public.coin_transactions where payment_ref = p_payment_ref) then
+    return jsonb_build_object('ok', true, 'duplicate', true);
+  end if;
+
+  if p_pass_days > 0 then
+    update public.wallets
+    set unlimited_until = greatest(now(), coalesce(unlimited_until, now())) + (p_pass_days || ' days')::interval,
+        updated_at = now()
+    where user_id = p_user_id
+    returning balance into v_new_bal;
+  else
+    update public.wallets
+    set balance = balance + p_coins,
+        updated_at = now()
+    where user_id = p_user_id
+    returning balance into v_new_bal;
+  end if;
+
+  insert into public.coin_transactions (user_id, delta, label, payment_ref)
+  values (p_user_id, coalesce(p_coins, 0), p_label, p_payment_ref);
 
   return jsonb_build_object('ok', true, 'balance', v_new_bal);
 end;

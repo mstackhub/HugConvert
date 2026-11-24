@@ -2534,38 +2534,107 @@ $('#couponApplyBtn').onclick = () => {
   }
 };
 
-$('#pkgGrid').addEventListener('click', (e) => {
+let activeCheckoutChargeId = null;
+let opnPollTimer = null;
+
+function stopOpnPolling() {
+  if (opnPollTimer) {
+    clearInterval(opnPollTimer);
+    opnPollTimer = null;
+  }
+  activeCheckoutChargeId = null;
+}
+
+async function checkOpnStatusOnce() {
+  if (!activeCheckoutChargeId || !activeCheckoutPkg) return;
+  try {
+    const res = await fetch(`/api/opn-check-status?chargeId=${encodeURIComponent(activeCheckoutChargeId)}`);
+    const data = await res.json();
+    if (data?.paid) {
+      const pkg = activeCheckoutPkg;
+      stopOpnPolling();
+      const creditRes = addCoinsFromPurchase(pkg.id, 'Opn PromptPay');
+      toast(creditRes.passDays
+        ? `👑 ชำระเงินสำเร็จ! เปิดใช้งาน Unlimited Pass ${creditRes.passDays} วันแล้ว`
+        : `🎉 ชำระเงินสำเร็จ! เติม +${creditRes.added} HeyCoins เข้ากระเป๋าแล้ว`);
+      $('#qrCheckoutBox').hidden = true;
+      $('#coinModalReason').hidden = true;
+      activeCheckoutPkg = null;
+      renderCoinModal();
+      refreshUI();
+    } else if (data?.status === 'failed' || data?.status === 'expired') {
+      stopOpnPolling();
+      $('#qrStatusHint').textContent = `❌ รายการไม่สำเร็จหรือหมดอายุ (${data.failureMessage || data.status}) กรุณากดสร้าง QR ใหม่อีกครั้ง`;
+    }
+  } catch { /* ignore transient network errors */ }
+}
+
+$('#pkgGrid').addEventListener('click', async (e) => {
   const btn = e.target.closest('[data-pkg]');
   if (!btn) return;
   const w = loadWallet();
-  if (w.isGuest) {
+  const user = getCurrentUser();
+  if (w.isGuest || !user) {
     openAuthModal('signup', 'กรุณาเข้าสู่ระบบหรือสมัครสมาชิกก่อนเติมเหรียญ เพื่อผูกเหรียญไว้กับบัญชีของคุณครับ');
     return;
   }
   const pkg = COIN_PACKAGES.find((p) => p.id === btn.dataset.pkg);
   if (!pkg) return;
 
-  // ถ้าตั้งค่า paymentUrl (เช่น Stripe Payment Link) ไว้แล้ว ให้เปิดหน้าชำระเงินจริงทันที
-  if (pkg.paymentUrl) {
-    const sep = pkg.paymentUrl.includes('?') ? '&' : '?';
-    window.open(`${pkg.paymentUrl}${sep}client_reference_id=${encodeURIComponent(w.walletId)}`, '_blank');
-    return;
-  }
-
-  // โหมดแสดง PromptPay QR จำลองเพื่อทดสอบระบบรับเหรียญ
+  stopOpnPolling();
   activeCheckoutPkg = pkg;
   $('#qrPkgTitle').textContent = pkg.isPass
     ? `แพ็กเกจ ${pkg.name} (ใช้งานไม่อั้น 30 วัน)`
     : `แพ็กเกจ ${pkg.name} (+${pkg.coins} HeyCoins)`;
   $('#qrAmountText').textContent = `ยอดชำระ ${pkg.priceTHB}.00 บาท`;
   $('#qrCheckoutBox').hidden = false;
+
+  // ลองเรียก Opn Payments API บน Vercel (/api/opn-create-qr)
+  let liveOk = false;
+  try {
+    const resp = await fetch('/api/opn-create-qr', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pkgId: pkg.id, userId: user.id, email: user.email }),
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data?.ok && data.qrImageUrl) {
+        liveOk = true;
+        activeCheckoutChargeId = data.chargeId;
+        $('#qrCodeGraphic').hidden = true;
+        $('#qrLiveImg').src = data.qrImageUrl;
+        $('#qrLiveImg').style.display = 'block';
+        $('#qrLiveImg').hidden = false;
+        $('#qrConfirmSimBtn').hidden = true;
+        $('#qrCheckNowBtn').hidden = false;
+        $('#qrStatusHint').innerHTML = '⏳ <b>กรุณาสแกน PromptPay QR ด้วยแอปธนาคารใดก็ได้</b> (0฿ ค่าธรรมเนียม) ระบบกำลังตรวจสอบยอดอัตโนมัติ...';
+        opnPollTimer = setInterval(checkOpnStatusOnce, 2500);
+      }
+    }
+  } catch { /* fallback to demo mode */ }
+
+  if (!liveOk) {
+    $('#qrCodeGraphic').hidden = false;
+    $('#qrLiveImg').hidden = true;
+    $('#qrLiveImg').style.display = 'none';
+    $('#qrConfirmSimBtn').hidden = false;
+    $('#qrCheckNowBtn').hidden = true;
+    $('#qrStatusHint').innerHTML = 'เมื่อเชื่อมต่อ <b>Opn Payments (Omise)</b> บน Vercel แล้ว สแกนจ่ายเสร็จเหรียญจะเข้ากระเป๋าทันทีภายใน 2 วินาที (ไม่ต้องส่งสลิป)';
+  }
+
   $('#qrCheckoutBox').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 });
 
+$('#qrCheckNowBtn')?.addEventListener('click', checkOpnStatusOnce);
+
 $('#qrCancelBtn').onclick = () => {
+  stopOpnPolling();
   $('#qrCheckoutBox').hidden = true;
   activeCheckoutPkg = null;
 };
+
+$('#coinCloseBtn').addEventListener('click', stopOpnPolling);
 
 $('#qrConfirmSimBtn').onclick = () => {
   if (!activeCheckoutPkg) return;
