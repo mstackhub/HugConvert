@@ -873,7 +873,7 @@ function buildCodecSelect() {
   const proKeys = new Set(['avc-gpu', 'hevc', 'hevc-gpu', 'av1']);
   $('#codec').innerHTML = Object.entries(CODECS).map(([k, c]) => {
     const ok = state.support.video[k];
-    const tag = proKeys.has(k) ? ' [🪙 2]' : '';
+    const tag = proKeys.has(k) ? ' [2]' : '';
     return `<option value="${k}" ${ok ? '' : 'disabled'}>${c.label}${tag}${ok ? '' : ' — ไม่รองรับในเบราว์เซอร์นี้'}</option>`;
   }).join('');
   const first = Object.keys(CODECS).find((k) => state.support.video[k]);
@@ -2024,17 +2024,17 @@ function refreshUI() {
     $('#costPreviewLabel').textContent = jobCost.reason || 'โหมดมาตรฐาน';
     const badge = $('#costPreviewBadge');
     if (jobCost.cost > 0) {
-      badge.textContent = `ใช้ 🪙 ${jobCost.cost} HugCoin`;
+      badge.textContent = `ใช้ ${jobCost.cost} HugCoin`;
       badge.classList.add('paid');
     } else {
-      badge.textContent = 'ฟรี 0 🪙';
+      badge.textContent = 'ฟรี 0 เหรียญ';
       badge.classList.remove('paid');
     }
   }
 
   const actualJobCost = calculateJobCost(tool.id, runnableCount, s);
   const costSuffix = runnableCount > 0
-    ? (actualJobCost.cost > 0 ? ` · 🪙 ${actualJobCost.cost}` : ' · ฟรี')
+    ? (actualJobCost.cost > 0 ? ` · ${actualJobCost.cost}` : ' · ฟรี')
     : '';
   startBtn.textContent = state.running
     ? '⏳ กำลังประมวลผล…'
@@ -2217,11 +2217,11 @@ $('#startBtn').onclick = async () => {
   if (jobCost.cost > 0) {
     const w = loadWallet();
     if (w.isGuest) {
-      openAuthModal('signup', `ฟีเจอร์นี้ใช้ 🪙 ${jobCost.cost} HugCoins (${jobCost.reason}) — สมัครสมาชิกหรือเข้าสู่ระบบฟรีเพื่อรับโบนัส +15 HugCoins ทันที!`);
+      openAuthModal('signup', `ฟีเจอร์นี้ใช้ ${jobCost.cost} HugCoins (${jobCost.reason}) — สมัครสมาชิกหรือเข้าสู่ระบบฟรีเพื่อรับโบนัส +15 HugCoins ทันที!`);
       return;
     }
     if (w.balance < jobCost.cost) {
-      openCoinModal(`รอบนี้ใช้ 🪙 ${jobCost.cost} HugCoins (${jobCost.reason}) — ตอนนี้คุณมี ${w.balance} เหรียญ สามารถกดรับโบนัสรายวันฟรี กรอกคูปอง หรือเติมเหรียญด้านล่างได้เลยครับ`);
+      openCoinModal(`รอบนี้ใช้ ${jobCost.cost} HugCoins (${jobCost.reason}) — ตอนนี้คุณมี ${w.balance} เหรียญ สามารถกดรับโบนัสรายวันฟรี กรอกคูปอง หรือเติมเหรียญด้านล่างได้เลยครับ`);
       return;
     }
   }
@@ -2337,7 +2337,7 @@ $('#startBtn').onclick = async () => {
     }
     refreshUI();
     if (!state.cancelled) {
-      toast(jobCost.cost > 0 ? `เสร็จเรียบร้อย! (ใช้ไป 🪙 ${jobCost.cost} HugCoins)` : 'เสร็จเรียบร้อย พร้อมดาวน์โหลด!');
+      toast(jobCost.cost > 0 ? `เสร็จเรียบร้อย! (ใช้ไป ${jobCost.cost} HugCoins)` : 'เสร็จเรียบร้อย พร้อมดาวน์โหลด!');
       $('#downloadCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }
@@ -2494,7 +2494,7 @@ function setAuthMode(mode, infoMsg = '') {
     $('#authSubmitBtn').textContent = 'เข้าสู่ระบบ';
     $('#authPassword').setAttribute('autocomplete', 'current-password');
   } else if (mode === 'signup') {
-    $('#authModalTitle').textContent = 'สมัครสมาชิกฟรี (+15 🪙)';
+    $('#authModalTitle').textContent = 'สมัครสมาชิกฟรี (+15 เหรียญ)';
     $('#authModalSub').textContent = 'รับโบนัสต้อนรับ 15 HugCoins ทันที ไม่มีค่าใช้จ่าย';
     $('#authSubmitBtn').textContent = '🎁 สมัครสมาชิกและรับ 15 HugCoins';
     $('#authPassword').setAttribute('autocomplete', 'new-password');
@@ -2625,13 +2625,13 @@ function renderWalletBadge() {
   const balEl = $('#coinBalanceText');
   if (balEl) balEl.textContent = isPass ? `∞ (${w.balance})` : w.balance;
   const actionEl = $('#coinPillAction');
-  if (actionEl) actionEl.textContent = w.isGuest ? 'รับฟรี 15 🪙' : isPass ? '👑 VIP Pass' : '+ เติมเหรียญ';
+  if (actionEl) actionEl.textContent = w.isGuest ? 'รับฟรี 15 เหรียญ' : isPass ? '👑 VIP Pass' : '+ เติมเหรียญ';
   const dot = $('#coinDailyDot');
   if (dot) dot.hidden = !canClaimDaily(w);
 
   const dashStatus = $('#memberDashStatus');
   if (dashStatus) {
-    dashStatus.textContent = isPass ? '👑 VIP Unlimited Pass' : `🪙 ${w.balance} HugCoins`;
+    dashStatus.textContent = isPass ? '👑 VIP Unlimited Pass' : `${w.balance} HugCoins`;
   }
   const memberDailyBtn = $('#memberDailyBtn');
   if (memberDailyBtn) {
@@ -2676,13 +2676,13 @@ function renderCoinModal() {
   const dailyBtn = $('#dailyClaimBtn');
   if (w.isGuest) {
     dailyBtn.disabled = false;
-    dailyBtn.textContent = '🔐 เข้าสู่ระบบเพื่อรับ +15 🪙 ฟรี';
+    dailyBtn.textContent = '🔐 เข้าสู่ระบบเพื่อรับ +15 ฟรี';
   } else if (canClaimDaily(w)) {
     dailyBtn.disabled = false;
     dailyBtn.textContent = `☀️ รับฟรี +${DAILY_BONUS_COINS} HugCoin วันนี้`;
   } else if (w.balance >= FREE_DAILY_CAP) {
     dailyBtn.disabled = true;
-    dailyBtn.textContent = `✓ ถึงเพดานโบนัสฟรี (${FREE_DAILY_CAP} 🪙) แล้ว`;
+    dailyBtn.textContent = `✓ ถึงเพดานโบนัสฟรี (${FREE_DAILY_CAP} เหรียญ) แล้ว`;
   } else {
     dailyBtn.disabled = true;
     dailyBtn.textContent = '✓ รับโบนัสวันนี้แล้ว (พรุ่งนี้รับใหม่ได้)';
@@ -2719,8 +2719,8 @@ function renderHistoryPage() {
   const inEl = $('#histPageIn');
   const outEl = $('#histPageOut');
   if (balEl) balEl.textContent = isPass ? `∞ (${w.balance} HugCoins)` : `${w.balance} HugCoins`;
-  if (inEl) inEl.textContent = `+${totalIn} 🪙`;
-  if (outEl) outEl.textContent = `-${totalOut} 🪙`;
+  if (inEl) inEl.textContent = `+${totalIn} HugCoins`;
+  if (outEl) outEl.textContent = `-${totalOut} HugCoins`;
   renderCoinHistory(hist);
 }
 
@@ -2735,7 +2735,7 @@ function renderCoinHistory(hist) {
   const totalOut = Math.round(hist.reduce((s, h) => s + (h.delta < 0 ? Math.abs(h.delta) : 0), 0) * 10) / 10;
   if (statsEl) {
     statsEl.innerHTML = hist.length
-      ? `<span class="coin-plus">รับรวม +${totalIn} 🪙</span> · <span class="coin-minus">ใช้ไป -${totalOut} 🪙</span> · <span class="muted">${hist.length} รายการล่าสุด</span>`
+      ? `<span class="coin-plus">รับรวม +${totalIn} เหรียญ</span> · <span class="coin-minus">ใช้ไป -${totalOut} เหรียญ</span> · <span class="muted">${hist.length} รายการล่าสุด</span>`
       : '<span class="muted">ยังไม่มีประวัติรายการ</span>';
   }
 
@@ -2759,7 +2759,7 @@ function renderCoinHistory(hist) {
     const isIn = h.delta > 0;
     const badgeTxt = isPassItem ? 'VIP Pass' : isIn ? 'รับเข้า' : 'ใช้ไป';
     const badgeCls = isPassItem ? 'pass' : isIn ? 'in' : 'out';
-    const signTxt = isPassItem ? '∞ ไม่อั้น' : `${isIn ? `+${h.delta}` : h.delta} 🪙`;
+    const signTxt = isPassItem ? '∞ ไม่อั้น' : `${isIn ? `+${h.delta}` : h.delta} <span class="hc-coin"></span>`;
     const amtCls = isPassItem ? 'coin-pass' : isIn ? 'coin-plus' : 'coin-minus';
     return `
       <tr>

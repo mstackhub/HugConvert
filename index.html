@@ -180,7 +180,7 @@
           <button type="button" class="btn btn--outline auth-trigger-btn" id="authGuestBtn">
             <span>👤</span>
             <span class="auth-trigger-btn__label">เข้าสู่ระบบ</span>
-            <span class="auth-bonus-tag">+15 🪙</span>
+            <span class="auth-bonus-tag">+15 <span class="hc-coin"></span></span>
           </button>
 
           <!-- เมนูโปรไฟล์เมื่อล็อกอินแล้ว -->
@@ -199,7 +199,7 @@
                   <button type="button" class="copy-mini-btn" id="copyWalletBtn" title="คัดลอกรหัสกระเป๋า">คัดลอก</button>
                 </div>
               </div>
-              <button type="button" class="user-dropdown__item" id="ddOpenCoinBtn">🪙 กระเป๋า HugCoin & เติมเหรียญ</button>
+              <button type="button" class="user-dropdown__item" id="ddOpenCoinBtn"><span class="hc-coin"></span> กระเป๋า HugCoin & เติมเหรียญ</button>
               <button type="button" class="user-dropdown__item" id="ddOpenHistoryBtn">📜 ประวัติรายการ HugCoin</button>
               <button type="button" class="user-dropdown__item danger" id="ddLogoutBtn">🚪 ออกจากระบบ</button>
             </div>
@@ -233,8 +233,8 @@
               <h1 class="hub-strip__title">พร้อมทำงานได้เลย</h1>
               <p class="hub-strip__sub">โยนไฟล์ลงกล่องด้านขวา หรือเลือกเครื่องมือที่ต้องการใช้งานด้านล่าง</p>
               <div class="member-dash__actions">
-                <button type="button" class="btn btn--sm btn--primary" id="memberDailyBtn">🎁 รับโบนัสรายวัน +0.5 🪙</button>
-                <button type="button" class="btn btn--sm btn--outline" id="memberTopupBtn">🪙 เติมเหรียญ / แพ็กเกจ</button>
+                <button type="button" class="btn btn--sm btn--primary" id="memberDailyBtn">🎁 รับโบนัสรายวัน +0.5 <span class="hc-coin"></span></button>
+                <button type="button" class="btn btn--sm btn--outline" id="memberTopupBtn"><span class="hc-coin"></span> เติมเหรียญ / แพ็กเกจ</button>
                 <button type="button" class="btn btn--sm btn--outline" id="memberHistoryBtn">📜 ประวัติรายการ</button>
               </div>
             </div>
@@ -288,7 +288,7 @@
               <h3>ใช้งานฟรีทุกวัน หรือเติมเหรียญเฉพาะตอนต้องใช้</h3>
               <p class="muted">ไม่มีค่ารายเดือนผูกมัด ไม่ต้องกลัวไฟล์หลุด</p>
             </div>
-            <button type="button" class="btn btn--primary" id="hubOpenCoinBtn">🪙 ดูแพ็กเกจ HugCoin (เริ่ม 29฿)</button>
+            <button type="button" class="btn btn--primary" id="hubOpenCoinBtn"><span class="hc-coin"></span> ดูแพ็กเกจ HugCoin (เริ่ม 29฿)</button>
           </div>
           <div class="why-grid">
             <div class="why-item">
@@ -387,11 +387,11 @@
           </div>
           <div class="card hist-stat-card">
             <div class="hist-stat-card__label">รับเข้าทั้งหมด</div>
-            <div class="hist-stat-card__val coin-plus" id="histPageIn">+0 🪙</div>
+            <div class="hist-stat-card__val coin-plus" id="histPageIn">+0 <span class="hc-coin"></span></div>
           </div>
           <div class="card hist-stat-card">
             <div class="hist-stat-card__label">ใช้ไปทั้งหมด</div>
-            <div class="hist-stat-card__val coin-minus" id="histPageOut">-0 🪙</div>
+            <div class="hist-stat-card__val coin-minus" id="histPageOut">-0 <span class="hc-coin"></span></div>
           </div>
         </div>
 
@@ -1151,7 +1151,7 @@
 
               <div class="cost-preview" id="costPreview" hidden>
                 <span id="costPreviewLabel">โหมดมาตรฐานใช้งานฟรี</span>
-                <span class="cost-preview__badge" id="costPreviewBadge">ฟรี 0 🪙</span>
+                <span class="cost-preview__badge" id="costPreviewBadge">ฟรี 0 <span class="hc-coin"></span></span>
               </div>
               <button class="btn btn--primary btn--block btn--lg" id="startBtn" disabled>🚀 เริ่มประมวลผล</button>
               <button class="btn btn--ghost btn--block danger" id="cancelBtn" hidden>หยุด</button>
@@ -1209,7 +1209,7 @@
             <h4>รูปภาพ & บริการ</h4>
             <a href="?tool=image-compress">บีบอัดรูปภาพ</a>
             <a href="?tool=image-convert">แปลงรูป (รองรับ iPhone HEIC)</a>
-            <button type="button" class="site-footer__linkbtn" onclick="document.getElementById('coinWalletBtn')?.click()">🪙 แพ็กเกจ HugCoin</button>
+            <button type="button" class="site-footer__linkbtn" onclick="document.getElementById('coinWalletBtn')?.click()"><span class="hc-coin"></span> แพ็กเกจ HugCoin</button>
             <button type="button" class="site-footer__linkbtn" onclick="document.getElementById('authGuestBtn')?.click()">👤 เข้าสู่ระบบ / สมัครสมาชิก</button>
           </div>
         </div>
@@ -1249,7 +1249,7 @@
           <strong>🎁 สมัครสมาชิกหรือเข้าสู่ระบบฟรี รับโบนัสต้อนรับ +15 HugCoins!</strong>
           <p>ผูกเหรียญไว้กับบัญชีของคุณ เปิดใช้งานได้ทั้งในคอมพิวเตอร์และมือถือ เหรียญไม่หายแม้ล้างแคช</p>
         </div>
-        <button type="button" class="btn btn--primary" id="coinOpenAuthBtn">👤 เข้าสู่ระบบ / สมัครรับ 15 🪙</button>
+        <button type="button" class="btn btn--primary" id="coinOpenAuthBtn">👤 เข้าสู่ระบบ / สมัครรับ 15 <span class="hc-coin"></span></button>
       </div>
 
       <div class="coin-alert" id="coinModalReason" hidden></div>
@@ -1301,7 +1301,7 @@
 
       <div class="auth-tabs" id="authTabs">
         <button type="button" class="auth-tab active" data-authtab="signin">เข้าสู่ระบบ</button>
-        <button type="button" class="auth-tab" data-authtab="signup">สมัครสมาชิกฟรี <span class="auth-tab__gift">+15 🪙</span></button>
+        <button type="button" class="auth-tab" data-authtab="signup">สมัครสมาชิกฟรี <span class="auth-tab__gift">+15 <span class="hc-coin"></span></span></button>
       </div>
 
       <button type="button" class="google-btn" id="googleLoginBtn">
