@@ -21,7 +21,7 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
 body { -webkit-font-smoothing: antialiased; font-size: 15px; line-height: 1.5; }
-button, input, select { font: inherit; color: inherit; }
+button, input, select, textarea { font: inherit; color: inherit; }
 [hidden] { display: none !important; }
 code { background: var(--primary-soft); color: var(--primary); padding: 0 5px; border-radius: 4px; font-size: .9em; }
 
@@ -328,6 +328,38 @@ input[type="range"] { width: 100%; accent-color: var(--primary); }
 }
 .pdf-item:hover .pdf-item__resize, .pdf-item.selected .pdf-item__resize { display: block; }
 
+.pdf-item--text {
+  padding: 0; cursor: default; min-width: 70px;
+}
+.pdf-item--text.selected, .pdf-item--text:focus-within {
+  border-color: var(--primary);
+  background: rgba(255, 255, 255, .45);
+  box-shadow: 0 0 0 3px rgba(91, 91, 240, .14);
+}
+.pdf-item__drag {
+  position: absolute; top: -20px; left: -1px;
+  background: var(--primary); color: #fff; font-size: 10.5px; font-weight: 600;
+  padding: 1px 7px; border-radius: 5px 5px 0 0; cursor: move;
+  display: none; align-items: center; gap: 3px; white-space: nowrap;
+  user-select: none;
+}
+.pdf-item--text:hover .pdf-item__drag,
+.pdf-item--text.selected .pdf-item__drag,
+.pdf-item--text:focus-within .pdf-item__drag { display: inline-flex; }
+.pdf-item--text:focus-within .pdf-item__del { display: grid; }
+.pdf-item--text:focus-within .pdf-item__resize { display: block; }
+
+.pdf-textarea {
+  display: block; width: 100%; min-height: 26px;
+  border: 0; outline: none; resize: none; overflow: hidden;
+  background: transparent; padding: 3px 5px; margin: 0;
+  font-family: "IBM Plex Sans Thai", sans-serif;
+  line-height: 1.32; cursor: text;
+  user-select: text; -webkit-user-select: text;
+}
+.pdf-textarea::placeholder { color: rgba(31, 35, 51, .4); font-weight: 400; }
+
+.textarea-input { resize: vertical; min-height: 76px; line-height: 1.45; }
 .color-input { height: 40px; padding: 4px 6px; cursor: pointer; }
 
 /* ===== Signature Modal ===== */

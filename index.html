@@ -545,18 +545,27 @@
               <!-- 7. แผงตั้งค่า: แก้ไขไฟล์ PDF (pdf-edit) -->
               <div class="tool-panel" data-panel="pdf-edit" hidden>
                 <div class="field">
-                  <label for="edTextVal">ข้อความสำหรับวางบนหน้า PDF</label>
-                  <input type="text" id="edTextVal" class="input" value="ข้อความตัวอย่าง" placeholder="พิมพ์ข้อความที่นี่..." />
-                  <p class="hint">เมื่อเลือกเครื่องมือ <b>🔤 เพิ่มข้อความ</b> แล้วคลิกบนหน้า PDF จะวางข้อความนี้ (ดับเบิลคลิกที่ข้อความบนหน้าเพื่อแก้ไขภายหลังได้)</p>
+                  <label for="edTextVal">กล่องข้อความ (พิมพ์บนกระดาษโดยตรง หรือพิมพ์ที่นี่)</label>
+                  <textarea id="edTextVal" class="input textarea-input" rows="3" placeholder="คลิกปุ่ม '🔤 เพิ่มข้อความ' แล้วคลิกจุดที่ต้องการกรอกบนใบสมัครเพื่อพิมพ์หลายบรรทัดได้เลย..."></textarea>
+                  <p class="hint">รองรับการขึ้นบรรทัดใหม่ (Enter) ย่อ/ขยายความกว้างกล่องข้อความ และลากจัดวางตรงเส้นประใบสมัครได้อิสระ</p>
                 </div>
                 <div class="row-2">
                   <div class="field">
-                    <label for="edColor">สีข้อความ / ปากกา</label>
-                    <input type="color" id="edColor" class="input color-input" value="#1e40af" />
+                    <label for="edColor">สีตัวอักษร / ปากกา</label>
+                    <input type="color" id="edColor" class="input color-input" value="#000000" />
+                    <div class="chips color-chips" id="edColorChips">
+                      <button type="button" data-color="#000000" class="on">⬛ ดำ</button>
+                      <button type="button" data-color="#1e40af">🟦 น้ำเงิน</button>
+                      <button type="button" data-color="#dc2626">🟥 แดง</button>
+                    </div>
                   </div>
                   <div class="field">
                     <label for="edFontSize">ขนาดตัวอักษร</label>
-                    <input type="number" id="edFontSize" class="input" min="8" max="96" value="22" />
+                    <input type="number" id="edFontSize" class="input" min="8" max="96" value="16" />
+                    <label class="check" style="margin-top:10px;font-size:13px">
+                      <input type="checkbox" id="edBold" />
+                      <span><b>ตัวหนา (Bold)</b></span>
+                    </label>
                   </div>
                 </div>
                 <div class="field">

@@ -317,7 +317,7 @@ const baseName = (n) => n.replace(/\.[^.]+$/, '');
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 // ---------------- Settings ----------------
-const SETTINGS_KEY = 'mk.all.settings.v3';
+const SETTINGS_KEY = 'mk.all.settings.v4';
 const settingIds = [
   'codec', 'method', 'targetMB', 'percent', 'quality', 'maxMbps',
   'resMode', 'resolution', 'resScale', 'customW', 'customH', 'compatOld', 'fps', 'audio',
@@ -326,7 +326,7 @@ const settingIds = [
   'vgStart', 'vgDur', 'vgWidth', 'vgFps', 'vgColors',
   'imgFormat', 'imgMethod', 'imgQuality', 'imgTargetKB', 'imgPercent', 'imgMaxDim',
   'aeFormat', 'aeBitrate', 'aeChannels',
-  'edTextVal', 'edColor', 'edFontSize', 'edStrokeSize',
+  'edColor', 'edFontSize', 'edBold', 'edStrokeSize',
   'pcMethod', 'pcTargetMB', 'pcPercent', 'pcQuality', 'pcGrayscale',
   'pmMode', 'pmRange',
   'p2iFormat', 'p2iScale', 'p2iRange',
@@ -376,9 +376,10 @@ function readSettings() {
     aeBitrate: $('#aeBitrate').value,
     aeChannels: $('#aeChannels').value,
     // pdf-edit
-    edTextVal: $('#edTextVal').value || 'ข้อความ',
-    edColor: $('#edColor').value || '#1e40af',
-    edFontSize: Math.max(8, Number($('#edFontSize').value) || 22),
+    edTextVal: $('#edTextVal').value || '',
+    edColor: $('#edColor').value || '#000000',
+    edFontSize: Math.max(8, Number($('#edFontSize').value) || 16),
+    edBold: $('#edBold').checked,
     edStrokeSize: Math.max(1, Number($('#edStrokeSize').value) || 4),
     // pdf-compress
     pcMethod: $('#pcMethod').value,
@@ -543,13 +544,24 @@ function onSettingsChange() {
 
   // pdf-edit
   $('#edStrokeLabel').textContent = `${s.edStrokeSize} px`;
+  $$('#edColorChips button').forEach((b) =>
+    b.classList.toggle('on', b.dataset.color.toLowerCase() === s.edColor.toLowerCase())
+  );
   if (state.editor.selectedAnnId) {
     const pageObj = currentEditorPageObj();
     const ann = pageObj?.annotations.find((a) => a.id === state.editor.selectedAnnId);
     if (ann && ann.type === 'text') {
       ann.color = s.edColor;
       ann.fontSize = s.edFontSize;
-      renderEditorOverlay();
+      ann.bold = s.edBold;
+      const ta = $(`.pdf-item[data-annid="${ann.id}"] .pdf-textarea`);
+      if (ta) {
+        const w = $('#pdfBaseCanvas').width || 700;
+        ta.style.color = ann.color;
+        ta.style.fontSize = `${Math.round(ann.fontSize * (w / 700))}px`;
+        ta.style.fontWeight = ann.bold ? '700' : '500';
+        autoGrowTextarea(ta);
+      }
     }
   }
 
@@ -598,6 +610,25 @@ $('#pdfMbChips').addEventListener('click', (e) => {
   if (!b) return;
   $('#pcTargetMB').value = b.dataset.mb;
   onSettingsChange();
+});
+$('#edColorChips').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-color]');
+  if (!b) return;
+  $('#edColor').value = b.dataset.color;
+  onSettingsChange();
+});
+$('#edTextVal').addEventListener('input', () => {
+  if (!state.editor.selectedAnnId) return;
+  const pageObj = currentEditorPageObj();
+  const ann = pageObj?.annotations.find((a) => a.id === state.editor.selectedAnnId);
+  if (ann && ann.type === 'text') {
+    ann.text = $('#edTextVal').value;
+    const ta = $(`.pdf-item[data-annid="${ann.id}"] .pdf-textarea`);
+    if (ta && ta.value !== ann.text) {
+      ta.value = ann.text;
+      autoGrowTextarea(ta);
+    }
+  }
 });
 
 // ---------------- Add files & Demo generator ----------------
@@ -820,8 +851,8 @@ function setEditorTool(toolName) {
   state.editor.tool = toolName;
   $$('[data-edtool]').forEach((b) => b.classList.toggle('active', b.dataset.edtool === toolName));
   const hints = {
-    select: '💡 โหมดเลือก: คลิกที่ข้อความ/ลายเซ็น/รูปภาพเพื่อลากย้าย หรือย่อขยายที่มุมขวาล่าง',
-    text: '🔤 โหมดเพิ่มข้อความ: คลิกจุดใดก็ได้บนหน้ากระดาษเพื่อวางข้อความ (ดับเบิลคลิกเพื่อแก้ข้อความ)',
+    select: '💡 โหมดเลือก: คลิกในช่องข้อความเพื่อพิมพ์แก้ไข หรือจับปุ่ม "✥ ลากย้าย" เพื่อเลื่อนตำแหน่ง',
+    text: '🔤 โหมดกรอกข้อความ: คลิกจุดใดก็ได้บนใบสมัครเพื่อเปิดกล่อง Textarea พิมพ์หลายบรรทัดได้ทันที (จับปุ่ม ✥ เพื่อเลื่อน)',
     draw: '✏️ โหมดปากกาวาด: กดเมาส์หรือใช้นิ้วลากวาดเส้นอิสระลงบนหน้ากระดาษ',
     highlight: '🖍️ โหมดไฮไลต์: ลากป้ายทับข้อความที่ต้องการเน้น (โปร่งแสง)',
     whiteout: '⬜ โหมดลบคำผิด/ปิดทับ: คลิกบนจุดที่ต้องการสร้างแถบสีขาวปิดทับข้อความเดิม',
@@ -861,7 +892,24 @@ async function renderCurrentEditorPage() {
   await renderEditorOverlay();
 }
 
-async function renderEditorOverlay() {
+function autoGrowTextarea(ta) {
+  if (!ta) return;
+  ta.style.height = 'auto';
+  ta.style.height = `${Math.max(26, ta.scrollHeight)}px`;
+}
+
+function syncSidebarWithSelectedAnn(ann) {
+  if (!ann || ann.type !== 'text') return;
+  $('#edTextVal').value = ann.text || '';
+  if (ann.color) $('#edColor').value = ann.color;
+  if (ann.fontSize) $('#edFontSize').value = ann.fontSize;
+  $('#edBold').checked = !!ann.bold;
+  $$('#edColorChips button').forEach((b) =>
+    b.classList.toggle('on', b.dataset.color.toLowerCase() === (ann.color || '#000000').toLowerCase())
+  );
+}
+
+async function renderEditorOverlay(focusAnnId = null) {
   const pageObj = currentEditorPageObj();
   if (!pageObj) return;
   const baseCanvas = $('#pdfBaseCanvas');
@@ -878,7 +926,7 @@ async function renderEditorOverlay() {
     dCtx.drawImage(rendered, 0, 0);
   }
 
-  // สร้าง DOM elements สำหรับข้อความ, กล่องปิดทับ (rect), และรูปภาพ/ลายเซ็น เพื่อให้ลากย้ายและย่อขยายได้
+  // สร้าง DOM elements สำหรับกล่องข้อความ (Textarea), กล่องปิดทับ (rect), และรูปภาพ/ลายเซ็น
   const layer = $('#pdfItemsLayer');
   const boxAnns = pageObj.annotations.filter((a) => a.type === 'text' || a.type === 'rect' || a.type === 'image');
   layer.innerHTML = boxAnns.map((ann) => {
@@ -886,8 +934,15 @@ async function renderEditorOverlay() {
     const top = (ann.y * 100).toFixed(2) + '%';
     const isSel = ann.id === state.editor.selectedAnnId ? 'selected' : '';
     if (ann.type === 'text') {
-      const fs = Math.round((ann.fontSize || 20) * (w / 700));
-      return `<div class="pdf-item ${isSel}" data-annid="${ann.id}" style="left:${left};top:${top};color:${esc(ann.color || '#1f2333')};font-size:${fs}px;font-weight:600;line-height:1.25;white-space:pre;">${esc(ann.text)}<button type="button" class="pdf-item__del" title="ลบ">✕</button></div>`;
+      const fs = Math.round((ann.fontSize || 16) * (w / 700));
+      const fw = ann.bold ? '700' : '500';
+      const rw = ((ann.w || 0.32) * 100).toFixed(2) + '%';
+      return `<div class="pdf-item pdf-item--text ${isSel}" data-annid="${ann.id}" style="left:${left};top:${top};width:${rw};">
+        <span class="pdf-item__drag" title="ลากย้ายตำแหน่ง">✥ ลากย้าย</span>
+        <textarea class="pdf-textarea" rows="1" placeholder="พิมพ์ข้อความ..." style="color:${esc(ann.color || '#000000')};font-size:${fs}px;font-weight:${fw};">${esc(ann.text || '')}</textarea>
+        <button type="button" class="pdf-item__del" title="ลบกล่องข้อความ">✕</button>
+        <span class="pdf-item__resize" title="ดึงเพื่อปรับความกว้างกล่องข้อความ"></span>
+      </div>`;
     }
     if (ann.type === 'rect') {
       const rw = ((ann.w || 0.22) * 100).toFixed(2) + '%';
@@ -900,6 +955,15 @@ async function renderEditorOverlay() {
     }
     return '';
   }).join('');
+
+  $$('.pdf-textarea', layer).forEach(autoGrowTextarea);
+  if (focusAnnId) {
+    const targetTa = $(`.pdf-item[data-annid="${focusAnnId}"] .pdf-textarea`, layer);
+    if (targetTa) {
+      targetTa.focus();
+      targetTa.setSelectionRange(targetTa.value.length, targetTa.value.length);
+    }
+  }
 }
 
 // คลิกสลับหน้าจากแถบหน้าย่อ
@@ -919,30 +983,43 @@ $('#edNextPage').onclick = () => {
   if (state.editor.pageIdx < pages.length - 1) { state.editor.pageIdx++; renderCurrentEditorPage(); }
 };
 
-// คลิกบนหน้ากระดาษเพื่อวางข้อความ หรือกล่องลบคำผิด
-$('#pdfStage').addEventListener('click', (e) => {
+// คลิกบนหน้ากระดาษเพื่อวางกล่องข้อความ Textarea หรือกล่องลบคำผิด
+$('#pdfStage').addEventListener('click', async (e) => {
   if (e.target.closest('.pdf-item')) return;
   const pageObj = currentEditorPageObj();
   if (!pageObj) return;
+
+  // ลบกล่องข้อความที่ปล่อยว่างเปล่าไว้ก่อนหน้าออกอัตโนมัติ
+  pageObj.annotations = pageObj.annotations.filter((a) => a.type !== 'text' || String(a.text || '').trim().length > 0);
+
   const rect = $('#pdfStage').getBoundingClientRect();
-  const x = Math.max(0.02, Math.min(0.9, (e.clientX - rect.left) / rect.width));
-  const y = Math.max(0.02, Math.min(0.92, (e.clientY - rect.top) / rect.height));
+  const x = Math.max(0.01, Math.min(0.88, (e.clientX - rect.left) / rect.width));
+  const y = Math.max(0.01, Math.min(0.94, (e.clientY - rect.top) / rect.height));
   const s = readSettings();
 
   if (state.editor.tool === 'text') {
-    const text = s.edTextVal.trim() || 'ข้อความ';
+    const defaultW = Math.min(0.36, Math.max(0.15, 0.96 - x));
     const ann = {
       id: 'ann_' + (++uid),
       type: 'text',
-      x, y,
-      text,
-      color: s.edColor,
-      fontSize: s.edFontSize,
+      x,
+      y: Math.max(0, y - 0.012),
+      w: defaultW,
+      text: '',
+      color: s.edColor || '#000000',
+      fontSize: s.edFontSize || 16,
+      bold: !!s.edBold,
     };
     pageObj.annotations.push(ann);
     state.editor.selectedAnnId = ann.id;
-    setEditorTool('select');
-    renderCurrentEditorPage();
+    $('#edTextVal').value = '';
+    await renderEditorOverlay(ann.id);
+    // อัปเดตตัวเลข badge หน้าย่อ
+    const activeThumb = $(`.pdf-thumb-item[data-pidx="${state.editor.pageIdx}"]`);
+    if (activeThumb) {
+      const cnt = pageObj.annotations.length;
+      activeThumb.querySelector('div').innerHTML = `หน้า ${state.editor.pageIdx + 1} <span class="pdf-thumb-item__badge">${cnt}</span>`;
+    }
   } else if (state.editor.tool === 'whiteout') {
     const ann = {
       id: 'ann_' + (++uid),
@@ -961,7 +1038,20 @@ $('#pdfStage').addEventListener('click', (e) => {
   }
 });
 
-// ลากย้าย / ย่อขยาย / ลบ / ดับเบิลคลิกแก้ข้อความบนหน้า PDF
+// พิมพ์ข้อความหลายบรรทัดใน Textarea บนหน้ากระดาษโดยตรง
+$('#pdfItemsLayer').addEventListener('input', (e) => {
+  if (!e.target.classList.contains('pdf-textarea')) return;
+  const itemEl = e.target.closest('.pdf-item');
+  const pageObj = currentEditorPageObj();
+  if (!itemEl || !pageObj) return;
+  const ann = pageObj.annotations.find((a) => a.id === itemEl.dataset.annid);
+  if (!ann) return;
+  ann.text = e.target.value;
+  $('#edTextVal').value = ann.text;
+  autoGrowTextarea(e.target);
+});
+
+// ลากย้าย / ย่อขยาย / ลบ กล่องข้อความและวัตถุบนหน้า PDF
 let dragState = null;
 $('#pdfItemsLayer').addEventListener('pointerdown', (e) => {
   const delBtn = e.target.closest('.pdf-item__del');
@@ -976,24 +1066,34 @@ $('#pdfItemsLayer').addEventListener('pointerdown', (e) => {
     e.stopPropagation();
     pageObj.annotations = pageObj.annotations.filter((a) => a.id !== annId);
     state.editor.selectedAnnId = null;
+    $('#edTextVal').value = '';
     renderCurrentEditorPage();
     return;
   }
 
-  e.stopPropagation();
   state.editor.selectedAnnId = annId;
   $$('.pdf-item').forEach((el) => el.classList.toggle('selected', el.dataset.annid === annId));
+  syncSidebarWithSelectedAnn(ann);
 
+  // หากคลิกในช่อง <textarea> ให้พิมพ์หรือเลือกข้อความตามปกติ (ไม่เริ่มลากกล่อง)
+  if (e.target.classList.contains('pdf-textarea')) {
+    e.stopPropagation();
+    return;
+  }
+
+  e.stopPropagation();
+  e.preventDefault();
   const stageRect = $('#pdfStage').getBoundingClientRect();
   const isResize = !!e.target.closest('.pdf-item__resize');
   dragState = {
     ann,
+    itemEl,
     isResize,
     startX: e.clientX,
     startY: e.clientY,
     origX: ann.x,
     origY: ann.y,
-    origW: ann.w || 0.24,
+    origW: ann.w || 0.32,
     origH: ann.h || 0.06,
     stageW: stageRect.width,
     stageH: stageRect.height,
@@ -1005,35 +1105,26 @@ window.addEventListener('pointermove', (e) => {
   if (!dragState) return;
   const dx = (e.clientX - dragState.startX) / Math.max(1, dragState.stageW);
   const dy = (e.clientY - dragState.startY) / Math.max(1, dragState.stageH);
+  const { ann, itemEl } = dragState;
   if (dragState.isResize) {
-    dragState.ann.w = Math.max(0.05, Math.min(0.95, dragState.origW + dx));
-    if (dragState.ann.type === 'rect') {
-      dragState.ann.h = Math.max(0.02, Math.min(0.95, dragState.origH + dy));
+    ann.w = Math.max(0.06, Math.min(0.98 - ann.x, dragState.origW + dx));
+    itemEl.style.width = `${(ann.w * 100).toFixed(2)}%`;
+    if (ann.type === 'rect') {
+      ann.h = Math.max(0.018, Math.min(0.95, dragState.origH + dy));
+      itemEl.style.height = `${(ann.h * 100).toFixed(2)}%`;
+    } else if (ann.type === 'text') {
+      autoGrowTextarea($('.pdf-textarea', itemEl));
     }
   } else {
-    dragState.ann.x = Math.max(0, Math.min(0.95, dragState.origX + dx));
-    dragState.ann.y = Math.max(0, Math.min(0.95, dragState.origY + dy));
+    ann.x = Math.max(0, Math.min(0.95, dragState.origX + dx));
+    ann.y = Math.max(0, Math.min(0.96, dragState.origY + dy));
+    itemEl.style.left = `${(ann.x * 100).toFixed(2)}%`;
+    itemEl.style.top = `${(ann.y * 100).toFixed(2)}%`;
   }
-  renderEditorOverlay();
 });
 
 window.addEventListener('pointerup', () => {
   dragState = null;
-});
-
-$('#pdfItemsLayer').addEventListener('dblclick', (e) => {
-  const itemEl = e.target.closest('.pdf-item');
-  const pageObj = currentEditorPageObj();
-  if (!itemEl || !pageObj) return;
-  const ann = pageObj.annotations.find((a) => a.id === itemEl.dataset.annid);
-  if (ann && ann.type === 'text') {
-    const next = prompt('แก้ไขข้อความ:', ann.text);
-    if (next !== null) {
-      ann.text = next;
-      $('#edTextVal').value = next;
-      renderEditorOverlay();
-    }
-  }
 });
 
 // วาดเส้นอิสระ (ปากกา / ไฮไลต์) บน #pdfDrawCanvas
@@ -1181,7 +1272,7 @@ signCanvas.addEventListener('pointerdown', (e) => {
   const sx = (e.clientX - r.left) * (signCanvas.width / r.width);
   const sy = (e.clientY - r.top) * (signCanvas.height / r.height);
   signCtx.beginPath();
-  signCtx.strokeStyle = $('#edColor').value || '#1e40af';
+  signCtx.strokeStyle = $('#edColor').value || '#000000';
   signCtx.lineWidth = 3.5;
   signCtx.lineCap = 'round';
   signCtx.lineJoin = 'round';

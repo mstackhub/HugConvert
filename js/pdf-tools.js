@@ -502,13 +502,38 @@ export async function renderAnnotationsToCanvas(annotations, width, height) {
         ctx.strokeRect(rx, ry, rw, rh);
       }
     } else if (ann.type === 'text') {
-      const fontSize = Math.round((ann.fontSize || 20) * (width / 700));
-      ctx.font = `600 ${fontSize}px "IBM Plex Sans Thai", sans-serif`;
-      ctx.fillStyle = ann.color || '#1f2333';
+      const rawText = String(ann.text || '');
+      if (!rawText.trim()) { ctx.restore(); continue; }
+      const fontSize = Math.round((ann.fontSize || 16) * (width / 700));
+      const weight = ann.bold ? '700' : '500';
+      ctx.font = `${weight} ${fontSize}px "IBM Plex Sans Thai", sans-serif`;
+      ctx.fillStyle = ann.color || '#000000';
       ctx.textBaseline = 'top';
-      const lines = String(ann.text || '').split('\n');
-      lines.forEach((line, idx) => {
-        ctx.fillText(line, ann.x * width, ann.y * height + idx * (fontSize * 1.25));
+
+      const padX = 5 * (width / 700);
+      const padY = 3 * (width / 700);
+      const maxW = Math.max(fontSize * 2, ((ann.w || 0.32) * width) - padX * 2);
+      const lineHeight = fontSize * 1.32;
+
+      // ตัดบรรทัดตาม \n และตัดคำ/ตัวอักษรอัตโนมัติตามความกว้างของ Textarea
+      const wrappedLines = [];
+      for (const para of rawText.split('\n')) {
+        if (!para) { wrappedLines.push(''); continue; }
+        let line = '';
+        for (const ch of [...para]) {
+          const test = line + ch;
+          if (line && ctx.measureText(test).width > maxW) {
+            wrappedLines.push(line);
+            line = ch;
+          } else {
+            line = test;
+          }
+        }
+        if (line) wrappedLines.push(line);
+      }
+
+      wrappedLines.forEach((line, idx) => {
+        ctx.fillText(line, ann.x * width + padX, ann.y * height + padY + idx * lineHeight);
       });
     } else if (ann.type === 'image' && ann.dataUrl) {
       try {
