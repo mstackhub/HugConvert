@@ -2554,8 +2554,8 @@ function renderCoinHistory(hist) {
   const listEl = $('#coinHistoryList');
   if (!listEl) return;
 
-  const totalIn = hist.reduce((s, h) => s + (h.delta > 0 ? h.delta : 0), 0);
-  const totalOut = hist.reduce((s, h) => s + (h.delta < 0 ? Math.abs(h.delta) : 0), 0);
+  const totalIn = Math.round(hist.reduce((s, h) => s + (h.delta > 0 ? h.delta : 0), 0) * 10) / 10;
+  const totalOut = Math.round(hist.reduce((s, h) => s + (h.delta < 0 ? Math.abs(h.delta) : 0), 0) * 10) / 10;
   if (statsEl) {
     statsEl.innerHTML = hist.length
       ? `<span class="coin-plus">รับรวม +${totalIn} 🪙</span> · <span class="coin-minus">ใช้ไป -${totalOut} 🪙</span> · <span class="muted">${hist.length} รายการล่าสุด</span>`
@@ -2570,31 +2570,27 @@ function renderCoinHistory(hist) {
 
   if (!filtered.length) {
     listEl.innerHTML = hist.length
-      ? '<li class="coin-hist-empty muted">ไม่มีรายการในหมวดหมู่นี้</li>'
-      : '<li class="coin-hist-empty muted">ยังไม่มีประวัติรายการ (เข้าสู่ระบบเพื่อรับโบนัสเริ่มต้น +15 HugCoins)</li>';
+      ? '<tr><td colspan="4" class="coin-hist-empty muted">ไม่มีรายการในหมวดหมู่นี้</td></tr>'
+      : '<tr><td colspan="4" class="coin-hist-empty muted">ยังไม่มีประวัติรายการ (เข้าสู่ระบบเพื่อรับโบนัสเริ่มต้น +15 HugCoins)</td></tr>';
     return;
   }
 
   listEl.innerHTML = filtered.map((h) => {
     const d = new Date(h.ts);
-    const timeTxt = `${d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })} · ${d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.`;
+    const timeTxt = `${d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })} ${d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}`;
     const isPassItem = h.delta === 0;
     const isIn = h.delta > 0;
     const badgeTxt = isPassItem ? 'VIP Pass' : isIn ? 'รับเข้า' : 'ใช้ไป';
     const badgeCls = isPassItem ? 'pass' : isIn ? 'in' : 'out';
-    const signTxt = isPassItem ? '∞ ใช้งานไม่อั้น' : `${isIn ? `+${h.delta}` : h.delta} 🪙`;
+    const signTxt = isPassItem ? '∞ ไม่อั้น' : `${isIn ? `+${h.delta}` : h.delta} 🪙`;
     const amtCls = isPassItem ? 'coin-pass' : isIn ? 'coin-plus' : 'coin-minus';
     return `
-      <li class="coin-hist-row">
-        <div class="coin-hist-left">
-          <span class="coin-hist-badge ${badgeCls}">${badgeTxt}</span>
-          <div class="coin-hist-meta">
-            <div class="coin-hist-title">${esc(h.label)}</div>
-            <div class="coin-hist-time">${timeTxt}</div>
-          </div>
-        </div>
-        <span class="coin-hist-amt ${amtCls}">${signTxt}</span>
-      </li>
+      <tr>
+        <td><span class="coin-hist-badge ${badgeCls}">${badgeTxt}</span></td>
+        <td class="coin-hist-title-cell">${esc(h.label)}</td>
+        <td class="coin-hist-time-cell">${timeTxt}</td>
+        <td class="coin-hist-amt ${amtCls}" style="text-align:right">${signTxt}</td>
+      </tr>
     `;
   }).join('');
 }

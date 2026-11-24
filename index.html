@@ -1224,18 +1224,32 @@
               <button type="button" class="hist-tab" data-hfilter="out">ใช้ไป (-)</button>
             </div>
           </div>
-          <ul class="coin-history" id="coinHistoryList"></ul>
+          <div class="coin-history-scroll">
+            <table class="coin-hist-table">
+              <thead>
+                <tr>
+                  <th>ประเภท</th>
+                  <th>รายการ</th>
+                  <th>วัน-เวลา</th>
+                  <th style="text-align:right">จำนวน</th>
+                </tr>
+              </thead>
+              <tbody id="coinHistoryList"></tbody>
+            </table>
+          </div>
         </div>
 
-        <div class="coin-rules-card">
-          <div class="history-title" style="margin-bottom:8px;">📋 อัตราการใช้ HugCoin</div>
-          <ul class="rules-list" style="margin-bottom:0;">
-            <li><b>ฟรี 0 เหรียญ:</b> บีบอัด/แปลงไฟล์ทั่วไปครั้งละ 1–2 ไฟล์ (โหมดมาตรฐาน)</li>
-            <li><b>1 HugCoin / ไฟล์:</b> บันทึกการแก้ไข & เซ็น PDF, ล็อกขนาดไฟล์ MB เป๊ะๆ, ทำ GIF, แยกเสียง MP3</li>
-            <li><b>2 HugCoins / ไฟล์:</b> เข้ารหัสวิดีโอความเร็วสูงระดับสตูดิโอ (GPU / H.265 / AV1)</li>
-            <li><b>เหมา 5 HugCoins / รอบ:</b> ทำแบบกลุ่ม Batch Mode 3–20 ไฟล์พร้อมกัน + ดาวน์โหลดเป็น ZIP</li>
-          </ul>
-        </div>
+        <details class="coin-rules" style="margin-top:12px;">
+          <summary>📋 ดูอัตราการใช้ HugCoin</summary>
+          <div class="coin-rules__body">
+            <ul class="rules-list" style="margin-bottom:0;">
+              <li><b>ฟรี 0 เหรียญ:</b> บีบอัด/แปลงไฟล์ทั่วไปครั้งละ 1–2 ไฟล์ (โหมดมาตรฐาน)</li>
+              <li><b>1 HugCoin / ไฟล์:</b> บันทึกการแก้ไข & เซ็น PDF, ล็อกขนาดไฟล์ MB เป๊ะๆ, ทำ GIF, แยกเสียง MP3</li>
+              <li><b>2 HugCoins / ไฟล์:</b> เข้ารหัสวิดีโอความเร็วสูงระดับสตูดิโอ (GPU / H.265 / AV1)</li>
+              <li><b>เหมา 5 HugCoins / รอบ:</b> ทำแบบกลุ่ม Batch Mode 3–20 ไฟล์พร้อมกัน + ดาวน์โหลดเป็น ZIP</li>
+            </ul>
+          </div>
+        </details>
       </div>
     </div>
   </div>
