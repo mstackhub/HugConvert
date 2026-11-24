@@ -322,6 +322,70 @@
         <div class="ad-slot" data-adslot="hub-bottom"></div>
       </section>
 
+      <!-- ===== หน้าประวัติรายการ HugCoin แยกเป็นหน้าเต็ม ===== -->
+      <section class="history-page" id="historyPageSection" hidden>
+        <div class="workspace-head">
+          <a href="?tool=home" class="workspace-back">← กลับหน้าหลัก</a>
+          <div class="workspace-head__titles">
+            <h1 class="topbar__title">ประวัติรายการ HugCoin</h1>
+            <p class="topbar__desc">ตรวจสอบรายการรับเข้า ใช้เหรียญ และสถานะแพ็กเกจของคุณ</p>
+          </div>
+          <button type="button" class="btn btn--primary" id="historyPageTopupBtn">+ เติมเหรียญ / แพ็กเกจ</button>
+        </div>
+
+        <div class="history-summary-grid">
+          <div class="card hist-stat-card">
+            <div class="hist-stat-card__label">ยอดคงเหลือปัจจุบัน</div>
+            <div class="hist-stat-card__val" id="histPageBal">0 HugCoins</div>
+          </div>
+          <div class="card hist-stat-card">
+            <div class="hist-stat-card__label">รับเข้าทั้งหมด</div>
+            <div class="hist-stat-card__val coin-plus" id="histPageIn">+0 🪙</div>
+          </div>
+          <div class="card hist-stat-card">
+            <div class="hist-stat-card__label">ใช้ไปทั้งหมด</div>
+            <div class="hist-stat-card__val coin-minus" id="histPageOut">-0 🪙</div>
+          </div>
+        </div>
+
+        <div class="coin-history-box">
+          <div class="coin-history-head">
+            <div>
+              <div class="history-title">รายการล่าสุด</div>
+              <div class="history-stats" id="coinHistoryStats"></div>
+            </div>
+            <div class="history-filters" id="coinHistoryFilters">
+              <button type="button" class="hist-tab active" data-hfilter="all">ทั้งหมด</button>
+              <button type="button" class="hist-tab" data-hfilter="in">รับเข้า (+)</button>
+              <button type="button" class="hist-tab" data-hfilter="out">ใช้ไป (-)</button>
+            </div>
+          </div>
+          <div class="coin-history-scroll full-page">
+            <table class="coin-hist-table">
+              <thead>
+                <tr>
+                  <th>ประเภท</th>
+                  <th>รายการ</th>
+                  <th>วัน-เวลา</th>
+                  <th style="text-align:right">จำนวน</th>
+                </tr>
+              </thead>
+              <tbody id="coinHistoryList"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card coin-rules-card" style="margin-top:16px;">
+          <div class="history-title" style="margin-bottom:8px;">📋 อัตราการใช้ HugCoin</div>
+          <ul class="rules-list" style="margin-bottom:0;">
+            <li><b>ฟรี 0 เหรียญ:</b> บีบอัด/แปลงไฟล์ทั่วไปครั้งละ 1–2 ไฟล์ (โหมดมาตรฐาน)</li>
+            <li><b>1 HugCoin / ไฟล์:</b> บันทึกการแก้ไข & เซ็น PDF, ล็อกขนาดไฟล์ MB เป๊ะๆ, ทำ GIF, แยกเสียง MP3</li>
+            <li><b>2 HugCoins / ไฟล์:</b> เข้ารหัสวิดีโอความเร็วสูงระดับสตูดิโอ (GPU / H.265 / AV1)</li>
+            <li><b>เหมา 5 HugCoins / รอบ:</b> ทำแบบกลุ่ม Batch Mode 3–20 ไฟล์พร้อมกัน + ดาวน์โหลดเป็น ZIP</li>
+          </ul>
+        </div>
+      </section>
+
       <section class="tool" id="toolWorkspaceSection">
         <div class="workspace-head">
           <a href="?tool=home" class="workspace-back">← หน้ารวมเครื่องมือ</a>
@@ -1172,84 +1236,33 @@
 
       <div class="coin-alert" id="coinModalReason" hidden></div>
 
-      <!-- แถบสลับหน้าภายในกระเป๋า -->
-      <div class="coin-tabs" id="coinModalTabs">
-        <button type="button" class="coin-tab active" data-cointab="topup">💳 เติมเหรียญ / แพ็กเกจ</button>
-        <button type="button" class="coin-tab" data-cointab="history">📜 ประวัติ & อัตราใช้</button>
-      </div>
+      <div class="coin-section-title">เลือกแพ็กเกจ (🛡️ หักเหรียญเฉพาะเมื่อไฟล์เสร็จสมบูรณ์เท่านั้น)</div>
+      <div class="pkg-grid" id="pkgGrid"><!-- สร้างจาก COIN_PACKAGES --></div>
 
-      <!-- Tab 1: เติมเหรียญ -->
-      <div id="coinTabTopup">
-        <div class="coin-section-title">เลือกแพ็กเกจ (🛡️ หักเหรียญเฉพาะเมื่อไฟล์เสร็จสมบูรณ์เท่านั้น)</div>
-        <div class="pkg-grid" id="pkgGrid"><!-- สร้างจาก COIN_PACKAGES --></div>
-
-        <!-- กล่องสแกนจ่าย PromptPay QR (รองรับ Opn Payments จริง + โหมดทดสอบ) -->
-        <div class="qr-checkout" id="qrCheckoutBox" hidden>
-          <div class="qr-checkout__box">
-            <div class="qr-mock">
-              <div class="qr-mock__head">THAI QR PAYMENT · PromptPay</div>
-              <div class="qr-mock__code" id="qrCodeGraphic">▣ ▤ ▥</div>
-              <img id="qrLiveImg" alt="PromptPay QR Code" style="display:none;width:100%;height:auto;background:#fff;padding:6px;" hidden />
-              <div class="qr-mock__amt" id="qrAmountText">ยอดชำระ 79.00 บาท</div>
-            </div>
-            <div class="qr-checkout__info">
-              <h4 id="qrPkgTitle">แพ็กเกจ Popular Pack (+180 HugCoins)</h4>
-              <p class="hint" id="qrStatusHint">สแกนจ่ายผ่านแอปธนาคาร เหรียญจะเข้ากระเป๋าทันทีภายใน 2 วินาที (ไม่ต้องส่งสลิป)</p>
-              <div class="qr-checkout__actions">
-                <button type="button" class="btn btn--primary" id="qrConfirmSimBtn">✓ จำลองการชำระเงินสำเร็จ (รับเหรียญทันที)</button>
-                <button type="button" class="btn btn--outline" id="qrCheckNowBtn" hidden>🔄 ตรวจสอบการโอนเงิน</button>
-                <button type="button" class="btn btn--ghost" id="qrCancelBtn">ยกเลิก</button>
-              </div>
+      <!-- กล่องสแกนจ่าย PromptPay QR (รองรับ Opn Payments จริง + โหมดทดสอบ) -->
+      <div class="qr-checkout" id="qrCheckoutBox" hidden>
+        <div class="qr-checkout__box">
+          <div class="qr-mock">
+            <div class="qr-mock__head">THAI QR PAYMENT · PromptPay</div>
+            <div class="qr-mock__code" id="qrCodeGraphic">▣ ▤ ▥</div>
+            <img id="qrLiveImg" alt="PromptPay QR Code" style="display:none;width:100%;height:auto;background:#fff;padding:6px;" hidden />
+            <div class="qr-mock__amt" id="qrAmountText">ยอดชำระ 79.00 บาท</div>
+          </div>
+          <div class="qr-checkout__info">
+            <h4 id="qrPkgTitle">แพ็กเกจ Popular Pack (+180 HugCoins)</h4>
+            <p class="hint" id="qrStatusHint">สแกนจ่ายผ่านแอปธนาคาร เหรียญจะเข้ากระเป๋าทันทีภายใน 2 วินาที (ไม่ต้องส่งสลิป)</p>
+            <div class="qr-checkout__actions">
+              <button type="button" class="btn btn--primary" id="qrConfirmSimBtn">✓ จำลองการชำระเงินสำเร็จ (รับเหรียญทันที)</button>
+              <button type="button" class="btn btn--outline" id="qrCheckNowBtn" hidden>🔄 ตรวจสอบการโอนเงิน</button>
+              <button type="button" class="btn btn--ghost" id="qrCancelBtn">ยกเลิก</button>
             </div>
           </div>
-        </div>
-
-        <div class="coupon-row">
-          <input type="text" id="couponInput" class="input" placeholder="กรอกรหัสคูปอง (เช่น HEYFREE20)" />
-          <button type="button" class="btn btn--outline" id="couponApplyBtn">ใช้คูปอง</button>
         </div>
       </div>
 
-      <!-- Tab 2: ประวัติ & อัตราการใช้ -->
-      <div id="coinTabHistory" hidden>
-        <div class="coin-history-box">
-          <div class="coin-history-head">
-            <div>
-              <div class="history-title">📜 ประวัติรายการ HugCoin</div>
-              <div class="history-stats" id="coinHistoryStats"></div>
-            </div>
-            <div class="history-filters" id="coinHistoryFilters">
-              <button type="button" class="hist-tab active" data-hfilter="all">ทั้งหมด</button>
-              <button type="button" class="hist-tab" data-hfilter="in">รับเข้า (+)</button>
-              <button type="button" class="hist-tab" data-hfilter="out">ใช้ไป (-)</button>
-            </div>
-          </div>
-          <div class="coin-history-scroll">
-            <table class="coin-hist-table">
-              <thead>
-                <tr>
-                  <th>ประเภท</th>
-                  <th>รายการ</th>
-                  <th>วัน-เวลา</th>
-                  <th style="text-align:right">จำนวน</th>
-                </tr>
-              </thead>
-              <tbody id="coinHistoryList"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <details class="coin-rules" style="margin-top:12px;">
-          <summary>📋 ดูอัตราการใช้ HugCoin</summary>
-          <div class="coin-rules__body">
-            <ul class="rules-list" style="margin-bottom:0;">
-              <li><b>ฟรี 0 เหรียญ:</b> บีบอัด/แปลงไฟล์ทั่วไปครั้งละ 1–2 ไฟล์ (โหมดมาตรฐาน)</li>
-              <li><b>1 HugCoin / ไฟล์:</b> บันทึกการแก้ไข & เซ็น PDF, ล็อกขนาดไฟล์ MB เป๊ะๆ, ทำ GIF, แยกเสียง MP3</li>
-              <li><b>2 HugCoins / ไฟล์:</b> เข้ารหัสวิดีโอความเร็วสูงระดับสตูดิโอ (GPU / H.265 / AV1)</li>
-              <li><b>เหมา 5 HugCoins / รอบ:</b> ทำแบบกลุ่ม Batch Mode 3–20 ไฟล์พร้อมกัน + ดาวน์โหลดเป็น ZIP</li>
-            </ul>
-          </div>
-        </details>
+      <div class="coupon-row">
+        <input type="text" id="couponInput" class="input" placeholder="กรอกรหัสคูปอง (เช่น HEYFREE20)" />
+        <button type="button" class="btn btn--outline" id="couponApplyBtn">ใช้คูปอง</button>
       </div>
     </div>
   </div>

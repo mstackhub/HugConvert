@@ -769,6 +769,29 @@ input[type="range"] { width: 100%; accent-color: var(--primary); }
   overflow-y: auto;
   overflow-x: auto;
 }
+.coin-history-scroll.full-page {
+  max-height: 560px;
+}
+.history-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.hist-stat-card {
+  padding: 16px 20px;
+}
+.hist-stat-card__label {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 500;
+}
+.hist-stat-card__val {
+  font-size: 24px;
+  font-weight: 700;
+  margin-top: 4px;
+  color: var(--text);
+}
 .coin-hist-table {
   width: 100%;
   border-collapse: collapse;
@@ -1203,7 +1226,7 @@ body.is-member .hub-strip {
 
 @media (max-width: 580px) {
   .hub-grid { grid-template-columns: 1fr; }
-  .why-grid, .pricing-grid { grid-template-columns: 1fr; }
+  .why-grid, .pricing-grid, .history-summary-grid { grid-template-columns: 1fr; }
   .site-footer__grid { grid-template-columns: 1fr; gap: 20px; }
   .pkg-grid { grid-template-columns: 1fr; }
   .file { grid-template-columns: auto 72px minmax(0, 1fr); gap: 10px; padding: 12px; }

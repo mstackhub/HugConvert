@@ -127,6 +127,11 @@ const TOOLS = [
     settingsTitle: 'ตั้งค่าแยกและแปลงไฟล์เสียง', actionLabel: '🎵 เริ่มแปลงไฟล์เสียง', suffix: '_audio',
     tags: 'แยกเสียง mp3 บีบอัดเสียง m4a wav เป็น mp3 อัดเสียงประชุม',
   },
+  {
+    id: 'history', icon: '📜', label: 'ประวัติรายการ HugCoin', kind: 'history', cat: 'account', panel: 'none',
+    desc: 'ตรวจสอบรายการรับเข้า ใช้เหรียญ และสถานะแพ็กเกจของคุณ',
+    settingsTitle: '', actionLabel: '', suffix: '', tags: '',
+  },
 ];
 
 const $ = (s, el = document) => el.querySelector(s);
@@ -174,7 +179,7 @@ function setItems(arr) {
 
 // ---------------- Sidebar / SEO Router ----------------
 function buildNav() {
-  $('#nav').innerHTML = TOOLS.map((t) =>
+  $('#nav').innerHTML = TOOLS.filter((t) => t.id !== 'history').map((t) =>
     t.group
       ? `<div class="nav__group">${t.group}</div>`
       : `<a class="nav__item" href="?tool=${t.id}" data-id="${t.id}">
@@ -307,14 +312,23 @@ function route() {
   $('#settingsTitle').textContent = tool.settingsTitle;
   updateSeoForTool(tool);
 
-  // สลับระหว่างหน้าแรก (Home Hub) กับหน้าเครื่องมือ (Tool Workspace)
+  // สลับระหว่างหน้าแรก (Home Hub), หน้าประวัติ (History) และหน้าเครื่องมือ (Tool Workspace)
   const isHome = tool.id === 'home';
+  const isHistory = tool.id === 'history';
   $('#homeHubSection').hidden = !isHome;
-  $('#toolWorkspaceSection').hidden = isHome;
+  const histSec = $('#historyPageSection');
+  if (histSec) histSec.hidden = !isHistory;
+  $('#toolWorkspaceSection').hidden = isHome || isHistory;
   if (isHome) {
     $('#smartPdfChoice').hidden = true;
     renderHubCards();
     renderLandingAds(hasUnlimitedPass(), (msg) => openCoinModal(msg));
+    toggleSidebar(false);
+    renderWalletBadge();
+    return;
+  }
+  if (isHistory) {
+    renderHistoryPage();
     toggleSidebar(false);
     renderWalletBadge();
     return;
@@ -394,7 +408,7 @@ let pendingSmartPdfFiles = null;
 function renderHubCards() {
   const q = ($('#hubSearchInput')?.value || '').trim().toLowerCase();
   const list = TOOLS.filter((t) => {
-    if (!t.id || t.id === 'home') return false;
+    if (!t.id || t.id === 'home' || t.id === 'history') return false;
     if (hubActiveCat !== 'all' && t.cat !== hubActiveCat) return false;
     if (q) {
       const hay = `${t.label} ${t.desc} ${t.tags || ''}`.toLowerCase();
@@ -2443,7 +2457,8 @@ $('#ddOpenCoinBtn').onclick = () => {
 };
 $('#ddOpenHistoryBtn')?.addEventListener('click', () => {
   $('#profileDropdown').hidden = true;
-  openCoinModal('', 'history');
+  navigateToTool('history');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
 $('#ddLogoutBtn').onclick = async () => {
@@ -2486,6 +2501,9 @@ function renderWalletBadge() {
   if (state.toolId === 'home') {
     renderLandingAds(isPass, (msg) => openCoinModal(msg));
   }
+  if (state.toolId === 'history') {
+    renderHistoryPage();
+  }
 }
 
 $('#memberDailyBtn')?.addEventListener('click', async () => {
@@ -2494,7 +2512,11 @@ $('#memberDailyBtn')?.addEventListener('click', async () => {
   toast(res.msg);
 });
 $('#memberTopupBtn')?.addEventListener('click', () => openCoinModal());
-$('#memberHistoryBtn')?.addEventListener('click', () => openCoinModal('', 'history'));
+$('#memberHistoryBtn')?.addEventListener('click', () => {
+  navigateToTool('history');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+$('#historyPageTopupBtn')?.addEventListener('click', () => openCoinModal());
 
 function renderCoinModal() {
   const w = loadWallet();
@@ -2545,6 +2567,21 @@ function renderCoinModal() {
   `).join('');
 
   renderCoinHistory(w.history || []);
+}
+
+function renderHistoryPage() {
+  const w = loadWallet();
+  const isPass = hasUnlimitedPass(w);
+  const hist = w.history || [];
+  const totalIn = Math.round(hist.reduce((s, h) => s + (h.delta > 0 ? h.delta : 0), 0) * 10) / 10;
+  const totalOut = Math.round(hist.reduce((s, h) => s + (h.delta < 0 ? Math.abs(h.delta) : 0), 0) * 10) / 10;
+  const balEl = $('#histPageBal');
+  const inEl = $('#histPageIn');
+  const outEl = $('#histPageOut');
+  if (balEl) balEl.textContent = isPass ? `∞ (${w.balance} HugCoins)` : `${w.balance} HugCoins`;
+  if (inEl) inEl.textContent = `+${totalIn} 🪙`;
+  if (outEl) outEl.textContent = `-${totalOut} 🪙`;
+  renderCoinHistory(hist);
 }
 
 let coinHistoryFilter = 'all';
@@ -2603,21 +2640,7 @@ $('#coinHistoryFilters')?.addEventListener('click', (e) => {
   renderCoinHistory(loadWallet().history || []);
 });
 
-function switchCoinTab(tab = 'topup') {
-  $$('#coinModalTabs .coin-tab').forEach((b) => b.classList.toggle('active', b.dataset.cointab === tab));
-  const topupEl = $('#coinTabTopup');
-  const histEl = $('#coinTabHistory');
-  if (topupEl) topupEl.hidden = tab !== 'topup';
-  if (histEl) histEl.hidden = tab !== 'history';
-}
-
-$('#coinModalTabs')?.addEventListener('click', (e) => {
-  const btn = e.target.closest('[data-cointab]');
-  if (!btn) return;
-  switchCoinTab(btn.dataset.cointab);
-});
-
-function openCoinModal(reasonMsg = '', initialTab = 'topup') {
+function openCoinModal(reasonMsg = '') {
   const alertEl = $('#coinModalReason');
   if (reasonMsg) {
     alertEl.hidden = false;
@@ -2627,7 +2650,6 @@ function openCoinModal(reasonMsg = '', initialTab = 'topup') {
   }
   $('#qrCheckoutBox').hidden = true;
   activeCheckoutPkg = null;
-  switchCoinTab(initialTab);
   renderCoinModal();
   $('#coinModal').hidden = false;
 }
