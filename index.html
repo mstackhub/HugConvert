@@ -34,31 +34,34 @@
     <!-- ===== Sidebar ===== -->
     <aside class="sidebar" id="sidebar" aria-label="เมนูเครื่องมือ">
       <div class="sidebar__brand">
-        <div class="logo">HC</div>
-        <div>
-          <div class="brand__name">HeyConvert</div>
-          <div class="brand__tag">เครื่องมือมีเดีย & PDF ครบวงจร</div>
-        </div>
+        <a href="?tool=home" class="brand-link" title="กลับหน้าแรก HeyConvert">
+          <div class="logo">HC</div>
+          <div>
+            <div class="brand__name">HeyConvert</div>
+            <div class="brand__tag">เครื่องมือมีเดีย & PDF ครบวงจร</div>
+          </div>
+        </a>
         <button class="icon-btn sidebar__close" id="sidebarClose" aria-label="ปิดเมนู">✕</button>
       </div>
 
       <nav class="nav" id="nav">
-        <div class="nav__group">วิดีโอ (Video)</div>
-        <a class="nav__item active" href="?tool=video-compress" data-id="video-compress"><span class="nav__icon">🎬</span><span>บีบอัดวิดีโอ</span></a>
-        <a class="nav__item" href="?tool=video-convert" data-id="video-convert"><span class="nav__icon">🔄</span><span>แปลงไฟล์วิดีโอ</span></a>
-        <a class="nav__item" href="?tool=video-trim" data-id="video-trim"><span class="nav__icon">✂️</span><span>ตัดวิดีโอ</span></a>
-        <a class="nav__item" href="?tool=video-to-gif" data-id="video-to-gif"><span class="nav__icon">🎞️</span><span>วิดีโอเป็น GIF</span></a>
-        <div class="nav__group">รูปภาพ (Image)</div>
-        <a class="nav__item" href="?tool=image-compress" data-id="image-compress"><span class="nav__icon">🖼️</span><span>บีบอัดรูปภาพ</span></a>
-        <a class="nav__item" href="?tool=image-convert" data-id="image-convert"><span class="nav__icon">🔁</span><span>แปลงไฟล์รูปภาพ</span></a>
+        <a class="nav__item active" href="?tool=home" data-id="home"><span class="nav__icon">🏠</span><span>หน้าแรก (รวมเครื่องมือ)</span></a>
         <div class="nav__group">เอกสาร (PDF)</div>
-        <a class="nav__item" href="?tool=pdf-edit" data-id="pdf-edit"><span class="nav__icon">✏️</span><span>แก้ไขไฟล์ PDF</span></a>
+        <a class="nav__item" href="?tool=pdf-edit" data-id="pdf-edit"><span class="nav__icon">✏️</span><span>แก้ไข & กรอกฟอร์ม PDF</span></a>
         <a class="nav__item" href="?tool=pdf-compress" data-id="pdf-compress"><span class="nav__icon">📉</span><span>บีบอัดไฟล์ PDF</span></a>
+        <a class="nav__item" href="?tool=pdf-security" data-id="pdf-security"><span class="nav__icon">🔐</span><span>ปลดล็อก & ลายน้ำ PDF</span></a>
         <a class="nav__item" href="?tool=pdf-merge" data-id="pdf-merge"><span class="nav__icon">📑</span><span>รวม & แยกหน้า PDF</span></a>
         <a class="nav__item" href="?tool=pdf-to-image" data-id="pdf-to-image"><span class="nav__icon">📸</span><span>PDF เป็นรูปภาพ</span></a>
         <a class="nav__item" href="?tool=image-to-pdf" data-id="image-to-pdf"><span class="nav__icon">📄</span><span>รูปภาพเป็น PDF</span></a>
-        <div class="nav__group">เสียง (Audio)</div>
-        <a class="nav__item" href="?tool=audio-extract" data-id="audio-extract"><span class="nav__icon">🎵</span><span>แยกเสียงจากวิดีโอ</span></a>
+        <div class="nav__group">วิดีโอ (Video)</div>
+        <a class="nav__item" href="?tool=video-compress" data-id="video-compress"><span class="nav__icon">🎬</span><span>บีบอัดวิดีโอ</span></a>
+        <a class="nav__item" href="?tool=video-convert" data-id="video-convert"><span class="nav__icon">🔄</span><span>แปลงไฟล์วิดีโอ</span></a>
+        <a class="nav__item" href="?tool=video-trim" data-id="video-trim"><span class="nav__icon">✂️</span><span>ตัดวิดีโอ</span></a>
+        <a class="nav__item" href="?tool=video-to-gif" data-id="video-to-gif"><span class="nav__icon">🎞️</span><span>วิดีโอเป็น GIF</span></a>
+        <div class="nav__group">รูปภาพ & เสียง</div>
+        <a class="nav__item" href="?tool=image-compress" data-id="image-compress"><span class="nav__icon">🖼️</span><span>บีบอัดรูปภาพ</span></a>
+        <a class="nav__item" href="?tool=image-convert" data-id="image-convert"><span class="nav__icon">🔁</span><span>แปลงรูป (รองรับ HEIC)</span></a>
+        <a class="nav__item" href="?tool=audio-extract" data-id="audio-extract"><span class="nav__icon">🎵</span><span>แยก & บีบอัดเสียง MP3</span></a>
       </nav>
 
       <div class="sidebar__foot">
@@ -121,7 +124,101 @@
         และเปิดผ่าน https:// หรือ localhost
       </div>
 
-      <section class="tool">
+      <!-- ===== หน้าแรก: Smart Tool Hub Landing Page ===== -->
+      <section class="home-hub" id="homeHubSection" hidden>
+        <div class="hub-hero card">
+          <div class="hub-hero__badge">🔒 ปลอดภัยมาตรฐาน PDPA 100% · ประมวลผลในเครื่องคุณเอง ไม่อัปโหลดไฟล์</div>
+          <h2 class="hub-hero__title">บีบอัด แปลงไฟล์ และจัดการ PDF ครบจบในที่เดียว</h2>
+          <p class="hub-hero__sub">ลากไฟล์ใดก็ได้วางด้านล่าง ระบบจะตรวจจับประเภทไฟล์และพาเข้าเครื่องมือที่เหมาะสมให้อัตโนมัติ หรือเลือกจากเมนูการ์ดด้านล่าง</p>
+
+          <div class="smart-dropzone" id="smartDropzone" role="button" tabindex="0">
+            <input type="file" id="smartFileInput" accept="video/*,image/*,audio/*,application/pdf,.pdf,.heic,.heif,.jfif,.mkv,.mov,.webm,.mp4,.mp3,.wav,.m4a" multiple hidden />
+            <div class="smart-dropzone__icon">✨📂</div>
+            <div class="smart-dropzone__title">โยนไฟล์อะไรก็ได้มาวางที่นี่ หรือ <u>คลิกเลือกไฟล์</u></div>
+            <div class="smart-dropzone__types">รองรับ <b>PDF</b> · <b>MP4/MOV</b> · <b>JPG/PNG/WebP</b> · <b>iPhone HEIC</b> · <b>MP3/WAV</b> (สูงสุด 20 ไฟล์)</div>
+          </div>
+
+          <!-- ตัวเลือกด่วนเมื่อผู้ใช้โยนไฟล์ PDF ที่หน้าแรก -->
+          <div class="smart-pdf-choice" id="smartPdfChoice" hidden>
+            <div class="smart-pdf-choice__label">📄 ตรวจพบไฟล์ PDF! คุณต้องการทำอะไรกับไฟล์นี้?</div>
+            <div class="smart-pdf-choice__btns">
+              <button type="button" class="btn btn--primary btn--sm" data-pdfgo="pdf-edit">✏️ แก้ไข / กรอกฟอร์ม / เซ็นชื่อ</button>
+              <button type="button" class="btn btn--outline btn--sm" data-pdfgo="pdf-compress">📉 บีบอัดลดขนาด MB</button>
+              <button type="button" class="btn btn--outline btn--sm" data-pdfgo="pdf-security">🔐 ปลดล็อกรหัส / คาดลายน้ำ</button>
+              <button type="button" class="btn btn--outline btn--sm" data-pdfgo="pdf-merge">📑 รวม / แยกหน้า</button>
+              <button type="button" class="btn btn--outline btn--sm" data-pdfgo="pdf-to-image">📸 แปลงเป็นรูปภาพ</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- แถบค้นหาและตัวกรองหมวดหมู่ -->
+        <div class="hub-filter-bar">
+          <div class="hub-tabs" id="hubCatTabs">
+            <button type="button" class="hub-tab active" data-hubcat="all">ทั้งหมด (13)</button>
+            <button type="button" class="hub-tab" data-hubcat="pdf">📄 เอกสาร PDF</button>
+            <button type="button" class="hub-tab" data-hubcat="video">🎬 วิดีโอ</button>
+            <button type="button" class="hub-tab" data-hubcat="image">🖼️ รูปภาพ & HEIC</button>
+            <button type="button" class="hub-tab" data-hubcat="audio">🎵 เสียง MP3</button>
+          </div>
+          <div class="hub-search">
+            <input type="search" id="hubSearchInput" class="input" placeholder="🔍 ค้นหา เช่น บัตรประชาชน, HEIC, 10MB, สเตทเมนต์..." />
+          </div>
+        </div>
+
+        <!-- การ์ดรวมเครื่องมือทั้งหมด -->
+        <div class="hub-grid" id="hubGrid"><!-- สร้างจาก TOOLS ใน js/app.js --></div>
+
+        <!-- ตารางเปรียบเทียบทำไม HeyConvert คุ้มค่ากว่า -->
+        <div class="card compare-card">
+          <div class="compare-card__head">
+            <div>
+              <h3>💡 ทำไมคนทำงานออฟฟิศและครีเอเตอร์ถึงเลือก HeyConvert?</h3>
+              <p class="muted">เทียบความคุ้มค่าระหว่างเว็บแปลงไฟล์รายเดือนทั่วไป กับระบบ HeyCoin ของเรา</p>
+            </div>
+            <button type="button" class="btn btn--primary" id="hubOpenCoinBtn">🪙 ดูแพ็กเกจ HeyCoin (เริ่ม 29฿)</button>
+          </div>
+          <div class="compare-table-wrap">
+            <table class="compare-table">
+              <thead>
+                <tr>
+                  <th>หัวข้อเปรียบเทียบ</th>
+                  <th>เว็บแปลงไฟล์ทั่วไป (Cloud)</th>
+                  <th class="hi">HeyConvert (ของเรา ✨)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><b>ค่าบริการ</b></td>
+                  <td>ตัดบัตรรายเดือน ~450 – 1,030 บาท/เดือน</td>
+                  <td class="hi"><b>โหมดพื้นฐานฟรี!</b> หรือเติมเหรียญเริ่มแค่ <b>29 บาท</b></td>
+                </tr>
+                <tr>
+                  <td><b>วันหมดอายุโควตา</b></td>
+                  <td>ตัดทิ้งทุกสิ้นเดือนแม้ไม่ได้ใช้</td>
+                  <td class="hi"><b>เหรียญ HeyCoin ไม่มีวันหมดอายุ</b> (หรือเหมา 30 วัน 149฿)</td>
+                </tr>
+                <tr>
+                  <td><b>การเข้ารหัส GPU ความเร็วสูง</b></td>
+                  <td>กั๊กไว้เฉพาะแพ็กแพงสุด (~1,030฿/ด.)</td>
+                  <td class="hi"><b>ปลดล็อก GPU / H.265 / AV1 ได้ทันที</b> (ใช้แค่ 2 🪙)</td>
+                </tr>
+                <tr>
+                  <td><b>ความปลอดภัยข้อมูล (PDPA)</b></td>
+                  <td>ต้องอัปโหลดสัญญา/บัตรประชาชนขึ้นคลาวด์</td>
+                  <td class="hi"><b>ไฟล์ไม่ออกจากเครื่อง 100%</b> ปลอดภัยสูงสุด</td>
+                </tr>
+                <tr>
+                  <td><b>การรับประกัน</b></td>
+                  <td>เสียโควตานาทีแม้ตั้งค่าผิด</td>
+                  <td class="hi"><b>🛡️ หักเหรียญเฉพาะเมื่อไฟล์เสร็จสมบูรณ์เท่านั้น</b></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="tool" id="toolWorkspaceSection">
         <div class="layout">
           <!-- ===== คอลัมน์ซ้าย: Dropzone + PDF Editor / รายการไฟล์ + ดาวน์โหลด ===== -->
           <div class="col-main">
@@ -748,6 +845,67 @@
                 </div>
               </div>
 
+              <!-- 12. แผงตั้งค่า: ปลดล็อกรหัสผ่าน & คาดลายน้ำ PDF (pdf-security) -->
+              <div class="tool-panel" data-panel="pdf-security" hidden>
+                <div class="field">
+                  <label for="psMode">เลือกสิ่งที่ต้องการทำกับไฟล์ PDF</label>
+                  <select id="psMode" class="select">
+                    <option value="watermark" selected>🖋️ คาดลายน้ำทับเอกสาร (เช่น สำเนาบัตรประชาชน)</option>
+                    <option value="unlock">🔓 ปลดล็อกรหัสผ่าน PDF (เช่น สเตทเมนต์ธนาคาร/สลิป)</option>
+                  </select>
+                </div>
+
+                <div data-psshow="watermark">
+                  <div class="field">
+                    <label for="psWmText">ข้อความลายน้ำ (รองรับหลายบรรทัด)</label>
+                    <textarea id="psWmText" class="input textarea-input" rows="3">สำเนาถูกต้อง
+ใช้สำหรับสมัครงานเท่านั้น</textarea>
+                    <div class="chips" id="wmPresetChips">
+                      <button type="button" data-wm="สำเนาถูกต้อง&#10;ใช้สำหรับสมัครงานเท่านั้น">สมัครงาน</button>
+                      <button type="button" data-wm="สำเนาถูกต้อง&#10;ใช้สำหรับติดต่อราชการเท่านั้น">ติดต่อราชการ</button>
+                      <button type="button" data-wm="เอกสารลับ (CONFIDENTIAL)&#10;ห้ามเผยแพร่">เอกสารลับ</button>
+                    </div>
+                  </div>
+
+                  <div class="row-2">
+                    <div class="field">
+                      <label for="psWmColor">สีลายน้ำ</label>
+                      <input type="color" id="psWmColor" class="input color-input" value="#dc2626" />
+                    </div>
+                    <div class="field">
+                      <label for="psWmAngle">แนวการวาง</label>
+                      <select id="psWmAngle" class="select">
+                        <option value="diagonal" selected>คาดเฉียงกลางหน้า (-32°)</option>
+                        <option value="horizontal">แนวนอนกลางหน้า (0°)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="field">
+                    <label for="psWmOpacity">ความเข้มลายน้ำ: <b id="psWmOpacityLabel">28%</b></label>
+                    <input type="range" id="psWmOpacity" min="10" max="80" step="2" value="28" />
+                  </div>
+
+                  <div class="field">
+                    <label class="check compat-check">
+                      <input type="checkbox" id="psWmDoubleLine" checked />
+                      <span>ตีเส้นคู่ขนานคร่อมข้อความ (สไตล์ขีดคร่อมสำเนาบัตรประชาชนไทย)</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div data-psshow="unlock" hidden>
+                  <div class="field">
+                    <label for="psPassword">รหัสผ่านเดิมของไฟล์ PDF (เพื่อถอดรหัสล็อกออก)</label>
+                    <div class="pw-wrap">
+                      <input type="password" id="psPassword" class="input" placeholder="เช่น วันเดือนปีเกิด 01012540" />
+                      <button type="button" class="pw-toggle" id="psPwToggleBtn" title="แสดง/ซ่อนรหัสผ่าน">👁️</button>
+                    </div>
+                    <p class="hint">เหมาะสำหรับไฟล์สเตทเมนต์ธนาคาร/สลิปเงินเดือนที่คุณทราบรหัสอยู่แล้ว ระบบจะสร้างไฟล์ PDF ใหม่ที่เปิดได้ทันทีโดยไม่ถามรหัสอีก (ปลอดภัย 100% รหัสไม่ออกจากเครื่องคุณ)</p>
+                  </div>
+                </div>
+              </div>
+
               <div class="cost-preview" id="costPreview" hidden>
                 <span id="costPreviewLabel">โหมดมาตรฐานใช้งานฟรี</span>
                 <span class="cost-preview__badge" id="costPreviewBadge">ฟรี 0 🪙</span>
@@ -794,15 +952,17 @@
           <div class="seo-faqs" id="seoFaqs"></div>
 
           <div class="seo-links">
-            <span>เครื่องมือยอดนิยมใน HeyConvert:</span>
-            <a href="?tool=video-compress">บีบอัดวิดีโอ MB</a> ·
-            <a href="?tool=pdf-edit">แก้ไขและเซ็นไฟล์ PDF</a> ·
-            <a href="?tool=pdf-compress">บีบอัด PDF ไม่เกิน 2MB</a> ·
+            <span>ทางลัดเครื่องมือยอดนิยม (Smart Presets):</span>
+            <a href="?tool=video-compress&preset=discord-10mb">บีบวิดีโอไม่เกิน 10MB (LINE/Discord)</a> ·
+            <a href="?tool=image-convert&preset=heic-to-jpg">แปลงรูป iPhone HEIC เป็น JPG</a> ·
+            <a href="?tool=pdf-edit">กรอกใบสมัคร & เซ็นไฟล์ PDF</a> ·
+            <a href="?tool=pdf-security&preset=idcard-watermark">คาดลายน้ำสำเนาบัตรประชาชน</a> ·
+            <a href="?tool=pdf-security&preset=unlock-statement">ปลดล็อกรหัส PDF สเตทเมนต์ธนาคาร</a> ·
+            <a href="?tool=pdf-compress&preset=gov-2mb">บีบอัด PDF ไม่เกิน 2MB</a> ·
             <a href="?tool=pdf-merge">รวมไฟล์ PDF</a> ·
-            <a href="?tool=image-compress">บีบอัดรูปภาพ KB</a> ·
-            <a href="?tool=pdf-to-image">แปลง PDF เป็นรูป JPG</a> ·
-            <a href="?tool=image-to-pdf">รวมรูปเป็น PDF</a> ·
-            <a href="?tool=audio-extract">แยกเสียง MP3</a>
+            <a href="?tool=image-compress&preset=job-100kb">ย่อรูปสมัครงานไม่เกิน 100KB</a> ·
+            <a href="?tool=video-convert&preset=mov-to-mp4">แปลงวิดีโอ MOV เป็น MP4</a> ·
+            <a href="?tool=audio-extract">แยก & บีบอัดเสียง MP3</a>
           </div>
         </div>
       </article>
@@ -841,7 +1001,7 @@
 
       <div class="coin-alert" id="coinModalReason" hidden></div>
 
-      <div class="coin-section-title">แพ็กเกจเติมเหรียญสุดคุ้ม (จ่ายครั้งเดียว · ไม่ตัดบัตรรายเดือน)</div>
+      <div class="coin-section-title">แพ็กเกจเติมเหรียญ & Unlimited Pass (🛡️ การันตีหักเหรียญเฉพาะเมื่อไฟล์สำเร็จเท่านั้น)</div>
       <div class="pkg-grid" id="pkgGrid"><!-- สร้างจาก COIN_PACKAGES --></div>
 
       <!-- กล่องจำลองสแกนจ่าย PromptPay QR เมื่อเลือกแพ็กเกจ -->

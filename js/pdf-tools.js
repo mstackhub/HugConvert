@@ -8,6 +8,7 @@
 // ============================================================
 import { PDFDocument, degrees, StandardFonts, rgb } from 'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm';
 import * as pdfjsLib from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.mjs';
+import { normalizeImageFile } from './compressor.js';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs';
@@ -33,7 +34,27 @@ function loadImageFromUrl(url) {
 export async function probePdf(file) {
   const buf = await file.arrayBuffer();
   const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(buf) });
-  const pdf = await loadingTask.promise;
+  let pdf;
+  try {
+    pdf = await loadingTask.promise;
+  } catch (err) {
+    if (err?.name === 'PasswordException') {
+      const lockSvg = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 100'><rect width='160' height='100' fill='%231c1e33'/><text x='50%25' y='44%25' text-anchor='middle' font-size='28'>🔒</text><text x='50%25' y='76%25' text-anchor='middle' fill='%23cbd5e1' font-family='sans-serif' font-size='12'>ติดรหัสผ่าน</text></svg>";
+      return {
+        isEncrypted: true,
+        pageCount: 1,
+        width: 595,
+        height: 842,
+        thumbUrl: lockSvg,
+        duration: 1,
+        fps: 0,
+        hasVideo: false,
+        hasAudio: false,
+        canDecode: true,
+      };
+    }
+    throw err;
+  }
   try {
     const pageCount = pdf.numPages;
     const page1 = await pdf.getPage(1);
@@ -394,7 +415,7 @@ export async function imagesToPdf(files, opts, onProgress) {
   const margin = Number(opts.margin) || 0;
 
   for (let i = 0; i < files.length; i++) {
-    const f = files[i];
+    const f = await normalizeImageFile(files[i]);
     const url = URL.createObjectURL(f);
     try {
       const img = await loadImageFromUrl(url);
@@ -637,4 +658,128 @@ export async function exportEditedPdf(session, onProgress) {
 
   const bytes = await outDoc.save();
   return new Blob([bytes], { type: 'application/pdf' });
+}
+
+// ============================================================
+//  6. ปลดล็อกรหัสผ่าน PDF & คาดลายน้ำเอกสาร (Unlock & Watermark PDF)
+// ============================================================
+export async function unlockPdf(file, password, { onProgress }) {
+  if (!password) throw new Error('กรุณากรอกรหัสผ่านของไฟล์ PDF ในช่องตั้งค่าด้านขวา');
+  const buf = await file.arrayBuffer();
+  let pdf;
+  try {
+    pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf), password }).promise;
+  } catch (err) {
+    if (err?.name === 'PasswordException') {
+      throw new Error('รหัสผ่านของไฟล์ PDF ไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง');
+    }
+    throw err;
+  }
+
+  try {
+    const outDoc = await PDFDocument.create();
+    const numPages = pdf.numPages;
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    for (let i = 1; i <= numPages; i++) {
+      const page = await pdf.getPage(i);
+      const origVp = page.getViewport({ scale: 1 });
+      const renderVp = page.getViewport({ scale: 2 }); // ความชัดสูง 2x
+      canvas.width = Math.max(1, Math.round(renderVp.width));
+      canvas.height = Math.max(1, Math.round(renderVp.height));
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvasContext: ctx, viewport: renderVp }).promise;
+
+      const jpgBlob = await canvasToBlob(canvas, 'image/jpeg', 0.88);
+      const embedded = await outDoc.embedJpg(await jpgBlob.arrayBuffer());
+      const outPage = outDoc.addPage([origVp.width, origVp.height]);
+      outPage.drawImage(embedded, { x: 0, y: 0, width: origVp.width, height: origVp.height });
+      onProgress?.(i / numPages, 1, 1);
+    }
+
+    const bytes = await outDoc.save({ useObjectStreams: true });
+    return {
+      blob: new Blob([bytes], { type: 'application/pdf' }),
+      ext: 'pdf',
+      note: `ปลดล็อกรหัสผ่านสำเร็จ (${numPages} หน้า)`,
+    };
+  } finally {
+    try { await pdf.destroy(); } catch { /* ignore */ }
+  }
+}
+
+export async function watermarkPdf(file, opts, { onProgress }) {
+  const text = String(opts.text || 'สำเนาถูกต้อง').trim();
+  if (!text) throw new Error('กรุณากรอกข้อความลายน้ำ');
+  if (typeof document !== 'undefined' && document.fonts?.ready) {
+    try { await document.fonts.ready; } catch { /* ignore */ }
+  }
+
+  const buf = await file.arrayBuffer();
+  const doc = await PDFDocument.load(buf, { ignoreEncryption: true });
+  const pages = doc.getPages();
+  const opacity = Math.min(0.9, Math.max(0.08, (Number(opts.opacity) || 28) / 100));
+  const angleDeg = opts.angle === 'horizontal' ? 0 : -32;
+  const color = opts.color || '#dc2626';
+  const fontSizeBase = Number(opts.fontSize) || 34;
+
+  for (let i = 0; i < pages.length; i++) {
+    const page = pages[i];
+    const { width: pw, height: ph } = page.getSize();
+    const cw = Math.round(pw * 2);
+    const ch = Math.round(ph * 2);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = cw;
+    canvas.height = ch;
+    const ctx = canvas.getContext('2d');
+
+    ctx.save();
+    ctx.globalAlpha = opacity;
+    ctx.translate(cw / 2, ch / 2);
+    ctx.rotate((angleDeg * Math.PI) / 180);
+
+    const fs = Math.round(fontSizeBase * (cw / 600));
+    ctx.font = `700 ${fs}px "Sarabun", "IBM Plex Sans Thai", sans-serif`;
+    ctx.fillStyle = color;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const lines = text.split('\n');
+    const lh = fs * 1.35;
+    const startY = -((lines.length - 1) * lh) / 2;
+    lines.forEach((line, idx) => {
+      ctx.fillText(line, 0, startY + idx * lh);
+    });
+
+    // ตีเส้นคู่ขนานคร่อมข้อความลายน้ำแบบสำเนาบัตรประชาชนไทย (ถ้าเปิดโหมดเส้นคู่)
+    if (opts.doubleLine) {
+      const maxLineW = Math.max(...lines.map((l) => ctx.measureText(l).width), 200) + 40;
+      const boxHalfH = (lines.length * lh) / 2 + 14;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = Math.max(2, Math.round(cw / 320));
+      ctx.beginPath();
+      ctx.moveTo(-maxLineW / 2, -boxHalfH);
+      ctx.lineTo(maxLineW / 2, -boxHalfH);
+      ctx.moveTo(-maxLineW / 2, boxHalfH);
+      ctx.lineTo(maxLineW / 2, boxHalfH);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    const pngBlob = await canvasToBlob(canvas, 'image/png');
+    const embedded = await doc.embedPng(await pngBlob.arrayBuffer());
+    page.drawImage(embedded, { x: 0, y: 0, width: pw, height: ph });
+    onProgress?.((i + 1) / pages.length, 1, 1);
+  }
+
+  const bytes = await doc.save();
+  return {
+    blob: new Blob([bytes], { type: 'application/pdf' }),
+    ext: 'pdf',
+    note: `คาดลายน้ำเรียบร้อย (${pages.length} หน้า)`,
+  };
 }

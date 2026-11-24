@@ -11,11 +11,12 @@ import {
   PDF_FONTS, probePdf, createSamplePdfFile, makePdfCompressPlan, compressPdf,
   mergePdfItems, splitPdfFile, pdfToImages, imagesToPdf,
   loadPdfEditorSession, renderEditorPageToCanvas, renderAnnotationsToCanvas, exportEditedPdf,
+  unlockPdf, watermarkPdf,
 } from './pdf-tools.js';
 import {
   COIN_PACKAGES, DAILY_BONUS_COINS, SEO_CONTENT,
   loadWallet, canClaimDaily, claimDailyBonus, redeemCoupon,
-  addCoinsFromPurchase, spendCoins, calculateJobCost,
+  addCoinsFromPurchase, spendCoins, calculateJobCost, hasUnlimitedPass,
 } from './heycoin.js';
 import {
   initAuth, getCurrentUser, onAuthStateChange,
@@ -26,69 +27,104 @@ import {
 //  รายการเครื่องมือใน Sidebar — ใช้งานได้จริงครบทุกตัว (12 เครื่องมือ)
 // ------------------------------------------------------------
 const TOOLS = [
-  { group: 'วิดีโอ (Video)' },
   {
-    id: 'video-compress', icon: '🎬', label: 'บีบอัดวิดีโอ', kind: 'video', panel: 'video-compress',
-    desc: 'ลดขนาดไฟล์วิดีโอ กำหนดขนาด MB ได้ตามต้องการโดยไม่ให้ภาพแตก',
-    settingsTitle: 'ตั้งค่าการบีบอัดวิดีโอ', actionLabel: '🚀 เริ่มบีบอัดวิดีโอ', suffix: '_compressed',
-  },
-  {
-    id: 'video-convert', icon: '🔄', label: 'แปลงไฟล์วิดีโอ', kind: 'video', panel: 'video-convert',
-    desc: 'แปลงวิดีโอเป็น MP4, MOV, WebM หรือ MKV พร้อมปรับความละเอียด',
-    settingsTitle: 'ตั้งค่าการแปลงไฟล์วิดีโอ', actionLabel: '🔄 เริ่มแปลงไฟล์วิดีโอ', suffix: '_converted',
-  },
-  {
-    id: 'video-trim', icon: '✂️', label: 'ตัดวิดีโอ', kind: 'video', panel: 'video-trim',
-    desc: 'ตัดเฉพาะช่วงเวลาที่ต้องการ (วินาทีเริ่มต้น – สิ้นสุด) ครั้งละหลายไฟล์',
-    settingsTitle: 'ตั้งค่าการตัดวิดีโอ', actionLabel: '✂️ เริ่มตัดวิดีโอ', suffix: '_trimmed',
-  },
-  {
-    id: 'video-to-gif', icon: '🎞️', label: 'วิดีโอเป็น GIF', kind: 'video', panel: 'video-to-gif',
-    desc: 'สร้างภาพเคลื่อนไหว GIF จากคลิปวิดีโอ ปรับความกว้างและ FPS ได้',
-    settingsTitle: 'ตั้งค่าการสร้าง GIF', actionLabel: '🎞️ เริ่มสร้างไฟล์ GIF', suffix: '_anim',
-  },
-  { group: 'รูปภาพ (Image)' },
-  {
-    id: 'image-compress', icon: '🖼️', label: 'บีบอัดรูปภาพ', kind: 'image', panel: 'image-tools',
-    desc: 'บีบอัดรูปภาพครั้งละ 20 รูป กำหนดขนาด KB หรือ % ได้ ภาพยังคมชัด',
-    settingsTitle: 'ตั้งค่าการบีบอัดรูปภาพ', actionLabel: '🖼️ เริ่มบีบอัดรูปภาพ', suffix: '_compressed',
-  },
-  {
-    id: 'image-convert', icon: '🔁', label: 'แปลงไฟล์รูปภาพ', kind: 'image', panel: 'image-tools',
-    desc: 'แปลงรูปภาพเป็น WebP, JPG, PNG พร้อมย่อความละเอียดได้ในคลิกเดียว',
-    settingsTitle: 'ตั้งค่าการแปลงไฟล์รูปภาพ', actionLabel: '🔁 เริ่มแปลงไฟล์รูปภาพ', suffix: '_converted',
+    id: 'home', icon: '🏠', label: 'หน้าแรก (รวมเครื่องมือ)', kind: 'home', cat: 'home', panel: 'none',
+    desc: 'เลือกเครื่องมือหรือโยนไฟล์ใดก็ได้เพื่อให้ระบบตรวจสอบอัตโนมัติ',
+    settingsTitle: '', actionLabel: '', suffix: '', tags: '',
   },
   { group: 'เอกสาร (PDF)' },
   {
-    id: 'pdf-edit', icon: '✏️', label: 'แก้ไขไฟล์ PDF', kind: 'pdf', panel: 'pdf-edit',
-    desc: 'พิมพ์ข้อความ วาดเขียน เซ็นลายเซ็น แทรกรูป ลบคำผิด หมุน/ลบ/เรียงหน้า PDF บนหน้าจอ',
+    id: 'pdf-edit', icon: '✏️', label: 'แก้ไข & กรอกฟอร์ม PDF', kind: 'pdf', cat: 'pdf', panel: 'pdf-edit',
+    catLabel: 'PDF',
+    desc: 'พิมพ์กรอกใบสมัคร (Textarea หลายบรรทัด) ฟอนต์มาตรฐานไทย เซ็นลายเซ็น ลบคำผิด หมุน/เรียงหน้า',
     settingsTitle: 'เครื่องมือแก้ไขหน้า PDF', actionLabel: '💾 บันทึกเป็นไฟล์ PDF', suffix: '_edited',
+    tags: 'แก้ไข pdf กรอกใบสมัคร เซ็นชื่อ ลายเซ็น ฟอนต์สารบัญ ลบคำผิด หมุนหน้า',
   },
   {
-    id: 'pdf-compress', icon: '📉', label: 'บีบอัดไฟล์ PDF', kind: 'pdf', panel: 'pdf-compress',
-    desc: 'ลดขนาดไฟล์ PDF ครั้งละ 20 ไฟล์ กำหนดขนาด MB หรือระดับความคมชัดได้',
+    id: 'pdf-compress', icon: '📉', label: 'บีบอัดไฟล์ PDF', kind: 'pdf', cat: 'pdf', panel: 'pdf-compress',
+    catLabel: 'PDF',
+    desc: 'ลดขนาดไฟล์ PDF ครั้งละ 20 ไฟล์ กำหนดขนาด MB เป้าหมาย หรือแปลงเป็นขาว-ดำ (Grayscale)',
     settingsTitle: 'ตั้งค่าการบีบอัด PDF', actionLabel: '📉 เริ่มบีบอัด PDF', suffix: '_compressed',
+    tags: 'บีบอัด pdf ลดขนาด pdf 2mb ยื่นเอกสารราชการ ขาวดำ grayscale',
   },
   {
-    id: 'pdf-merge', icon: '📑', label: 'รวม & แยกหน้า PDF', kind: 'pdf', panel: 'pdf-merge',
+    id: 'pdf-security', icon: '🔐', label: 'ปลดล็อก & ลายน้ำ PDF', kind: 'pdf', cat: 'pdf', panel: 'pdf-security',
+    catLabel: 'PDF · ยอดฮิต',
+    desc: 'คาดลายน้ำขีดคร่อม "สำเนาถูกต้อง" บนบัตรประชาชน/สัญญา หรือปลดล็อกรหัส PDF สเตทเมนต์ธนาคาร',
+    settingsTitle: 'คาดลายน้ำ / ปลดล็อกรหัสผ่าน PDF', actionLabel: '🔐 เริ่มดำเนินการ PDF', suffix: '_secured',
+    tags: 'ปลดล็อกรหัส pdf สเตทเมนต์ สลิปเงินเดือน คาดลายน้ำ สำเนาบัตรประชาชน สำเนาถูกต้อง unlock watermark',
+  },
+  {
+    id: 'pdf-merge', icon: '📑', label: 'รวม & แยกหน้า PDF', kind: 'pdf', cat: 'pdf', panel: 'pdf-merge',
+    catLabel: 'PDF',
     desc: 'รวมหลายไฟล์ PDF เข้าเป็นเล่มเดียว หรือเลือกแยกเฉพาะบางหน้า (เช่น 1-3, 5)',
     settingsTitle: 'ตั้งค่ารวม / แยกหน้า PDF', actionLabel: '📑 เริ่มรวม/แยกไฟล์ PDF', suffix: '_merged',
+    tags: 'รวมไฟล์ pdf แยกหน้า pdf ตัดหน้า merge split',
   },
   {
-    id: 'pdf-to-image', icon: '📸', label: 'PDF เป็นรูปภาพ', kind: 'pdf', panel: 'pdf-to-image',
-    desc: 'แปลงแต่ละหน้าของไฟล์ PDF ออกเป็นไฟล์รูปภาพ JPG, PNG หรือ WebP ความชัดสูง',
+    id: 'pdf-to-image', icon: '📸', label: 'PDF เป็นรูปภาพ', kind: 'pdf', cat: 'pdf', panel: 'pdf-to-image',
+    catLabel: 'PDF → รูป',
+    desc: 'แปลงแต่ละหน้าของไฟล์ PDF ออกเป็นไฟล์รูปภาพ JPG, PNG หรือ WebP ความชัดสูง 300 DPI',
     settingsTitle: 'ตั้งค่าแปลง PDF เป็นรูปภาพ', actionLabel: '📸 เริ่มแปลงเป็นรูปภาพ', suffix: '_page',
+    tags: 'pdf เป็นรูป jpg png เซฟหน้า pdf เป็นภาพ',
   },
   {
-    id: 'image-to-pdf', icon: '📄', label: 'รูปภาพเป็น PDF', kind: 'image-pdf', panel: 'image-to-pdf',
-    desc: 'รวมรูปภาพหลายๆ รูปเข้าเป็นไฟล์ PDF เล่มเดียว หรือแยกเป็นรายไฟล์',
+    id: 'image-to-pdf', icon: '📄', label: 'รูปภาพเป็น PDF', kind: 'image-pdf', cat: 'pdf', panel: 'image-to-pdf',
+    catLabel: 'รูป → PDF',
+    desc: 'รวมรูปถ่ายเอกสารหรือรูป iPhone (.HEIC / JPG / PNG) หลายรูปเข้าเป็นไฟล์ PDF เล่มเดียว',
     settingsTitle: 'ตั้งค่าแปลงรูปภาพเป็น PDF', actionLabel: '📄 เริ่มสร้างไฟล์ PDF', suffix: '_document',
+    tags: 'รูปเป็น pdf รวมรูปเป็น pdf jpg heic to pdf',
   },
-  { group: 'เสียง (Audio)' },
+  { group: 'วิดีโอ (Video)' },
   {
-    id: 'audio-extract', icon: '🎵', label: 'แยกเสียงจากวิดีโอ', kind: 'audio', panel: 'audio-extract',
-    desc: 'ดึงเฉพาะเสียงออกจากไฟล์วิดีโอ บันทึกเป็น MP3, M4A, WAV หรือ OGG',
-    settingsTitle: 'ตั้งค่าการแยกเสียง', actionLabel: '🎵 เริ่มแยกไฟล์เสียง', suffix: '_audio',
+    id: 'video-compress', icon: '🎬', label: 'บีบอัดวิดีโอ', kind: 'video', cat: 'video', panel: 'video-compress',
+    catLabel: 'Video · ยอดฮิต',
+    desc: 'ลดขนาดไฟล์วิดีโอ (เช่น 400MB เหลือ 10MB) ส่ง LINE / Discord ได้สบายโดยภาพไม่แตก',
+    settingsTitle: 'ตั้งค่าการบีบอัดวิดีโอ', actionLabel: '🚀 เริ่มบีบอัดวิดีโอ', suffix: '_compressed',
+    tags: 'บีบอัดวิดีโอ ลดขนาด mp4 10mb 25mb ส่งไลน์ discord gpu h265',
+  },
+  {
+    id: 'video-convert', icon: '🔄', label: 'แปลงไฟล์วิดีโอ', kind: 'video', cat: 'video', panel: 'video-convert',
+    catLabel: 'Video',
+    desc: 'แปลงวิดีโอ iPhone (.MOV) หรือ .MKV / .WebM ให้เป็น .MP4 มาตรฐานที่เปิดได้ทุกเครื่อง',
+    settingsTitle: 'ตั้งค่าการแปลงไฟล์วิดีโอ', actionLabel: '🔄 เริ่มแปลงไฟล์วิดีโอ', suffix: '_converted',
+    tags: 'แปลงวิดีโอ mov เป็น mp4 mkv webm ไอโฟน',
+  },
+  {
+    id: 'video-trim', icon: '✂️', label: 'ตัดวิดีโอ', kind: 'video', cat: 'video', panel: 'video-trim',
+    catLabel: 'Video',
+    desc: 'ตัดเฉพาะช่วงวินาทีเริ่มต้น–สิ้นสุดที่ต้องการ รองรับการตั้งเวลาแยกแต่ละคลิป',
+    settingsTitle: 'ตั้งค่าการตัดวิดีโอ', actionLabel: '✂️ เริ่มตัดวิดีโอ', suffix: '_trimmed',
+    tags: 'ตัดวิดีโอ ตัดคลิป trim video',
+  },
+  {
+    id: 'video-to-gif', icon: '🎞️', label: 'วิดีโอเป็น GIF', kind: 'video', cat: 'video', panel: 'video-to-gif',
+    catLabel: 'GIF',
+    desc: 'สร้างภาพเคลื่อนไหว GIF คมชัดขนาดกะทัดรัดจากคลิปวิดีโอ ปรับความกว้างและ FPS ได้',
+    settingsTitle: 'ตั้งค่าการสร้าง GIF', actionLabel: '🎞️ เริ่มสร้างไฟล์ GIF', suffix: '_anim',
+    tags: 'วิดีโอเป็น gif ภาพเคลื่อนไหว mp4 to gif',
+  },
+  { group: 'รูปภาพ & เสียง' },
+  {
+    id: 'image-compress', icon: '🖼️', label: 'บีบอัดรูปภาพ', kind: 'image', cat: 'image', panel: 'image-tools',
+    catLabel: 'Image',
+    desc: 'ย่อขนาดไฟล์รูปภาพครั้งละ 20 รูป กำหนดขนาดเป็น KB (เช่น 100KB สมัครงาน) หรือ % ได้แม่นยำ',
+    settingsTitle: 'ตั้งค่าการบีบอัดรูปภาพ', actionLabel: '🖼️ เริ่มบีบอัดรูปภาพ', suffix: '_compressed',
+    tags: 'บีบรูป ย่อรูป 100kb สมัครงาน jpg png webp heic',
+  },
+  {
+    id: 'image-convert', icon: '🔁', label: 'แปลงรูป (รองรับ HEIC)', kind: 'image', cat: 'image', panel: 'image-tools',
+    catLabel: 'Image · HEIC',
+    desc: 'แปลงรูปถ่าย iPhone (.HEIC) หรือ .JFIF / WebP / PNG ให้เป็น JPG หรือ WebP ในคลิกเดียว',
+    settingsTitle: 'ตั้งค่าการแปลงไฟล์รูปภาพ', actionLabel: '🔁 เริ่มแปลงไฟล์รูปภาพ', suffix: '_converted',
+    tags: 'แปลงรูป heic เป็น jpg jfif เป็น png webp ไอโฟน',
+  },
+  {
+    id: 'audio-extract', icon: '🎵', label: 'แยก & บีบอัดเสียง MP3', kind: 'audio', cat: 'audio', panel: 'audio-extract',
+    catLabel: 'Audio',
+    desc: 'แยกเสียง MP3 ออกจากวิดีโอ หรือบีบอัด/แปลงไฟล์เสียงอัดประชุม (.M4A / .WAV → .MP3)',
+    settingsTitle: 'ตั้งค่าแยกและแปลงไฟล์เสียง', actionLabel: '🎵 เริ่มแปลงไฟล์เสียง', suffix: '_audio',
+    tags: 'แยกเสียง mp3 บีบอัดเสียง m4a wav เป็น mp3 อัดเสียงประชุม',
   },
 ];
 
@@ -152,15 +188,41 @@ function getToolIdFromUrl() {
   if (qTool && TOOLS.some((t) => t.id === qTool)) return qTool;
   const hTool = location.hash.slice(1);
   if (hTool && TOOLS.some((t) => t.id === hTool)) return hTool;
-  return 'video-compress';
+  return 'home';
 }
 
-function navigateToTool(id) {
+function applyUrlPreset(preset) {
+  if (!preset) return;
+  if (preset === 'discord-10mb') {
+    $('#method').value = 'size';
+    $('#targetMB').value = 10;
+  } else if (preset === 'heic-to-jpg') {
+    $('#imgFormat').value = 'jpeg';
+  } else if (preset === 'idcard-watermark') {
+    $('#psMode').value = 'watermark';
+    $('#psWmDoubleLine').checked = true;
+  } else if (preset === 'unlock-statement') {
+    $('#psMode').value = 'unlock';
+  } else if (preset === 'gov-2mb') {
+    $('#pcMethod').value = 'size';
+    $('#pcTargetMB').value = 2;
+  } else if (preset === 'job-100kb') {
+    $('#imgMethod').value = 'size';
+    $('#imgTargetKB').value = 100;
+  } else if (preset === 'mov-to-mp4') {
+    $('#vcFormat').value = 'mp4';
+  }
+}
+
+function navigateToTool(id, preset = '') {
   if (state.running) {
     toast('กรุณารอให้ประมวลผลเสร็จหรือกดหยุดก่อนเปลี่ยนเมนู');
     return;
   }
-  const url = id === 'video-compress' ? location.pathname : `${location.pathname}?tool=${id}`;
+  let url = location.pathname;
+  if (id && id !== 'home') {
+    url = `${location.pathname}?tool=${id}${preset ? `&preset=${preset}` : ''}`;
+  }
   history.pushState({ tool: id }, '', url);
   route();
 }
@@ -231,14 +293,29 @@ function route() {
     return;
   }
   const id = getToolIdFromUrl();
-  const tool = TOOLS.find((t) => t.id === id) || TOOLS[1];
+  const tool = TOOLS.find((t) => t.id === id) || TOOLS[0];
   state.toolId = tool.id;
 
+  const params = new URLSearchParams(location.search);
+  if (params.get('preset')) applyUrlPreset(params.get('preset'));
+
   $$('.nav__item').forEach((a) => a.classList.toggle('active', a.dataset.id === tool.id));
-  $('#pageTitle').textContent = tool.label;
+  $('#pageTitle').textContent = tool.id === 'home' ? 'HeyConvert — รวมเครื่องมือไฟล์มีเดีย & PDF' : tool.label;
   $('#pageDesc').textContent = tool.desc;
   $('#settingsTitle').textContent = tool.settingsTitle;
   updateSeoForTool(tool);
+
+  // สลับระหว่างหน้าแรก (Home Hub) กับหน้าเครื่องมือ (Tool Workspace)
+  const isHome = tool.id === 'home';
+  $('#homeHubSection').hidden = !isHome;
+  $('#toolWorkspaceSection').hidden = isHome;
+  if (isHome) {
+    $('#smartPdfChoice').hidden = true;
+    renderHubCards();
+    toggleSidebar(false);
+    renderWalletBadge();
+    return;
+  }
 
   // สลับแผงตั้งค่า
   $$('.tool-panel').forEach((p) => (p.hidden = p.dataset.panel !== tool.panel));
@@ -246,27 +323,33 @@ function route() {
   // ปรับ Dropzone ตามประเภทไฟล์
   const fileInput = $('#fileInput');
   if (tool.kind === 'image' || tool.kind === 'image-pdf') {
-    fileInput.accept = 'image/*,.jpg,.jpeg,.png,.webp,.gif,.bmp,.avif';
+    fileInput.accept = 'image/*,.jpg,.jpeg,.png,.webp,.gif,.bmp,.avif,.heic,.heif,.jfif';
     $('#dropIcon').textContent = tool.icon;
     $('#dropTitle').innerHTML = 'ลากไฟล์รูปภาพมาวาง หรือ <u>คลิกเลือกไฟล์</u>';
-    $('#dropSub').innerHTML = 'สูงสุด <b>20 รูป</b> ต่อครั้ง · JPG, PNG, WebP, GIF, BMP';
+    $('#dropSub').innerHTML = 'สูงสุด <b>20 รูป</b> ต่อครั้ง · JPG, PNG, WebP, iPhone HEIC, JFIF';
     $('#demoBtn').textContent = '✨ ทดลองสร้างรูปภาพตัวอย่าง';
   } else if (tool.kind === 'pdf') {
     fileInput.accept = 'application/pdf,.pdf';
     $('#dropIcon').textContent = tool.icon;
     $('#dropTitle').innerHTML = 'ลากไฟล์ PDF มาวาง หรือ <u>คลิกเลือกไฟล์</u>';
-    $('#dropSub').innerHTML = 'สูงสุด <b>20 ไฟล์</b> ต่อครั้ง · รองรับไฟล์ .PDF ทุกขนาด';
+    $('#dropSub').innerHTML = 'สูงสุด <b>20 ไฟล์</b> ต่อครั้ง · รองรับไฟล์ .PDF ทุกขนาด (ไฟล์ไม่ออกจากเครื่อง)';
     $('#demoBtn').textContent = '✨ ทดลองสร้างไฟล์ PDF ตัวอย่าง';
+  } else if (tool.kind === 'audio') {
+    fileInput.accept = 'video/*,audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac,.mp4,.mov,.mkv,.webm';
+    $('#dropIcon').textContent = tool.icon;
+    $('#dropTitle').innerHTML = 'ลากไฟล์วิดีโอหรือไฟล์เสียงมาวาง หรือ <u>คลิกเลือกไฟล์</u>';
+    $('#dropSub').innerHTML = 'สูงสุด <b>20 ไฟล์</b> · แยกเสียงจากวิดีโอ หรือบีบอัด/แปลง MP3, M4A, WAV';
+    $('#demoBtn').textContent = '✨ ทดลองสร้างวิดีโอตัวอย่าง';
   } else {
-    fileInput.accept = 'video/*,audio/*,.mkv,.mov,.webm,.mp4,.m4v,.avi';
+    fileInput.accept = 'video/*,.mkv,.mov,.webm,.mp4,.m4v,.avi';
     $('#dropIcon').textContent = tool.icon;
     $('#dropTitle').innerHTML = 'ลากไฟล์วิดีโอมาวาง หรือ <u>คลิกเลือกไฟล์</u>';
     $('#dropSub').innerHTML = 'สูงสุด <b>20 ไฟล์</b> ต่อครั้ง · MP4, MOV, WebM, MKV';
     $('#demoBtn').textContent = '✨ ทดลองสร้างวิดีโอตัวอย่าง';
   }
 
-  if (tool.id === 'image-convert' && $('#imgFormat').value === 'original') {
-    $('#imgFormat').value = 'webp';
+  if (tool.id === 'image-convert' && $('#imgFormat').value === 'original' && !params.get('preset')) {
+    $('#imgFormat').value = 'jpeg';
   }
 
   $('#renamePattern').value = `{name}${tool.suffix}`;
@@ -294,10 +377,111 @@ document.addEventListener('click', (e) => {
   e.preventDefault();
   const params = new URLSearchParams(link.getAttribute('href'));
   const tId = params.get('tool');
+  const preset = params.get('preset') || '';
   if (tId) {
-    navigateToTool(tId);
+    navigateToTool(tId, preset);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+});
+
+// ---------------- Smart Home Hub Logic ----------------
+let hubActiveCat = 'all';
+let pendingSmartPdfFiles = null;
+
+function renderHubCards() {
+  const q = ($('#hubSearchInput')?.value || '').trim().toLowerCase();
+  const list = TOOLS.filter((t) => {
+    if (!t.id || t.id === 'home') return false;
+    if (hubActiveCat !== 'all' && t.cat !== hubActiveCat) return false;
+    if (q) {
+      const hay = `${t.label} ${t.desc} ${t.tags || ''}`.toLowerCase();
+      return hay.includes(q);
+    }
+    return true;
+  });
+
+  const grid = $('#hubGrid');
+  if (!grid) return;
+  if (!list.length) {
+    grid.innerHTML = '<div class="card" style="padding:28px;text-align:center;grid-column:1/-1" class="muted">ไม่พบเครื่องมือที่ค้นหา ลองพิมพ์คำอื่นดูนะครับ</div>';
+    return;
+  }
+  grid.innerHTML = list.map((t) => `
+    <a class="tool-card" href="?tool=${t.id}" data-cat="${t.cat}">
+      <div class="tool-card__top">
+        <span class="tool-card__icon">${t.icon}</span>
+        <span class="tool-card__cat">${esc(t.catLabel || t.cat.toUpperCase())}</span>
+      </div>
+      <div class="tool-card__title">${esc(t.label)}</div>
+      <div class="tool-card__desc">${esc(t.desc)}</div>
+      <div class="tool-card__go">เปิดใช้งานเครื่องมือ →</div>
+    </a>
+  `).join('');
+}
+
+$('#hubCatTabs')?.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-hubcat]');
+  if (!btn) return;
+  hubActiveCat = btn.dataset.hubcat;
+  $$('#hubCatTabs .hub-tab').forEach((b) => b.classList.toggle('active', b === btn));
+  renderHubCards();
+});
+$('#hubSearchInput')?.addEventListener('input', renderHubCards);
+$('#hubOpenCoinBtn')?.addEventListener('click', () => openCoinModal());
+
+// Smart Auto-Detect Dropzone บนหน้าแรก
+const smartDz = $('#smartDropzone');
+const smartInput = $('#smartFileInput');
+if (smartDz && smartInput) {
+  smartDz.addEventListener('click', () => smartInput.click());
+  smartInput.addEventListener('change', () => {
+    handleSmartFiles(smartInput.files);
+    smartInput.value = '';
+  });
+  ['dragenter', 'dragover'].forEach((ev) => smartDz.addEventListener(ev, (e) => { e.preventDefault(); smartDz.classList.add('drag'); }));
+  ['dragleave', 'drop'].forEach((ev) => smartDz.addEventListener(ev, (e) => { e.preventDefault(); smartDz.classList.remove('drag'); }));
+  smartDz.addEventListener('drop', (e) => handleSmartFiles(e.dataTransfer.files));
+}
+
+function handleSmartFiles(fileList) {
+  const arr = [...(fileList || [])];
+  if (!arr.length) return;
+  const f = arr[0];
+  const name = f.name.toLowerCase();
+
+  if (f.type === 'application/pdf' || name.endsWith('.pdf')) {
+    pendingSmartPdfFiles = arr;
+    $('#smartPdfChoice').hidden = false;
+    $('#smartPdfChoice').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    return;
+  }
+  if (/\.(heic|heif|jfif)$/i.test(name) || /^image\/hei/i.test(f.type)) {
+    navigateToTool('image-convert', 'heic-to-jpg');
+    addFiles(arr);
+    return;
+  }
+  if (f.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp|avif)$/i.test(name)) {
+    navigateToTool('image-compress');
+    addFiles(arr);
+    return;
+  }
+  if (f.type.startsWith('audio/') || /\.(mp3|wav|m4a|aac|ogg|flac)$/i.test(name)) {
+    navigateToTool('audio-extract');
+    addFiles(arr);
+    return;
+  }
+  navigateToTool('video-compress');
+  addFiles(arr);
+}
+
+$('#smartPdfChoice')?.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-pdfgo]');
+  if (!btn || !pendingSmartPdfFiles) return;
+  const files = pendingSmartPdfFiles;
+  pendingSmartPdfFiles = null;
+  $('#smartPdfChoice').hidden = true;
+  navigateToTool(btn.dataset.pdfgo);
+  addFiles(files);
 });
 
 // ---------------- Toast ----------------
@@ -332,6 +516,7 @@ const settingIds = [
   'aeFormat', 'aeBitrate', 'aeChannels',
   'edFontFamily', 'edColor', 'edFontSize', 'edBold', 'edStrokeSize',
   'pcMethod', 'pcTargetMB', 'pcPercent', 'pcQuality', 'pcGrayscale',
+  'psMode', 'psWmText', 'psWmColor', 'psWmAngle', 'psWmOpacity', 'psWmDoubleLine',
   'pmMode', 'pmRange',
   'p2iFormat', 'p2iScale', 'p2iRange',
   'i2pMerge', 'i2pSize', 'i2pOrient', 'i2pMargin',
@@ -392,6 +577,14 @@ function readSettings() {
     pcPercent: Number($('#pcPercent').value) || 50,
     pcQuality: $('#pcQuality').value,
     pcGrayscale: $('#pcGrayscale').checked,
+    // pdf-security
+    psMode: $('#psMode').value,
+    psWmText: $('#psWmText').value,
+    psWmColor: $('#psWmColor').value || '#dc2626',
+    psWmAngle: $('#psWmAngle').value,
+    psWmOpacity: Number($('#psWmOpacity').value) || 28,
+    psWmDoubleLine: $('#psWmDoubleLine').checked,
+    psPassword: $('#psPassword').value,
     // pdf-merge
     pmMode: $('#pmMode').value,
     pmRange: $('#pmRange').value.trim(),
@@ -488,6 +681,15 @@ function computeItemPlan(it, s) {
       advice: [`คลิกปุ่ม "✏️ เปิดในกระดานแก้ไข" หรือแก้ไขบนกระดานด้านบน แล้วกดบันทึกเป็นไฟล์ PDF`],
     };
   }
+  if (tool.id === 'pdf-security') {
+    return {
+      ext: 'pdf', width: it.meta.width, height: it.meta.height,
+      estBytes: it.file.size, rating: 'excellent',
+      advice: [s.psMode === 'unlock'
+        ? (it.meta.isEncrypted ? '🔒 ตรวจพบไฟล์ติดรหัสผ่าน — กรอกรหัสเดิมด้านขวาเพื่อปลดล็อกถาวร' : 'ไฟล์นี้ไม่ได้ล็อกรหัสผ่าน หรือพร้อมสร้างสำเนาไร้รหัส')
+        : `🖋️ คาดลายน้ำ "${(s.psWmText || '').split('\n')[0]}" ทับทุกหน้า`],
+    };
+  }
   if (tool.id === 'pdf-compress') {
     return makePdfCompressPlan(it.meta, it.file.size, {
       method: s.pcMethod,
@@ -542,10 +744,12 @@ function onSettingsChange() {
   $('#imgPercentLabel').textContent = `${s.imgPercent}%`;
   $$('#kbChips button').forEach((b) => b.classList.toggle('on', Number(b.dataset.kb) === s.imgTargetKB));
 
-  // ซ่อน/แสดงฟิลด์ของ pdf-compress
+  // ซ่อน/แสดงฟิลด์ของ pdf-compress & pdf-security
   $$('[data-pcshow]').forEach((el) => (el.hidden = el.dataset.pcshow !== s.pcMethod));
   $('#pcPercentLabel').textContent = `${s.pcPercent}%`;
   $$('#pdfMbChips button').forEach((b) => b.classList.toggle('on', Number(b.dataset.mb) === s.pcTargetMB));
+  $$('[data-psshow]').forEach((el) => (el.hidden = el.dataset.psshow !== s.psMode));
+  $('#psWmOpacityLabel').textContent = `${s.psWmOpacity}%`;
 
   // pdf-edit
   $('#edStrokeLabel').textContent = `${s.edStrokeSize} px`;
@@ -617,6 +821,16 @@ $('#pdfMbChips').addEventListener('click', (e) => {
   if (!b) return;
   $('#pcTargetMB').value = b.dataset.mb;
   onSettingsChange();
+});
+$('#wmPresetChips')?.addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-wm]');
+  if (!b) return;
+  $('#psWmText').value = b.dataset.wm;
+  onSettingsChange();
+});
+$('#psPwToggleBtn')?.addEventListener('click', () => {
+  const pw = $('#psPassword');
+  pw.type = pw.type === 'password' ? 'text' : 'password';
 });
 $('#edColorChips').addEventListener('click', (e) => {
   const b = e.target.closest('button[data-color]');
@@ -741,9 +955,9 @@ function addFiles(list) {
   const isImg = tool.kind === 'image' || tool.kind === 'image-pdf';
   const isPdf = tool.kind === 'pdf';
   const files = [...list].filter((f) => {
-    if (isImg) return f.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp|avif)$/i.test(f.name);
+    if (isImg) return f.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp|avif|heic|heif|jfif)$/i.test(f.name);
     if (isPdf) return f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
-    return f.type.startsWith('video/') || f.type.startsWith('audio/') || /\.(mp4|mov|m4v|webm|mkv|avi|3gp)$/i.test(f.name);
+    return f.type.startsWith('video/') || f.type.startsWith('audio/') || /\.(mp4|mov|m4v|webm|mkv|avi|3gp|mp3|wav|m4a|aac|ogg|flac)$/i.test(f.name);
   });
   if (!files.length) return toast(isImg ? 'กรุณาเลือกไฟล์รูปภาพ' : isPdf ? 'กรุณาเลือกไฟล์ PDF' : 'กรุณาเลือกไฟล์วิดีโอ');
 
@@ -783,6 +997,10 @@ async function probeItem(it) {
   try {
     if (it.kind === 'image') {
       it.meta = await probeImage(it.file);
+      if (it.meta.thumbUrl) {
+        const thumbImg = $(`.file[data-id="${it.id}"] .thumb img`);
+        if (thumbImg) thumbImg.src = it.meta.thumbUrl;
+      }
     } else if (it.kind === 'pdf') {
       it.meta = await probePdf(it.file);
       const thumbImg = $(`.file[data-id="${it.id}"] .thumb img`);
@@ -1726,6 +1944,18 @@ async function executeToolOnItem(it, tool, settings, callbacks) {
     const activeCount = it.editorSession.pages.filter((p) => !p.deleted).length;
     return { blob, ext: 'pdf', note: `บันทึกการแก้ไขแล้ว (${activeCount} หน้า)` };
   }
+  if (tool.id === 'pdf-security') {
+    if (settings.psMode === 'unlock') {
+      return await unlockPdf(it.file, settings.psPassword, callbacks);
+    }
+    return await watermarkPdf(it.file, {
+      text: settings.psWmText,
+      color: settings.psWmColor,
+      angle: settings.psWmAngle,
+      opacity: settings.psWmOpacity,
+      doubleLine: settings.psWmDoubleLine,
+    }, callbacks);
+  }
   if (tool.id === 'pdf-compress') {
     return await compressPdf(it.file, it.meta, {
       method: settings.pcMethod,
@@ -2189,18 +2419,27 @@ let activeCheckoutPkg = null;
 
 function renderWalletBadge() {
   const w = loadWallet();
+  const isPass = hasUnlimitedPass(w);
   const balEl = $('#coinBalanceText');
-  if (balEl) balEl.textContent = w.balance;
+  if (balEl) balEl.textContent = isPass ? `∞ (${w.balance})` : w.balance;
   const actionEl = $('#coinPillAction');
-  if (actionEl) actionEl.textContent = w.isGuest ? 'รับฟรี 15 🪙' : '+ เติมเหรียญ';
+  if (actionEl) actionEl.textContent = w.isGuest ? 'รับฟรี 15 🪙' : isPass ? '👑 VIP Pass' : '+ เติมเหรียญ';
   const dot = $('#coinDailyDot');
   if (dot) dot.hidden = !canClaimDaily(w);
 }
 
 function renderCoinModal() {
   const w = loadWallet();
+  const isPass = hasUnlimitedPass(w);
   renderWalletBadge();
-  $('#walletIdText').textContent = w.isGuest ? 'สถานะ: ผู้เยี่ยมชม (Guest)' : `Wallet ID: ${w.walletId}`;
+  if (w.isGuest) {
+    $('#walletIdText').textContent = 'สถานะ: ผู้เยี่ยมชม (Guest)';
+  } else if (isPass) {
+    const expDate = new Date(w.unlimitedUntil).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+    $('#walletIdText').textContent = `Wallet ID: ${w.walletId} · 👑 Unlimited ถึง ${expDate}`;
+  } else {
+    $('#walletIdText').textContent = `Wallet ID: ${w.walletId}`;
+  }
   $('#modalCoinBal').textContent = w.balance;
   $('#coinGuestBanner').hidden = !w.isGuest;
 
@@ -2217,14 +2456,14 @@ function renderCoinModal() {
   }
 
   $('#pkgGrid').innerHTML = COIN_PACKAGES.map((p) => `
-    <div class="pkg-card ${p.popular ? 'popular' : ''}">
-      ${p.popular ? '<span class="pkg-card__tag">ขายดีสุด ⭐</span>' : ''}
+    <div class="pkg-card ${p.popular ? 'popular' : ''} ${p.isPass ? 'pass-card' : ''}">
+      ${p.popular ? '<span class="pkg-card__tag">ขายดีสุด ⭐</span>' : p.isPass ? '<span class="pkg-card__tag" style="background:#d97706">คุ้มสายลุย 👑</span>' : ''}
       <div class="pkg-card__name">${esc(p.name)}</div>
-      <div class="pkg-card__coins">🪙 ${p.coins} <small style="font-size:12px;font-weight:500">Coins</small></div>
+      <div class="pkg-card__coins">${p.isPass ? '👑 ไม่อั้น' : `🪙 ${p.coins} <small style="font-size:12px;font-weight:500">Coins</small>`}</div>
       <div class="pkg-card__bonus">${esc(p.bonusText)}</div>
       <div class="pkg-card__desc">${esc(p.desc)}</div>
-      <button type="button" class="btn ${p.popular ? 'btn--primary' : 'btn--outline'} btn--sm pkg-card__btn" data-pkg="${p.id}">
-        เติม ฿${p.priceTHB} (PromptPay)
+      <button type="button" class="btn ${p.popular || p.isPass ? 'btn--primary' : 'btn--outline'} btn--sm pkg-card__btn" data-pkg="${p.id}">
+        ${p.isPass ? `สมัคร ฿${p.priceTHB} (30 วัน)` : `เติม ฿${p.priceTHB} (PromptPay)`}
       </button>
     </div>
   `).join('');
@@ -2310,7 +2549,9 @@ $('#pkgGrid').addEventListener('click', (e) => {
 
   // โหมดแสดง PromptPay QR จำลองเพื่อทดสอบระบบรับเหรียญ
   activeCheckoutPkg = pkg;
-  $('#qrPkgTitle').textContent = `แพ็กเกจ ${pkg.name} (+${pkg.coins} HeyCoins)`;
+  $('#qrPkgTitle').textContent = pkg.isPass
+    ? `แพ็กเกจ ${pkg.name} (ใช้งานไม่อั้น 30 วัน)`
+    : `แพ็กเกจ ${pkg.name} (+${pkg.coins} HeyCoins)`;
   $('#qrAmountText').textContent = `ยอดชำระ ${pkg.priceTHB}.00 บาท`;
   $('#qrCheckoutBox').hidden = false;
   $('#qrCheckoutBox').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -2325,7 +2566,9 @@ $('#qrConfirmSimBtn').onclick = () => {
   if (!activeCheckoutPkg) return;
   const res = addCoinsFromPurchase(activeCheckoutPkg.id, 'PromptPay');
   if (res.ok) {
-    toast(`🎉 ชำระเงินสำเร็จ! เติม +${res.added} HeyCoins เข้ากระเป๋าแล้ว`);
+    toast(res.passDays
+      ? `👑 เปิดใช้งาน Unlimited Pass ${res.passDays} วัน สำเร็จ! ใช้ฟรีทุกฟีเจอร์ไม่อั้น`
+      : `🎉 ชำระเงินสำเร็จ! เติม +${res.added} HeyCoins เข้ากระเป๋าแล้ว`);
     $('#qrCheckoutBox').hidden = true;
     $('#coinModalReason').hidden = true;
     activeCheckoutPkg = null;

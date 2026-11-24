@@ -123,14 +123,38 @@ export async function probe(file) {
   }
 }
 
-/** อ่านข้อมูลรูปภาพ */
-export function probeImage(file) {
+/** แปลงไฟล์ .HEIC / .HEIF จาก iPhone ให้เป็น Blob มาตรฐานที่เบราว์เซอร์ทุกตัวอ่านได้ */
+export async function normalizeImageFile(file) {
+  if (file._decodedBlob) return file._decodedBlob;
+  const isHeic = /\.(heic|heif)$/i.test(file.name) || /^image\/hei(c|f)/i.test(file.type || '');
+  if (!isHeic) return file;
+  const mod = await import('https://cdn.jsdelivr.net/npm/heic2any@0.0.4/+esm');
+  const heic2any = mod.default || mod;
+  const out = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.94 });
+  const blob = Array.isArray(out) ? out[0] : out;
+  file._decodedBlob = blob;
+  return blob;
+}
+
+/** อ่านข้อมูลรูปภาพ (รองรับทั้ง JPG, PNG, WebP, GIF, BMP, JFIF และ HEIC/HEIF) */
+export async function probeImage(file) {
+  const targetBlob = await normalizeImageFile(file);
   return new Promise((resolve, reject) => {
     const img = new Image();
-    const url = URL.createObjectURL(file);
+    const url = URL.createObjectURL(targetBlob);
     img.onload = () => {
+      const thumbUrl = targetBlob !== file ? URL.createObjectURL(targetBlob) : null;
       URL.revokeObjectURL(url);
-      resolve({ width: img.naturalWidth, height: img.naturalHeight, duration: 0, fps: 0, hasVideo: false, hasAudio: false, canDecode: true });
+      resolve({
+        width: img.naturalWidth,
+        height: img.naturalHeight,
+        thumbUrl,
+        duration: 0,
+        fps: 0,
+        hasVideo: false,
+        hasAudio: false,
+        canDecode: true,
+      });
     };
     img.onerror = () => {
       URL.revokeObjectURL(url);
@@ -546,10 +570,11 @@ function canvasToBlob(canvas, mime, quality) {
   return new Promise((resolve) => canvas.toBlob((b) => resolve(b), mime, quality));
 }
 
-function loadImage(file) {
+async function loadImage(file) {
+  const targetBlob = await normalizeImageFile(file);
   return new Promise((resolve, reject) => {
     const img = new Image();
-    const url = URL.createObjectURL(file);
+    const url = URL.createObjectURL(targetBlob);
     img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
     img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('โหลดรูปภาพไม่สำเร็จ')); };
     img.src = url;

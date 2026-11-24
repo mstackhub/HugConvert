@@ -1,16 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://mstackhub.github.io/HeyConvert/</loc><priority>1.0</priority></url>
-  <url><loc>https://mstackhub.github.io/HeyConvert/?tool=video-compress</loc><priority>0.95</priority></url>
   <url><loc>https://mstackhub.github.io/HeyConvert/?tool=pdf-edit</loc><priority>0.95</priority></url>
   <url><loc>https://mstackhub.github.io/HeyConvert/?tool=pdf-compress</loc><priority>0.95</priority></url>
-  <url><loc>https://mstackhub.github.io/HeyConvert/?tool=pdf-merge</loc><priority>0.90</priority></url>
+  <url><loc>https://mstackhub.github.io/HeyConvert/?tool=pdf-security</loc><priority>0.95</priority></url>
+  <url><loc>https://mstackhub.github.io/HeyConvert/?tool=video-compress</loc><priority>0.95</priority></url>
+  <url><loc>https://mstackhub.github.io/HeyConvert/?tool=image-convert</loc><priority>0.90</priority></url>
   <url><loc>https://mstackhub.github.io/HeyConvert/?tool=image-compress</loc><priority>0.90</priority></url>
+  <url><loc>https://mstackhub.github.io/HeyConvert/?tool=pdf-merge</loc><priority>0.90</priority></url>
   <url><loc>https://mstackhub.github.io/HeyConvert/?tool=pdf-to-image</loc><priority>0.85</priority></url>
   <url><loc>https://mstackhub.github.io/HeyConvert/?tool=image-to-pdf</loc><priority>0.85</priority></url>
   <url><loc>https://mstackhub.github.io/HeyConvert/?tool=video-convert</loc><priority>0.85</priority></url>
   <url><loc>https://mstackhub.github.io/HeyConvert/?tool=video-trim</loc><priority>0.80</priority></url>
   <url><loc>https://mstackhub.github.io/HeyConvert/?tool=video-to-gif</loc><priority>0.80</priority></url>
-  <url><loc>https://mstackhub.github.io/HeyConvert/?tool=image-convert</loc><priority>0.80</priority></url>
   <url><loc>https://mstackhub.github.io/HeyConvert/?tool=audio-extract</loc><priority>0.80</priority></url>
 </urlset>

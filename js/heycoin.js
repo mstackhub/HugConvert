@@ -41,7 +41,19 @@ export const COIN_PACKAGES = [
     bonusText: 'แถมฟรี +100 เหรียญ',
     priceTHB: 199,
     popular: false,
-    desc: 'คุ้มที่สุดสำหรับแอดมินเพจ สายตัดต่อ HR และบัญชี ปลดล็อก GPU/H.265/AV1 เต็มสูบ',
+    desc: 'คุ้มสำหรับแอดมินเพจ สายตัดต่อ HR เหรียญเก็บไว้ใช้ได้ตลอดชีพ ไม่มีวันหมดอายุ',
+    paymentUrl: '',
+  },
+  {
+    id: 'unlimited30',
+    name: 'Unlimited 30 วัน',
+    coins: 0,
+    passDays: 30,
+    bonusText: '🔥 ใช้ไม่อั้นทุกฟีเจอร์',
+    priceTHB: 149,
+    popular: false,
+    isPass: true,
+    desc: 'ใช้ GPU / Batch 20 ไฟล์ / แก้ไข & ปลดล็อก PDF ไม่อั้นตลอด 30 วัน (ถูกกว่าคู่แข่ง 7 เท่า!)',
     paymentUrl: '',
   },
 ];
@@ -151,6 +163,10 @@ export function redeemCoupon(codeRaw) {
   return { ok: true, added: promo.coins, msg: `🎉 เติมสำเร็จ +${promo.coins} HeyCoins!`, wallet: w };
 }
 
+export function hasUnlimitedPass(w = loadWallet()) {
+  return !w.isGuest && typeof w.unlimitedUntil === 'number' && w.unlimitedUntil > Date.now();
+}
+
 export function addCoinsFromPurchase(pkgId, refNote = '') {
   const w = loadWallet();
   if (w.isGuest) {
@@ -158,6 +174,19 @@ export function addCoinsFromPurchase(pkgId, refNote = '') {
   }
   const pkg = COIN_PACKAGES.find((p) => p.id === pkgId);
   if (!pkg) return { ok: false, msg: 'ไม่พบแพ็กเกจ' };
+
+  if (pkg.passDays) {
+    const base = Math.max(Date.now(), w.unlimitedUntil || 0);
+    w.unlimitedUntil = base + pkg.passDays * 86400 * 1000;
+    w.history.unshift({
+      ts: Date.now(),
+      delta: 0,
+      label: `👑 เปิดใช้งาน ${pkg.name}${refNote ? ` (${refNote})` : ''}`,
+    });
+    saveWallet(w);
+    return { ok: true, added: 0, passDays: pkg.passDays, wallet: w };
+  }
+
   w.balance += pkg.coins;
   w.history.unshift({
     ts: Date.now(),
@@ -192,6 +221,9 @@ export function spendCoins(amount, reason) {
  */
 export function calculateJobCost(toolId, count, s) {
   if (count <= 0) return { cost: 0, reason: '' };
+  if (hasUnlimitedPass()) {
+    return { cost: 0, reason: '👑 Unlimited Pass (ใช้ฟรีไม่อั้น)', isPass: true };
+  }
 
   const proCodecs = ['avc-gpu', 'hevc', 'hevc-gpu', 'av1'];
   const isProVideoCodec = toolId === 'video-compress' && !s.compatOld && proCodecs.includes(s.codec);
@@ -214,6 +246,9 @@ export function calculateJobCost(toolId, count, s) {
   if (toolId === 'pdf-edit') {
     return { cost: 1 * count, reason: 'บันทึกการแก้ไข & ลายเซ็น PDF' };
   }
+  if (toolId === 'pdf-security') {
+    return { cost: 1 * count, reason: s.psMode === 'unlock' ? 'ปลดล็อกรหัสผ่าน PDF' : 'คาดลายน้ำเอกสาร PDF' };
+  }
   if (toolId === 'pdf-compress') {
     if (s.pcMethod === 'size') return { cost: 1 * count, reason: `บีบอัด PDF ล็อกขนาด ${s.pcTargetMB} MB` };
     return { cost: 0, reason: 'โหมดมาตรฐานฟรี' };
@@ -232,6 +267,25 @@ export function calculateJobCost(toolId, count, s) {
 //  ข้อมูล SEO และคำถามพบบ่อย (FAQ) รายเครื่องมือ เพื่อให้ติดหน้าแรก Google
 // ============================================================
 export const SEO_CONTENT = {
+  home: {
+    title: 'HeyConvert — บีบอัดวิดีโอ รูปภาพ แก้ไข PDF ปลดล็อกรหัส PDF และแปลงไฟล์ออนไลน์ฟรี',
+    h2: 'ครบทุกเครื่องมือบีบอัด แปลงไฟล์ และจัดการเอกสาร PDF ในที่เดียว (ปลอดภัยระดับ PDPA 100%)',
+    keywords: 'บีบอัดวิดีโอ, แก้ไขไฟล์ pdf, เซ็นเอกสารออนไลน์, บีบอัด pdf, แปลง heic เป็น jpg, ปลดล็อกรหัส pdf, คาดลายน้ำบัตรประชาชน, HeyConvert',
+    intro: 'HeyConvert รวม 13 เครื่องมือสำคัญสำหรับคนทำงาน นักศึกษา และธุรกิจไทย ทั้งบีบอัดวิดีโอกำหนดขนาด MB ไม่ให้แตก แก้ไขและกรอกใบสมัคร PDF ฟอนต์มาตรฐานไทย คาดลายน้ำสำเนาเอกสาร ปลดล็อกรหัส PDF สเตทเมนต์ และแปลงรูป iPhone (.HEIC) ประมวลผลในเครื่องคุณเอง 100% ไม่อัปโหลดไฟล์ขึ้นเซิร์ฟเวอร์',
+    faqs: [
+      { q: 'ทำไม HeyConvert ถึงปลอดภัยกว่าเว็บแปลงไฟล์ทั่วไป?', a: 'เพราะไฟล์ของคุณไม่เคยถูกอัปโหลดออกจากเครื่องเลยแม้แต่ไบต์เดียว ระบบใช้เทคโนโลยี WebCodecs และ WebAssembly ประมวลผลในเบราว์เซอร์ของคุณเอง จึงปลอดภัยต่อข้อมูลส่วนบุคคลและเอกสารสำคัญตามมาตรฐาน PDPA 100%' },
+      { q: 'ต้องเสียค่ารายเดือนไหม?', a: 'ไม่ต้องผูกมัดรายเดือน! โหมดพื้นฐานใช้งานได้ฟรีทุกวัน และหากต้องการใช้ฟีเจอร์ระดับโปรหรือทำพร้อมกัน 20 ไฟล์ สามารถใช้เหรียญ HeyCoin ที่ไม่มีวันหมดอายุ หรือเปิด Unlimited Pass 30 วันในราคาเพียง 149 บาท' },
+    ],
+  },
+  'pdf-security': {
+    title: 'ปลดล็อกรหัสผ่าน PDF สเตทเมนต์ & คาดลายน้ำสำเนาเอกสารออนไลน์ ปลอดภัย PDPA — HeyConvert',
+    h2: 'ปลดล็อกรหัสผ่าน PDF (Unlock PDF) และคาดลายน้ำทับเอกสารสำคัญ (Watermark PDF)',
+    keywords: 'ปลดล็อก pdf, เอาพาสเวิร์ด pdf ออก, สเตทเมนต์ติดรหัส, คาดลายน้ำบัตรประชาชน, สำเนาถูกต้องออนไลน์, watermark pdf',
+    intro: 'ถอดรหัสผ่านไฟล์สเตทเมนต์ธนาคาร สลิปเงินเดือน หรือใบแจ้งหนี้ที่คุณทราบรหัสอยู่แล้วให้เปิดใช้งานต่อได้สะดวกโดยไม่ต้องกรอกรหัสซ้ำ หรือพิมพ์ข้อความคาดลายน้ำทับสำเนาบัตรประชาชน/สัญญา เช่น "สำเนาถูกต้อง ใช้สำหรับสมัครงานเท่านั้น" โดยไฟล์ไม่ถูกส่งออกจากเครื่องของคุณ 100%',
+    faqs: [
+      { q: 'เอาไฟล์สเตทเมนต์ธนาคารหรือบัตรประชาชนมาทำในเว็บนี้ปลอดภัยไหม?', a: 'ปลอดภัย 100% เพราะการถอดรหัสและคาดลายน้ำทำบนเครื่องของคุณเองในเบราว์เซอร์ ไม่มีการอัปโหลดไฟล์หรือรหัสผ่านไปยังเซิร์ฟเวอร์ใดๆ' },
+    ],
+  },
   'video-compress': {
     title: 'บีบอัดวิดีโอออนไลน์ ลดขนาดไฟล์ MP4 กำหนดขนาด MB ได้ ภาพไม่แตก — HeyConvert',
     h2: 'เว็บบีบอัดวิดีโอออนไลน์ (Video Compressor) กำหนดขนาด MB ได้ตามต้องการ',
