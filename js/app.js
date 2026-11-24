@@ -428,6 +428,7 @@ function route() {
   rebuildFileListDOM();
   syncEditorVisibility();
   refreshUI();
+  renderWatermarkPreview();
 }
 
 function toggleSidebar(open) {
@@ -956,6 +957,7 @@ function onSettingsChange() {
     }
   }
   refreshUI();
+  renderWatermarkPreview();
 }
 
 function buildCodecSelect() {
@@ -1163,6 +1165,7 @@ function addFiles(list) {
     probeItem(it);
   }
   refreshUI();
+  renderWatermarkPreview();
 }
 
 async function probeItem(it) {
@@ -1195,6 +1198,7 @@ async function probeItem(it) {
   }
   updateCard(it);
   refreshUI();
+  renderWatermarkPreview();
 }
 
 // ============================================================
@@ -2036,6 +2040,7 @@ function removeItem(it) {
   }
   syncEditorVisibility();
   refreshUI();
+  renderWatermarkPreview();
 }
 
 $('#clearBtn').onclick = () => {
@@ -2046,6 +2051,7 @@ $('#clearBtn').onclick = () => {
 $('#selectAll').addEventListener('change', (e) => {
   getItems().forEach((it) => { if (it.status === 'done') it.selected = e.target.checked; updateCard(it); });
   refreshUI();
+  renderWatermarkPreview();
 });
 
 // bulk rename
@@ -2714,6 +2720,7 @@ onAuthStateChange(() => {
   renderWalletBadge();
   if (state.toolId === 'topup') renderCoinModal();
   refreshUI();
+  renderWatermarkPreview();
 });
 
 // ============================================================
@@ -2986,6 +2993,7 @@ $('#dailyClaimBtn').onclick = () => {
   toast(res.msg);
   renderCoinModal();
   refreshUI();
+  renderWatermarkPreview();
 };
 
 $('#couponApplyBtn').onclick = () => {
