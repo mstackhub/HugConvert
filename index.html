@@ -393,6 +393,10 @@
             <div class="hist-stat-card__label">ใช้ไปทั้งหมด</div>
             <div class="hist-stat-card__val coin-minus" id="histPageOut">-0 <span class="hc-coin"></span></div>
           </div>
+          <div class="card hist-stat-card">
+            <div class="hist-stat-card__label">ยอดเติมสะสม <span class="hist-tier-pill" id="histPageTierBadge">Member</span></div>
+            <div class="hist-stat-card__val" id="histPageLifetime">0 HugCoins</div>
+          </div>
         </div>
 
         <div class="coin-history-box">
@@ -401,10 +405,28 @@
               <div class="history-title">รายการล่าสุด</div>
               <div class="history-stats" id="coinHistoryStats"></div>
             </div>
-            <div class="history-filters" id="coinHistoryFilters">
-              <button type="button" class="hist-tab active" data-hfilter="all">ทั้งหมด</button>
-              <button type="button" class="hist-tab" data-hfilter="in">รับเข้า (+)</button>
-              <button type="button" class="hist-tab" data-hfilter="out">ใช้ไป (-)</button>
+            <div class="history-controls">
+              <div class="history-date-bar">
+                <select id="histPeriodSelect" class="select hist-select" aria-label="ช่วงเวลา">
+                  <option value="all">ทุกช่วงเวลา</option>
+                  <option value="today">วันนี้</option>
+                  <option value="7d">7 วันล่าสุด</option>
+                  <option value="month_now">เดือนนี้</option>
+                  <option value="month">เลือกเดือน…</option>
+                  <option value="range">กำหนดช่วงวัน…</option>
+                </select>
+                <input type="month" id="histMonthInput" class="input hist-date-input" hidden aria-label="เลือกเดือน" />
+                <div class="hist-range-wrap" id="histRangeWrap" hidden>
+                  <input type="date" id="histStartDate" class="input hist-date-input" aria-label="ตั้งแต่วันที่" />
+                  <span class="muted">–</span>
+                  <input type="date" id="histEndDate" class="input hist-date-input" aria-label="ถึงวันที่" />
+                </div>
+              </div>
+              <div class="history-filters" id="coinHistoryFilters">
+                <button type="button" class="hist-tab active" data-hfilter="all">ทั้งหมด</button>
+                <button type="button" class="hist-tab" data-hfilter="in">รับเข้า (+)</button>
+                <button type="button" class="hist-tab" data-hfilter="out">ใช้ไป (-)</button>
+              </div>
             </div>
           </div>
           <div class="coin-history-scroll full-page">

@@ -2745,31 +2745,74 @@ function renderHistoryPage() {
   const hist = w.history || [];
   const totalIn = Math.round(hist.reduce((s, h) => s + (h.delta > 0 ? h.delta : 0), 0) * 10) / 10;
   const totalOut = Math.round(hist.reduce((s, h) => s + (h.delta < 0 ? Math.abs(h.delta) : 0), 0) * 10) / 10;
+  const { current, lifetimeTopup } = getVipTier(w);
   const balEl = $('#histPageBal');
   const inEl = $('#histPageIn');
   const outEl = $('#histPageOut');
+  const lifeEl = $('#histPageLifetime');
+  const tierEl = $('#histPageTierBadge');
   if (balEl) balEl.textContent = isPass ? `∞ (${w.balance} HugCoins)` : `${w.balance} HugCoins`;
   if (inEl) inEl.textContent = `+${totalIn} HugCoins`;
   if (outEl) outEl.textContent = `-${totalOut} HugCoins`;
+  if (lifeEl) lifeEl.textContent = `${lifetimeTopup.toLocaleString()} HugCoins`;
+  if (tierEl) tierEl.textContent = current.badge;
   renderCoinHistory(hist);
 }
 
 let coinHistoryFilter = 'all';
+
+function matchesHistoryDate(ts) {
+  const period = $('#histPeriodSelect')?.value || 'all';
+  if (period === 'all') return true;
+  const d = new Date(ts);
+  const now = new Date();
+  if (period === 'today') {
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+  }
+  if (period === '7d') {
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6).getTime();
+    return ts >= start;
+  }
+  if (period === 'month_now') {
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  }
+  if (period === 'month') {
+    const val = $('#histMonthInput')?.value; // YYYY-MM
+    if (!val) return true;
+    const [y, m] = val.split('-').map(Number);
+    return d.getFullYear() === y && d.getMonth() + 1 === m;
+  }
+  if (period === 'range') {
+    const sVal = $('#histStartDate')?.value;
+    const eVal = $('#histEndDate')?.value;
+    if (sVal) {
+      const sTime = new Date(`${sVal}T00:00:00`).getTime();
+      if (ts < sTime) return false;
+    }
+    if (eVal) {
+      const eTime = new Date(`${eVal}T23:59:59.999`).getTime();
+      if (ts > eTime) return false;
+    }
+    return true;
+  }
+  return true;
+}
 
 function renderCoinHistory(hist) {
   const statsEl = $('#coinHistoryStats');
   const listEl = $('#coinHistoryList');
   if (!listEl) return;
 
-  const totalIn = Math.round(hist.reduce((s, h) => s + (h.delta > 0 ? h.delta : 0), 0) * 10) / 10;
-  const totalOut = Math.round(hist.reduce((s, h) => s + (h.delta < 0 ? Math.abs(h.delta) : 0), 0) * 10) / 10;
+  const dateFiltered = hist.filter((h) => matchesHistoryDate(h.ts));
+  const totalIn = Math.round(dateFiltered.reduce((s, h) => s + (h.delta > 0 ? h.delta : 0), 0) * 10) / 10;
+  const totalOut = Math.round(dateFiltered.reduce((s, h) => s + (h.delta < 0 ? Math.abs(h.delta) : 0), 0) * 10) / 10;
   if (statsEl) {
-    statsEl.innerHTML = hist.length
-      ? `<span class="coin-plus">รับรวม +${totalIn} เหรียญ</span> · <span class="coin-minus">ใช้ไป -${totalOut} เหรียญ</span> · <span class="muted">${hist.length} รายการล่าสุด</span>`
-      : '<span class="muted">ยังไม่มีประวัติรายการ</span>';
+    statsEl.innerHTML = dateFiltered.length
+      ? `<span class="coin-plus">รับรวม +${totalIn} เหรียญ</span> · <span class="coin-minus">ใช้ไป -${totalOut} เหรียญ</span> · <span class="muted">${dateFiltered.length} รายการ</span>`
+      : '<span class="muted">ไม่พบรายการในช่วงเวลาที่เลือก</span>';
   }
 
-  const filtered = hist.filter((h) => {
+  const filtered = dateFiltered.filter((h) => {
     if (coinHistoryFilter === 'in') return h.delta >= 0;
     if (coinHistoryFilter === 'out') return h.delta < 0;
     return true;
@@ -2777,7 +2820,7 @@ function renderCoinHistory(hist) {
 
   if (!filtered.length) {
     listEl.innerHTML = hist.length
-      ? '<tr><td colspan="4" class="coin-hist-empty muted">ไม่มีรายการในหมวดหมู่นี้</td></tr>'
+      ? '<tr><td colspan="4" class="coin-hist-empty muted">ไม่มีรายการในช่วงเวลาหรือหมวดหมู่นี้</td></tr>'
       : '<tr><td colspan="4" class="coin-hist-empty muted">ยังไม่มีประวัติรายการ (เข้าสู่ระบบเพื่อรับโบนัสเริ่มต้น +15 HugCoins)</td></tr>';
     return;
   }
@@ -2801,6 +2844,21 @@ function renderCoinHistory(hist) {
     `;
   }).join('');
 }
+
+$('#histPeriodSelect')?.addEventListener('change', (e) => {
+  const v = e.target.value;
+  const mEl = $('#histMonthInput');
+  const rEl = $('#histRangeWrap');
+  if (mEl) {
+    mEl.hidden = v !== 'month';
+    if (v === 'month' && !mEl.value) mEl.value = new Date().toISOString().slice(0, 7);
+  }
+  if (rEl) rEl.hidden = v !== 'range';
+  renderCoinHistory(loadWallet().history || []);
+});
+$('#histMonthInput')?.addEventListener('change', () => renderCoinHistory(loadWallet().history || []));
+$('#histStartDate')?.addEventListener('change', () => renderCoinHistory(loadWallet().history || []));
+$('#histEndDate')?.addEventListener('change', () => renderCoinHistory(loadWallet().history || []));
 
 $('#coinHistoryFilters')?.addEventListener('click', (e) => {
   const btn = e.target.closest('[data-hfilter]');
