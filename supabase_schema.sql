@@ -180,7 +180,7 @@ language plpgsql
 security definer set search_path = public
 as $$
 declare
-  v_new_bal integer;
+  v_new_bal numeric(10,1);
 begin
   -- ป้องกันการเติมซ้ำหาก Webhook และ Polling เรียกพร้อมกัน
   if exists (select 1 from public.coin_transactions where payment_ref = p_payment_ref) then
@@ -190,12 +190,14 @@ begin
   if p_pass_days > 0 then
     update public.wallets
     set unlimited_until = greatest(now(), coalesce(unlimited_until, now())) + (p_pass_days || ' days')::interval,
+        lifetime_topup = lifetime_topup + 450,
         updated_at = now()
     where user_id = p_user_id
     returning balance into v_new_bal;
   else
     update public.wallets
     set balance = balance + p_coins,
+        lifetime_topup = lifetime_topup + coalesce(p_coins, 0),
         updated_at = now()
     where user_id = p_user_id
     returning balance into v_new_bal;
@@ -207,3 +209,21 @@ begin
   return jsonb_build_object('ok', true, 'balance', v_new_bal);
 end;
 $$;
+
+-- 8. ตารางสถิติการใช้งานเครื่องมือ (Tool Usage Analytics สำหรับ Admin Dashboard)
+create table if not exists public.tool_usage (
+  id bigint generated always as identity primary key,
+  tool_id text not null,
+  user_id uuid references auth.users(id) on delete set null,
+  file_count integer not null default 1,
+  coins_spent numeric(10,1) not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_tool_usage_created
+  on public.tool_usage (created_at desc);
+
+create index if not exists idx_tool_usage_tool
+  on public.tool_usage (tool_id, created_at desc);
+
+alter table public.tool_usage enable row level security;

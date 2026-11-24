@@ -2426,9 +2426,22 @@ $('#startBtn').onclick = async () => {
     if (!state.cancelled) {
       $('#overallBar').style.width = '100%';
       $('#overallPct').textContent = '100%';
-      const anyDone = queue.some((it) => it.status === 'done');
-      if (anyDone && jobCost.cost > 0) {
-        spendCoins(jobCost.cost, `⚡ ${tool.label} (${jobCost.reason})`);
+      const doneItems = queue.filter((it) => it.status === 'done');
+      if (doneItems.length > 0) {
+        if (jobCost.cost > 0) {
+          spendCoins(jobCost.cost, `⚡ ${tool.label} (${jobCost.reason})`);
+        }
+        const curUser = getCurrentUser();
+        fetch('/api/track-usage', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            toolId: tool.id,
+            fileCount: doneItems.length,
+            coinsSpent: jobCost.cost || 0,
+            userId: curUser?.id || null,
+          }),
+        }).catch(() => {});
       }
     }
     refreshUI();

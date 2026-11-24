@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>HugConvert Admin — หลังบ้าน CRM & สถิติเครื่องมือ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .admin-wrap { max-width: 1140px; margin: 0 auto; padding: 24px 20px 64px; }
+    .admin-kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 20px; }
+    .admin-card { padding: 20px 22px; margin-bottom: 20px; }
+    .admin-card__head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; }
+    .admin-card__head h2 { margin: 0; font-size: 17px; }
+    .admin-table-wrap { overflow-x: auto; }
+    .admin-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    .admin-table th { text-align: left; padding: 10px 12px; background: var(--bg); color: var(--muted); font-size: 12px; font-weight: 600; border-bottom: 1px solid var(--line); }
+    .admin-table td { padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+    .admin-table tr:last-child td { border-bottom: 0; }
+    .tool-bar-bg { width: 120px; height: 8px; border-radius: 99px; background: var(--surface-2); overflow: hidden; display: inline-block; vertical-align: middle; margin-right: 8px; }
+    .tool-bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--primary), #6366f1); }
+    .admin-login-box { max-width: 420px; margin: 48px auto; padding: 28px; }
+    @media (max-width: 900px) { .admin-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 580px) { .admin-kpi-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar__inner">
+      <div class="topbar__left">
+        <a href="index.html" class="brand-link">
+          <div class="logo">HC</div>
+          <span class="brand__name">HugConvert Admin</span>
+        </a>
+      </div>
+      <div class="topbar__actions">
+        <span class="muted" id="adminEmailLabel"></span>
+        <a href="index.html" class="btn btn--sm btn--outline">← กลับหน้าเว็บ</a>
+        <button type="button" class="btn btn--sm btn--ghost danger" id="adminLogoutBtn" hidden>ออกจากระบบ</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="admin-wrap">
+    <!-- Login Gate -->
+    <div class="card admin-login-box" id="adminLoginCard" hidden>
+      <h2 style="margin:0 0 6px;">เข้าสู่ระบบหลังบ้าน Admin</h2>
+      <p class="muted" style="margin:0 0 16px;">เฉพาะอีเมลที่ตั้งค่าใน <code>ADMIN_EMAILS</code> บน Vercel เท่านั้น</p>
+      <div class="auth-feedback err" id="adminLoginErr" hidden></div>
+      <button type="button" class="btn btn--google btn--block" id="adminGoogleBtn" style="margin-bottom:12px;">เข้าสู่ระบบด้วย Google</button>
+      <form id="adminLoginForm" class="stack">
+        <div class="field">
+          <label for="admEmail">อีเมล</label>
+          <input type="email" id="admEmail" class="input" required placeholder="admin@example.com" />
+        </div>
+        <div class="field">
+          <label for="admPw">รหัสผ่าน</label>
+          <input type="password" id="admPw" class="input" required />
+        </div>
+        <button type="submit" class="btn btn--primary btn--block">เข้าสู่ระบบ</button>
+      </form>
+    </div>
+
+    <!-- Error / Unauthorized Banner -->
+    <div class="banner banner--error" id="adminErrorBanner" hidden></div>
+
+    <!-- Main Dashboard -->
+    <div id="adminDashContent" hidden>
+      <!-- KPIs -->
+      <div class="admin-kpi-grid">
+        <div class="card hist-stat-card">
+          <div class="hist-stat-card__label">สมาชิกทั้งหมด</div>
+          <div class="hist-stat-card__val" id="kpiUsers">0</div>
+          <div class="muted" style="font-size:12px;margin-top:4px;" id="kpiPass">VIP Pass ใช้งาน: 0</div>
+        </div>
+        <div class="card hist-stat-card">
+          <div class="hist-stat-card__label">ยอดเติมสะสมรวม</div>
+          <div class="hist-stat-card__val coin-plus" id="kpiLifetime">0</div>
+          <div class="muted" style="font-size:12px;margin-top:4px;" id="kpiTiers">Silver 0 · Gold 0 · Platinum 0</div>
+        </div>
+        <div class="card hist-stat-card">
+          <div class="hist-stat-card__label">งานที่ประมวลผลแล้ว</div>
+          <div class="hist-stat-card__val" id="kpiRuns">0</div>
+          <div class="muted" style="font-size:12px;margin-top:4px;" id="kpiFiles">รวม 0 ไฟล์</div>
+        </div>
+        <div class="card hist-stat-card">
+          <div class="hist-stat-card__label">HugCoins คงเหลือในระบบ</div>
+          <div class="hist-stat-card__val" id="kpiBalance">0</div>
+          <div class="muted" style="font-size:12px;margin-top:4px;">รวมทุกกระเป๋าสมาชิก</div>
+        </div>
+      </div>
+
+      <!-- Tool Usage Analytics -->
+      <section class="card admin-card">
+        <div class="admin-card__head">
+          <div>
+            <h2>🏆 อันดับเครื่องมือที่ลูกค้าใช้บ่อยที่สุด</h2>
+            <p class="muted" style="margin:2px 0 0;">นับทุกครั้งที่ลูกค้าประมวลผลไฟล์สำเร็จ</p>
+          </div>
+          <select id="adminRangeSelect" class="select hist-select">
+            <option value="today">วันนี้</option>
+            <option value="7d">7 วันล่าสุด</option>
+            <option value="30d" selected>30 วันล่าสุด</option>
+            <option value="all">ทั้งหมด</option>
+          </select>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>อันดับ</th>
+                <th>เครื่องมือ</th>
+                <th>จำนวนครั้งที่ใช้</th>
+                <th>จำนวนไฟล์</th>
+                <th>ใช้ HugCoins</th>
+                <th>สัดส่วน</th>
+              </tr>
+            </thead>
+            <tbody id="topToolsBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Customer CRM -->
+      <section class="card admin-card">
+        <div class="admin-card__head">
+          <div>
+            <h2>👥 รายชื่อลูกค้า & จัดการเหรียญ (CRM)</h2>
+            <p class="muted" style="margin:2px 0 0;">ค้นหาด้วยอีเมลหรือ Wallet ID เพื่อดูระดับ VIP หรือเติมเหรียญให้ลูกค้า</p>
+          </div>
+          <input type="search" id="adminUserSearch" class="input" style="max-width:280px;" placeholder="ค้นหาอีเมล หรือ HC-..." />
+        </div>
+        <div class="admin-table-wrap" style="max-height:380px;overflow-y:auto;">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>ลูกค้า</th>
+                <th>Wallet ID</th>
+                <th>ระดับ VIP</th>
+                <th>คงเหลือ</th>
+                <th>ยอดเติมสะสม</th>
+                <th style="text-align:right">จัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="adminUsersBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Recent Transactions -->
+      <section class="card admin-card">
+        <div class="admin-card__head">
+          <h2>📜 ธุรกรรมล่าสุดทั้งระบบ</h2>
+        </div>
+        <div class="admin-table-wrap" style="max-height:360px;overflow-y:auto;">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>ลูกค้า</th>
+                <th>รายการ</th>
+                <th>วัน-เวลา</th>
+                <th style="text-align:right">จำนวน</th>
+              </tr>
+            </thead>
+            <tbody id="adminTxBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Adjust Modal -->
+  <div class="modal-backdrop" id="adjustModal" hidden>
+    <div class="modal card" style="max-width:440px;">
+      <div class="modal__head">
+        <h3 style="margin:0;">ปรับยอดเหรียญ / ให้ Unlimited Pass</h3>
+        <button type="button" class="icon-btn" id="adjCloseBtn">✕</button>
+      </div>
+      <p class="muted" id="adjTargetLabel" style="margin:4px 0 14px;"></p>
+      <form id="adjustForm" class="stack">
+        <div class="field">
+          <label for="adjDelta">เพิ่ม/ลด HugCoins (ใส่เลขติดลบเพื่อหัก)</label>
+          <input type="number" step="0.5" id="adjDelta" class="input" value="50" />
+        </div>
+        <div class="field">
+          <label for="adjPassDays">หรือมอบ Unlimited Pass (จำนวนวัน)</label>
+          <input type="number" min="0" id="adjPassDays" class="input" value="0" />
+        </div>
+        <div class="field">
+          <label for="adjReason">หมายเหตุ</label>
+          <input type="text" id="adjReason" class="input" placeholder="เช่น โอนตรง / ชดเชยระบบ" />
+        </div>
+        <button type="submit" class="btn btn--primary btn--block">บันทึกการเปลี่ยนแปลง</button>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initAuth, getCurrentUser, getAccessToken, loginWithEmail, loginWithGoogle, logoutUser } from './js/auth.js';
+
+    const TOOL_LABELS = {
+      'pdf-edit': '✏️ แก้ไข & กรอกฟอร์ม PDF',
+      'pdf-compress': '📉 บีบอัดไฟล์ PDF',
+      'pdf-security': '🔐 ปลดล็อก & ลายน้ำ PDF',
+      'pdf-merge': '📑 รวม & แยกหน้า PDF',
+      'pdf-to-image': '📸 PDF เป็นรูปภาพ',
+      'image-to-pdf': '📄 รูปภาพเป็น PDF',
+      'video-compress': '🎬 บีบอัดวิดีโอ',
+      'video-convert': '🔄 แปลงไฟล์วิดีโอ',
+      'video-trim': '✂️ ตัดวิดีโอ',
+      'video-to-gif': '🎞️ วิดีโอเป็น GIF',
+      'image-compress': '🖼️ บีบอัดรูปภาพ',
+      'image-convert': '🔁 แปลงรูป (HEIC)',
+      'audio-extract': '🎵 แยก & บีบอัดเสียง MP3',
+    };
+
+    const $ = (s) => document.querySelector(s);
+    const esc = (s) => String(s || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    let cachedUsers = [];
+    let activeAdjUser = null;
+
+    async function loadDashboard() {
+      const user = getCurrentUser();
+      if (!user) {
+        $('#adminLoginCard').hidden = false;
+        $('#adminDashContent').hidden = true;
+        $('#adminLogoutBtn').hidden = true;
+        $('#adminErrorBanner').hidden = true;
+        return;
+      }
+      $('#adminLoginCard').hidden = true;
+      $('#adminLogoutBtn').hidden = false;
+      $('#adminEmailLabel').textContent = user.email;
+
+      const token = await getAccessToken();
+      const range = $('#adminRangeSelect').value;
+      const res = await fetch(`/api/admin-data?range=${encodeURIComponent(range)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        $('#adminDashContent').hidden = true;
+        $('#adminErrorBanner').hidden = false;
+        $('#adminErrorBanner').textContent = `⚠️ ${data.error || 'ไม่สามารถโหลดข้อมูลหลังบ้านได้'}`;
+        return;
+      }
+
+      $('#adminErrorBanner').hidden = true;
+      $('#adminDashContent').hidden = false;
+
+      const s = data.summary;
+      $('#kpiUsers').textContent = s.totalUsers.toLocaleString();
+      $('#kpiPass').textContent = `VIP Pass ใช้งาน: ${s.activePassCount} คน`;
+      $('#kpiLifetime').textContent = `${s.totalLifetimeTopup.toLocaleString()} HugCoins`;
+      $('#kpiTiers').textContent = `Silver ${s.tierCounts.silver} · Gold ${s.tierCounts.gold} · Platinum ${s.tierCounts.platinum}`;
+      $('#kpiRuns').textContent = `${s.totalRuns.toLocaleString()} ครั้ง`;
+      $('#kpiFiles').textContent = `รวม ${s.totalFiles.toLocaleString()} ไฟล์`;
+      $('#kpiBalance').textContent = `${s.totalCoinsBalance.toLocaleString()} HugCoins`;
+
+      // Render Top Tools
+      const maxRuns = Math.max(1, ...(data.topTools || []).map((t) => t.runs));
+      $('#topToolsBody').innerHTML = (data.topTools || []).length
+        ? data.topTools.map((t, i) => {
+            const pct = s.totalRuns ? Math.round((t.runs / s.totalRuns) * 100) : 0;
+            const barW = Math.round((t.runs / maxRuns) * 100);
+            return `
+              <tr>
+                <td><b>#${i + 1}</b></td>
+                <td><b>${esc(TOOL_LABELS[t.toolId] || t.toolId)}</b></td>
+                <td>${t.runs.toLocaleString()} ครั้ง</td>
+                <td>${t.files.toLocaleString()} ไฟล์</td>
+                <td>${t.coinsSpent} HugCoins</td>
+                <td><span class="tool-bar-bg"><span class="tool-bar-fill" style="width:${barW}%"></span></span>${pct}%</td>
+              </tr>
+            `;
+          }).join('')
+        : '<tr><td colspan="6" class="muted" style="text-align:center;padding:20px;">ยังไม่มีข้อมูลการใช้งานในช่วงเวลานี้</td></tr>';
+
+      cachedUsers = data.users || [];
+      renderUsersTable();
+
+      $('#adminTxBody').innerHTML = (data.recentTx || []).map((t) => {
+        const d = new Date(t.createdAt);
+        const dt = `${d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })} ${d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}`;
+        const cls = t.delta > 0 ? 'coin-plus' : t.delta < 0 ? 'coin-minus' : 'coin-pass';
+        const amt = t.delta === 0 ? 'VIP Pass' : `${t.delta > 0 ? '+' : ''}${t.delta}`;
+        return `
+          <tr>
+            <td>${esc(t.email)}</td>
+            <td>${esc(t.label)}</td>
+            <td class="muted">${dt}</td>
+            <td class="${cls}" style="text-align:right;font-weight:700;">${amt}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderUsersTable() {
+      const q = ($('#adminUserSearch').value || '').trim().toLowerCase();
+      const filtered = cachedUsers.filter((u) =>
+        !q || u.email.toLowerCase().includes(q) || u.walletCode.toLowerCase().includes(q) || u.name.toLowerCase().includes(q)
+      );
+      $('#adminUsersBody').innerHTML = filtered.length
+        ? filtered.map((u) => `
+            <tr>
+              <td><b>${esc(u.email)}</b>${u.name ? `<div class="muted" style="font-size:12px">${esc(u.name)}</div>` : ''}</td>
+              <td><code>${esc(u.walletCode)}</code></td>
+              <td><span class="hist-tier-pill">${esc(u.tier)}</span></td>
+              <td><b>${u.balance}</b> HugCoins</td>
+              <td>${u.lifetimeTopup.toLocaleString()} HugCoins</td>
+              <td style="text-align:right">
+                <button type="button" class="btn btn--sm btn--outline" data-adj="${u.id}">+ เติม / Pass</button>
+              </td>
+            </tr>
+          `).join('')
+        : '<tr><td colspan="6" class="muted" style="text-align:center;padding:20px;">ไม่พบสมาชิกที่ค้นหา</td></tr>';
+    }
+
+    $('#adminUserSearch').addEventListener('input', renderUsersTable);
+    $('#adminRangeSelect').addEventListener('change', loadDashboard);
+
+    $('#adminUsersBody').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-adj]');
+      if (!btn) return;
+      activeAdjUser = cachedUsers.find((u) => u.id === btn.dataset.adj);
+      if (!activeAdjUser) return;
+      $('#adjTargetLabel').textContent = `ลูกค้า: ${activeAdjUser.email} (${activeAdjUser.walletCode})`;
+      $('#adjustModal').hidden = false;
+    });
+
+    $('#adjCloseBtn').onclick = () => ($('#adjustModal').hidden = true);
+    $('#adjustForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!activeAdjUser) return;
+      const token = await getAccessToken();
+      const res = await fetch('/api/admin-adjust', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          userId: activeAdjUser.id,
+          deltaCoins: Number($('#adjDelta').value) || 0,
+          passDays: Number($('#adjPassDays').value) || 0,
+          reason: $('#adjReason').value,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) return alert(data.error || 'เกิดข้อผิดพลาด');
+      $('#adjustModal').hidden = true;
+      await loadDashboard();
+    });
+
+    $('#adminGoogleBtn').onclick = () => loginWithGoogle();
+    $('#adminLoginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const res = await loginWithEmail({ email: $('#admEmail').value, password: $('#admPw').value });
+      if (!res.ok) {
+        $('#adminLoginErr').hidden = false;
+        $('#adminLoginErr').textContent = res.msg;
+        return;
+      }
+      await loadDashboard();
+    });
+    $('#adminLogoutBtn').onclick = async () => {
+      await logoutUser();
+      await loadDashboard();
+    };
+
+    await initAuth();
+    await loadDashboard();
+  </script>
+</body>
+</html>

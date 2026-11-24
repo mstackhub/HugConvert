@@ -68,6 +68,13 @@ export function getCurrentUser() {
   return null;
 }
 
+export async function getAccessToken() {
+  const sb = await getSupabase();
+  if (!sb) return '';
+  const { data } = await sb.auth.getSession();
+  return data?.session?.access_token || '';
+}
+
 function setCurrentUser(user) {
   if (user) localStorage.setItem(SESSION_KEY, JSON.stringify(user));
   else localStorage.removeItem(SESSION_KEY);
