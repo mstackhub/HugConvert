@@ -174,7 +174,7 @@ function updateSeoForTool(tool) {
   if (ogTitle) ogTitle.setAttribute('content', seo.title);
   if (ogDesc) ogDesc.setAttribute('content', seo.intro);
   if (canonical) {
-    const base = 'https://mstackhub.github.io/beebfile/';
+    const base = 'https://mstackhub.github.io/HeyConvert/';
     canonical.setAttribute('href', tool.id === 'video-compress' ? base : `${base}?tool=${tool.id}`);
   }
 
