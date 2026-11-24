@@ -859,6 +859,65 @@ input[type="range"] { width: 100%; accent-color: var(--primary); }
   line-height: 1.5;
 }
 
+/* ===== Dedicated Pricing Section ===== */
+.pricing-section { padding: 24px 26px; }
+.pricing-section__head {
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
+  margin-bottom: 18px;
+}
+.pricing-section__head h3 { margin: 0; font-size: 18px; }
+.pricing-section__head p { margin: 2px 0 0; }
+.pricing-section__pay {
+  font-size: 12.5px; font-weight: 600; color: var(--text-2);
+  background: var(--bg); border: 1px solid var(--line); padding: 6px 12px; border-radius: 99px;
+}
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+.price-card {
+  position: relative;
+  display: flex; flex-direction: column;
+  padding: 20px 18px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  transition: transform .15s, border-color .15s, box-shadow .15s;
+}
+.price-card:hover {
+  transform: translateY(-2px);
+  border-color: #c7d2fe;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
+}
+.price-card.popular {
+  border: 1.5px solid var(--primary);
+  background: #fafaff;
+  box-shadow: 0 6px 20px rgba(79, 70, 229, .09);
+}
+.price-card.pass {
+  border: 1.5px solid #f59e0b;
+  background: #fffdf5;
+}
+.price-card__tag {
+  position: absolute; top: -10px; right: 14px;
+  background: var(--primary); color: #fff;
+  font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 99px;
+}
+.price-card__tag.warn { background: #d97706; }
+.price-card__name { font-size: 14px; font-weight: 700; color: var(--text-2); }
+.price-card__price {
+  font-size: 30px; font-weight: 700; color: var(--text); line-height: 1.15; margin-top: 8px;
+}
+.price-card__price span { font-size: 14px; font-weight: 500; color: var(--muted); }
+.price-card__coins { font-size: 15px; font-weight: 700; color: var(--primary); margin-top: 4px; }
+.price-card__note { font-size: 12px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+.price-card__note.ok { color: var(--ok); }
+.price-card__desc {
+  font-size: 12.5px; color: var(--muted); line-height: 1.5;
+  margin: 10px 0 16px; flex: 1;
+}
+
 /* ===== Subtle Clean SEO Footer Guide ===== */
 .seo-article {
   margin-top: 32px; padding: 24px 26px;
@@ -968,7 +1027,7 @@ input[type="range"] { width: 100%; accent-color: var(--primary); }
 
 @media (max-width: 900px) {
   .hub-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .why-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .why-grid, .pricing-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .site-footer__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
@@ -1002,7 +1061,7 @@ input[type="range"] { width: 100%; accent-color: var(--primary); }
 
 @media (max-width: 580px) {
   .hub-grid { grid-template-columns: 1fr; }
-  .why-grid { grid-template-columns: 1fr; }
+  .why-grid, .pricing-grid { grid-template-columns: 1fr; }
   .site-footer__grid { grid-template-columns: 1fr; gap: 20px; }
   .pkg-grid { grid-template-columns: 1fr; }
   .file { grid-template-columns: auto 72px minmax(0, 1fr); gap: 10px; padding: 12px; }
