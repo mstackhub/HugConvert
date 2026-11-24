@@ -1,5 +1,5 @@
 {
-  "name": "heyconvert-web",
+  "name": "hugconvert-web",
   "version": "1.0.0",
   "description": "เว็บบีบอัดวิดีโอ บีบอัดรูปภาพ แปลงไฟล์ ตัดวิดีโอ ทำ GIF และแยกเสียง (ทำงานในเบราว์เซอร์ 100%)",
   "private": true,

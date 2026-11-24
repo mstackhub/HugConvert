@@ -241,7 +241,7 @@ function updateSeoForTool(tool) {
   if (ogTitle) ogTitle.setAttribute('content', seo.title);
   if (ogDesc) ogDesc.setAttribute('content', seo.intro);
   if (canonical) {
-    const base = 'https://mstackhub.github.io/HeyConvert/';
+    const base = 'https://mstackhub.github.io/HugConvert/';
     canonical.setAttribute('href', tool.id === 'video-compress' ? base : `${base}?tool=${tool.id}`);
   }
 
@@ -266,7 +266,7 @@ function updateSeoForTool(tool) {
       {
         '@context': 'https://schema.org',
         '@type': 'SoftwareApplication',
-        name: `${tool.label} — HeyConvert`,
+        name: `${tool.label} — HugConvert`,
         applicationCategory: 'MultimediaApplication',
         operatingSystem: 'Web, Windows, macOS, iOS, Android',
         offers: { '@type': 'Offer', price: '0', priceCurrency: 'THB' },
@@ -300,8 +300,9 @@ function route() {
   const params = new URLSearchParams(location.search);
   if (params.get('preset')) applyUrlPreset(params.get('preset'));
 
-  $$('.nav__item').forEach((a) => a.classList.toggle('active', a.dataset.id === tool.id));
-  $('#pageTitle').textContent = tool.id === 'home' ? 'HeyConvert — รวมเครื่องมือไฟล์มีเดีย & PDF' : tool.label;
+  $$('.nav__item, .topnav__menu a').forEach((a) => a.classList.toggle('active', a.dataset.id === tool.id));
+  $$('.topnav__link[data-nav="home"]').forEach((a) => a.classList.toggle('active', tool.id === 'home'));
+  $('#pageTitle').textContent = tool.id === 'home' ? 'HugConvert — รวมเครื่องมือไฟล์มีเดีย & PDF' : tool.label;
   $('#pageDesc').textContent = tool.desc;
   $('#settingsTitle').textContent = tool.settingsTitle;
   updateSeoForTool(tool);
@@ -355,7 +356,7 @@ function route() {
   }
 
   $('#renamePattern').value = `{name}${tool.suffix}`;
-  $('#zipName').value = `heyconvert-${tool.id}`;
+  $('#zipName').value = `hugconvert-${tool.id}`;
 
   toggleSidebar(false);
   onSettingsChange();
@@ -410,13 +411,11 @@ function renderHubCards() {
   }
   grid.innerHTML = list.map((t) => `
     <a class="tool-card" href="?tool=${t.id}" data-cat="${t.cat}">
-      <div class="tool-card__top">
-        <span class="tool-card__icon">${t.icon}</span>
-        <span class="tool-card__cat">${esc(t.catLabel || t.cat.toUpperCase())}</span>
+      <span class="tool-card__icon">${t.icon}</span>
+      <div class="tool-card__body">
+        <div class="tool-card__title">${esc(t.label)}</div>
+        <div class="tool-card__desc">${esc(t.desc)}</div>
       </div>
-      <div class="tool-card__title">${esc(t.label)}</div>
-      <div class="tool-card__desc">${esc(t.desc)}</div>
-      <div class="tool-card__go">เปิดใช้งานเครื่องมือ →</div>
     </a>
   `).join('');
 }
@@ -891,7 +890,7 @@ $('#demoBtn').addEventListener('click', async (e) => {
     ctx.fillStyle = '#fff';
     ctx.font = 'bold 54px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('HeyConvert Sample Image (1280×720)', 640, 350);
+    ctx.fillText('HugConvert Sample Image (1280×720)', 640, 350);
     ctx.font = '28px sans-serif';
     ctx.fillText('ทดสอบบีบอัดและแปลงไฟล์รูปภาพ', 640, 410);
     c.toBlob((blob) => {
@@ -945,7 +944,7 @@ async function createSampleVideoFile() {
     ctx.arc(100 + (i / totalFrames) * 440, 180 + Math.sin(t * Math.PI * 2) * 70, 36, 0, Math.PI * 2);
     ctx.fill();
     ctx.font = 'bold 28px sans-serif';
-    ctx.fillText(`HeyConvert Sample Video  ${t.toFixed(1)}s`, 110, 60);
+    ctx.fillText(`HugConvert Sample Video  ${t.toFixed(1)}s`, 110, 60);
     await source.add(t, 1 / fps);
   }
   await output.finalize();
@@ -2231,7 +2230,7 @@ async function download(items) {
         entries[name] = [new Uint8Array(await blob.arrayBuffer()), { level: 0 }];
       }
       const zipped = zipSync(entries);
-      downloadBlob(new Blob([zipped], { type: 'application/zip' }), `${sanitize($('#zipName').value || 'heyconvert-files')}.zip`);
+      downloadBlob(new Blob([zipped], { type: 'application/zip' }), `${sanitize($('#zipName').value || 'hugconvert-files')}.zip`);
     } catch (e) {
       console.error(e);
       toast('สร้าง ZIP ไม่สำเร็จ (หน่วยความจำไม่พอ) ลองปิดสวิตช์ ZIP แล้วโหลดทีละไฟล์');
@@ -2270,7 +2269,7 @@ function renderAuthUI() {
     const initial = (user.name || user.email || 'U').trim().charAt(0).toUpperCase();
     $('#userAvatar').textContent = initial;
     $('#userNameText').textContent = user.name || user.email.split('@')[0];
-    $('#ddUserName').textContent = user.name || 'สมาชิก HeyConvert';
+    $('#ddUserName').textContent = user.name || 'สมาชิก HugConvert';
     $('#ddUserEmail').textContent = user.email;
     $('#ddWalletId').textContent = w.walletId;
   }
@@ -2296,7 +2295,7 @@ function setAuthMode(mode, infoMsg = '') {
   $('#authResetBackWrap').hidden = mode !== 'reset';
 
   if (mode === 'signin') {
-    $('#authModalTitle').textContent = 'เข้าสู่ระบบ HeyConvert';
+    $('#authModalTitle').textContent = 'เข้าสู่ระบบ HugConvert';
     $('#authModalSub').textContent = 'ซิงก์เหรียญ HeyCoin และประวัติการใช้งานของคุณ';
     $('#authSubmitBtn').textContent = 'เข้าสู่ระบบ';
     $('#authPassword').setAttribute('autocomplete', 'current-password');

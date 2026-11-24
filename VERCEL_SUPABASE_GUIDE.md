@@ -1,4 +1,4 @@
-# คู่มือนำ HeyConvert ขึ้น Vercel + เชื่อมต่อ Supabase (พร้อมรับคนใช้วันละ 1,000+ คน)
+# คู่มือนำ HugConvert ขึ้น Vercel + เชื่อมต่อ Supabase (พร้อมรับคนใช้วันละ 1,000+ คน)
 
 โปรเจกต์เตรียมไฟล์ตั้งค่า **Vercel (`vercel.json`)** และสคริปต์ฐานข้อมูล **Supabase (`supabase_schema.sql`)** ไว้ให้พร้อมแล้วครับ ทำตาม 3 ขั้นตอนนี้ก็ออนไลน์ใช้งานจริงได้เลย:
 
@@ -6,7 +6,7 @@
 
 ## ขั้นตอนที่ 1: นำเว็บขึ้น Vercel (ฟรี Bandwidth ไม่จำกัด)
 1. เข้าเว็บ [vercel.com](https://vercel.com) และล็อกอินด้วยบัญชี GitHub ของคุณ
-2. กด **Add New... → Project** แล้วเลือก Repository **`mstackhub/HeyConvert`**
+2. กด **Add New... → Project** แล้วเลือก Repository **`mstackhub/HugConvert`**
 3. ไม่ต้องตั้งค่า Build Command (เพราะเป็น Static Web ล้วน) กด **Deploy** ได้เลย
 4. รอ ~20 วินาที เว็บจะออนไลน์ทันทีที่ `https://hey-convert.vercel.app` (และสามารถผูก Custom Domain ของคุณเองได้ฟรีในเมนู **Settings → Domains**)
    > ทุกครั้งที่แก้ไขโค้ดแล้ว `git push` ขึ้น GitHub, Vercel จะอัปเดตหน้าเว็บให้อัตโนมัติ

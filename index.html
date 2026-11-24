@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>HeyConvert — บีบอัดวิดีโอ รูปภาพ แก้ไข PDF และแปลงไฟล์ออนไลน์</title>
-  <meta name="description" id="metaDesc" content="HeyConvert เว็บบีบอัดวิดีโอ กำหนดขนาด MB ภาพไม่แตก บีบอัดรูปภาพ แก้ไขไฟล์ PDF เซ็นเอกสาร รวม/แยกหน้า PDF แปลงไฟล์ ตัดวิดีโอ ทำ GIF และแยกเสียง MP3 ปลอดภัยระดับ PDPA 100% ไม่อัปโหลดไฟล์ขึ้นเซิร์ฟเวอร์" />
-  <meta name="keywords" id="metaKeywords" content="บีบอัดวิดีโอ, ลดขนาดวิดีโอ mb, แก้ไขไฟล์ pdf, เซ็นเอกสาร pdf ออนไลน์, บีบอัด pdf, รวมไฟล์ pdf, บีบอัดรูปภาพ, แปลงวิดีโอเป็น mp4, แยกเสียง mp3, HeyConvert" />
+  <title>HugConvert — บีบอัดวิดีโอ รูปภาพ แก้ไข PDF และแปลงไฟล์ออนไลน์</title>
+  <meta name="description" id="metaDesc" content="HugConvert เว็บบีบอัดวิดีโอ กำหนดขนาด MB ภาพไม่แตก บีบอัดรูปภาพ แก้ไขไฟล์ PDF เซ็นเอกสาร รวม/แยกหน้า PDF แปลงไฟล์ ตัดวิดีโอ ทำ GIF และแยกเสียง MP3 ปลอดภัยระดับ PDPA 100% ไม่อัปโหลดไฟล์ขึ้นเซิร์ฟเวอร์" />
+  <meta name="keywords" id="metaKeywords" content="บีบอัดวิดีโอ, ลดขนาดวิดีโอ mb, แก้ไขไฟล์ pdf, เซ็นเอกสาร pdf ออนไลน์, บีบอัด pdf, รวมไฟล์ pdf, บีบอัดรูปภาพ, แปลงวิดีโอเป็น mp4, แยกเสียง mp3, HugConvert" />
   <meta name="robots" content="index, follow" />
   <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="HeyConvert" />
-  <meta property="og:title" id="ogTitle" content="HeyConvert — บีบอัดวิดีโอ รูปภาพ แก้ไข PDF และแปลงไฟล์ออนไลน์ฟรี" />
+  <meta property="og:site_name" content="HugConvert" />
+  <meta property="og:title" id="ogTitle" content="HugConvert — บีบอัดวิดีโอ รูปภาพ แก้ไข PDF และแปลงไฟล์ออนไลน์ฟรี" />
   <meta property="og:description" id="ogDesc" content="จัดการไฟล์วิดีโอ รูปภาพ และเอกสาร PDF ครบวงจร ทำพร้อมกันได้ 20 ไฟล์ ปลอดภัย 100% ประมวลผลในเครื่องคุณเอง" />
-  <link rel="canonical" id="canonicalLink" href="https://mstackhub.github.io/HeyConvert/" />
+  <link rel="canonical" id="canonicalLink" href="https://mstackhub.github.io/HugConvert/" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='16' fill='%235b5bf0'/><text x='50%25' y='56%25' text-anchor='middle' dominant-baseline='middle' fill='white' font-family='sans-serif' font-weight='700' font-size='28'>HC</text></svg>" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -21,7 +21,7 @@
   {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    "name": "HeyConvert",
+    "name": "HugConvert",
     "applicationCategory": "MultimediaApplication",
     "operatingSystem": "Web, Windows, macOS, iOS, Android",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "THB" },
@@ -31,14 +31,14 @@
 </head>
 <body>
   <div class="app">
-    <!-- ===== Sidebar ===== -->
+    <!-- ===== Mobile Drawer Sidebar (ซ่อนบน Desktop ใช้ Top-Nav แทน) ===== -->
     <aside class="sidebar" id="sidebar" aria-label="เมนูเครื่องมือ">
       <div class="sidebar__brand">
-        <a href="?tool=home" class="brand-link" title="กลับหน้าแรก HeyConvert">
+        <a href="?tool=home" class="brand-link" title="กลับหน้าแรก HugConvert">
           <div class="logo">HC</div>
           <div>
-            <div class="brand__name">HeyConvert</div>
-            <div class="brand__tag">เครื่องมือมีเดีย & PDF ครบวงจร</div>
+            <div class="brand__name">HugConvert</div>
+            <div class="brand__tag">เครื่องมือมีเดีย & PDF</div>
           </div>
         </a>
         <button class="icon-btn sidebar__close" id="sidebarClose" aria-label="ปิดเมนู">✕</button>
@@ -73,14 +73,52 @@
     </aside>
     <div class="backdrop" id="backdrop"></div>
 
-    <!-- ===== Main ===== -->
-    <div class="main">
-      <header class="topbar">
-        <button class="icon-btn menu-btn" id="menuBtn" aria-label="เปิดเมนู">☰</button>
-        <div class="topbar__titles">
-          <h1 class="topbar__title" id="pageTitle">บีบอัดวิดีโอ</h1>
-          <p class="topbar__desc" id="pageDesc">ลดขนาดไฟล์วิดีโอ กำหนดขนาด MB ได้ตามต้องการโดยไม่ให้ภาพแตก</p>
+    <!-- ===== Top Navigation Bar (Clean แบบที่ 2) ===== -->
+    <header class="topbar">
+      <div class="topbar__inner">
+        <div class="topbar__left">
+          <button class="icon-btn menu-btn" id="menuBtn" aria-label="เปิดเมนู">☰</button>
+          <a href="?tool=home" class="brand-link" title="กลับหน้าแรก HugConvert">
+            <div class="logo">HC</div>
+            <span class="brand__name">HugConvert</span>
+          </a>
+
+          <nav class="topnav" aria-label="เมนูหลัก">
+            <a href="?tool=home" class="topnav__link" data-nav="home">ทั้งหมด</a>
+
+            <div class="topnav__drop">
+              <button type="button" class="topnav__link topnav__btn">เอกสาร PDF <span class="topnav__caret">▾</span></button>
+              <div class="topnav__menu">
+                <a href="?tool=pdf-edit" data-id="pdf-edit">✏️ แก้ไข & กรอกฟอร์ม PDF</a>
+                <a href="?tool=pdf-compress" data-id="pdf-compress">📉 บีบอัดไฟล์ PDF</a>
+                <a href="?tool=pdf-security" data-id="pdf-security">🔐 ปลดล็อก & ลายน้ำ PDF</a>
+                <a href="?tool=pdf-merge" data-id="pdf-merge">📑 รวม & แยกหน้า PDF</a>
+                <a href="?tool=pdf-to-image" data-id="pdf-to-image">📸 PDF เป็นรูปภาพ</a>
+                <a href="?tool=image-to-pdf" data-id="image-to-pdf">📄 รูปภาพเป็น PDF</a>
+              </div>
+            </div>
+
+            <div class="topnav__drop">
+              <button type="button" class="topnav__link topnav__btn">วิดีโอ <span class="topnav__caret">▾</span></button>
+              <div class="topnav__menu">
+                <a href="?tool=video-compress" data-id="video-compress">🎬 บีบอัดวิดีโอ</a>
+                <a href="?tool=video-convert" data-id="video-convert">🔄 แปลงไฟล์วิดีโอ</a>
+                <a href="?tool=video-trim" data-id="video-trim">✂️ ตัดวิดีโอ</a>
+                <a href="?tool=video-to-gif" data-id="video-to-gif">🎞️ วิดีโอเป็น GIF</a>
+              </div>
+            </div>
+
+            <div class="topnav__drop">
+              <button type="button" class="topnav__link topnav__btn">รูปภาพ & เสียง <span class="topnav__caret">▾</span></button>
+              <div class="topnav__menu">
+                <a href="?tool=image-compress" data-id="image-compress">🖼️ บีบอัดรูปภาพ</a>
+                <a href="?tool=image-convert" data-id="image-convert">🔁 แปลงรูป (รองรับ HEIC)</a>
+                <a href="?tool=audio-extract" data-id="audio-extract">🎵 แยก & บีบอัดเสียง MP3</a>
+              </div>
+            </div>
+          </nav>
         </div>
+
         <div class="topbar__actions">
           <button type="button" class="coin-pill" id="coinWalletBtn" title="กระเป๋าเหรียญ HeyCoin & โบนัสรายวัน">
             <span class="coin-pill__icon">🪙</span>
@@ -117,68 +155,71 @@
             </div>
           </div>
         </div>
-      </header>
+      </div>
+    </header>
 
+    <!-- ===== Main ===== -->
+    <div class="main">
       <div class="banner banner--error" id="unsupported" hidden>
         ⚠️ เบราว์เซอร์นี้ไม่รองรับการประมวลผลวิดีโอ (WebCodecs) — กรุณาใช้ Chrome / Edge เวอร์ชันล่าสุด, Safari 16.4+ หรือ Firefox 130+
         และเปิดผ่าน https:// หรือ localhost
       </div>
 
-      <!-- ===== หน้าแรก: Smart Tool Hub Landing Page ===== -->
+      <!-- ===== หน้าแรก: Clean Top-Nav + Compact Cards ===== -->
       <section class="home-hub" id="homeHubSection" hidden>
-        <div class="hub-hero card">
-          <div class="hub-hero__badge">🔒 ปลอดภัยมาตรฐาน PDPA 100% · ประมวลผลในเครื่องคุณเอง ไม่อัปโหลดไฟล์</div>
-          <h2 class="hub-hero__title">บีบอัด แปลงไฟล์ และจัดการ PDF ครบจบในที่เดียว</h2>
-          <p class="hub-hero__sub">ลากไฟล์ใดก็ได้วางด้านล่าง ระบบจะตรวจจับประเภทไฟล์และพาเข้าเครื่องมือที่เหมาะสมให้อัตโนมัติ หรือเลือกจากเมนูการ์ดด้านล่าง</p>
-
+        <div class="hub-strip card">
+          <div class="hub-strip__info">
+            <span class="hub-strip__badge">🔒 PDPA 100% · ประมวลผลในเครื่อง ไม่ส่งไฟล์ขึ้นเซิร์ฟเวอร์</span>
+            <h1 class="hub-strip__title">จัดการไฟล์ PDF, วิดีโอ และรูปภาพ ในเครื่องคุณเอง</h1>
+            <p class="hub-strip__sub">ลากไฟล์มาวางเพื่อตรวจจับอัตโนมัติ (สูงสุด 20 ไฟล์) หรือเลือกเครื่องมือด้านล่าง</p>
+          </div>
           <div class="smart-dropzone" id="smartDropzone" role="button" tabindex="0">
             <input type="file" id="smartFileInput" accept="video/*,image/*,audio/*,application/pdf,.pdf,.heic,.heif,.jfif,.mkv,.mov,.webm,.mp4,.mp3,.wav,.m4a" multiple hidden />
-            <div class="smart-dropzone__icon">✨📂</div>
-            <div class="smart-dropzone__title">โยนไฟล์อะไรก็ได้มาวางที่นี่ หรือ <u>คลิกเลือกไฟล์</u></div>
-            <div class="smart-dropzone__types">รองรับ <b>PDF</b> · <b>MP4/MOV</b> · <b>JPG/PNG/WebP</b> · <b>iPhone HEIC</b> · <b>MP3/WAV</b> (สูงสุด 20 ไฟล์)</div>
-          </div>
-
-          <!-- ตัวเลือกด่วนเมื่อผู้ใช้โยนไฟล์ PDF ที่หน้าแรก -->
-          <div class="smart-pdf-choice" id="smartPdfChoice" hidden>
-            <div class="smart-pdf-choice__label">📄 ตรวจพบไฟล์ PDF! คุณต้องการทำอะไรกับไฟล์นี้?</div>
-            <div class="smart-pdf-choice__btns">
-              <button type="button" class="btn btn--primary btn--sm" data-pdfgo="pdf-edit">✏️ แก้ไข / กรอกฟอร์ม / เซ็นชื่อ</button>
-              <button type="button" class="btn btn--outline btn--sm" data-pdfgo="pdf-compress">📉 บีบอัดลดขนาด MB</button>
-              <button type="button" class="btn btn--outline btn--sm" data-pdfgo="pdf-security">🔐 ปลดล็อกรหัส / คาดลายน้ำ</button>
-              <button type="button" class="btn btn--outline btn--sm" data-pdfgo="pdf-merge">📑 รวม / แยกหน้า</button>
-              <button type="button" class="btn btn--outline btn--sm" data-pdfgo="pdf-to-image">📸 แปลงเป็นรูปภาพ</button>
-            </div>
+            <div class="smart-dropzone__btn">+ เลือกไฟล์จากเครื่อง</div>
+            <div class="smart-dropzone__types">หรือลาก PDF · MP4 · JPG/HEIC · MP3 มาวางที่นี่</div>
           </div>
         </div>
 
-        <!-- ช่องโฆษณา 1: Leaderboard ใต้ Hero -->
-        <div class="ad-slot" data-adslot="hub-top"></div>
+        <!-- ตัวเลือกด่วนเมื่อผู้ใช้โยนไฟล์ PDF ที่หน้าแรก -->
+        <div class="smart-pdf-choice" id="smartPdfChoice" hidden>
+          <div class="smart-pdf-choice__label">📄 ตรวจพบไฟล์ PDF! คุณต้องการทำอะไรกับไฟล์นี้?</div>
+          <div class="smart-pdf-choice__btns">
+            <button type="button" class="btn btn--primary btn--sm" data-pdfgo="pdf-edit">✏️ แก้ไข / กรอกฟอร์ม / เซ็นชื่อ</button>
+            <button type="button" class="btn btn--outline btn--sm" data-pdfgo="pdf-compress">📉 บีบอัดลดขนาด MB</button>
+            <button type="button" class="btn btn--outline btn--sm" data-pdfgo="pdf-security">🔐 ปลดล็อกรหัส / คาดลายน้ำ</button>
+            <button type="button" class="btn btn--outline btn--sm" data-pdfgo="pdf-merge">📑 รวม / แยกหน้า</button>
+            <button type="button" class="btn btn--outline btn--sm" data-pdfgo="pdf-to-image">📸 แปลงเป็นรูปภาพ</button>
+          </div>
+        </div>
 
         <!-- แถบค้นหาและตัวกรองหมวดหมู่ -->
         <div class="hub-filter-bar">
           <div class="hub-tabs" id="hubCatTabs">
             <button type="button" class="hub-tab active" data-hubcat="all">ทั้งหมด (13)</button>
-            <button type="button" class="hub-tab" data-hubcat="pdf">📄 เอกสาร PDF</button>
-            <button type="button" class="hub-tab" data-hubcat="video">🎬 วิดีโอ</button>
-            <button type="button" class="hub-tab" data-hubcat="image">🖼️ รูปภาพ & HEIC</button>
-            <button type="button" class="hub-tab" data-hubcat="audio">🎵 เสียง MP3</button>
+            <button type="button" class="hub-tab" data-hubcat="pdf">PDF</button>
+            <button type="button" class="hub-tab" data-hubcat="video">วิดีโอ</button>
+            <button type="button" class="hub-tab" data-hubcat="image">รูปภาพ & HEIC</button>
+            <button type="button" class="hub-tab" data-hubcat="audio">เสียง MP3</button>
           </div>
           <div class="hub-search">
-            <input type="search" id="hubSearchInput" class="input" placeholder="🔍 ค้นหา เช่น บัตรประชาชน, HEIC, 10MB, สเตทเมนต์..." />
+            <input type="search" id="hubSearchInput" class="input" placeholder="ค้นหาเครื่องมือ เช่น บัตรประชาชน, HEIC, 10MB..." />
           </div>
         </div>
 
-        <!-- การ์ดรวมเครื่องมือทั้งหมด -->
+        <!-- การ์ดรวมเครื่องมือทั้งหมด (Compact 3 คอลัมน์) -->
         <div class="hub-grid" id="hubGrid"><!-- สร้างจาก TOOLS ใน js/app.js --></div>
 
-        <!-- ช่องโฆษณา 2: Native / Partner Banner ใต้รายการเครื่องมือ -->
+        <!-- ช่องโฆษณา 1: Leaderboard ใต้รายการเครื่องมือ -->
+        <div class="ad-slot" data-adslot="hub-top"></div>
+
+        <!-- ช่องโฆษณา 2: Native / Partner Banner -->
         <div class="ad-slot" data-adslot="hub-mid"></div>
 
-        <!-- ตารางเปรียบเทียบทำไม HeyConvert คุ้มค่ากว่า -->
+        <!-- ตารางเปรียบเทียบทำไม HugConvert คุ้มค่ากว่า -->
         <div class="card compare-card">
           <div class="compare-card__head">
             <div>
-              <h3>💡 ทำไมคนทำงานออฟฟิศและครีเอเตอร์ถึงเลือก HeyConvert?</h3>
+              <h3>💡 ทำไมคนทำงานออฟฟิศและครีเอเตอร์ถึงเลือก HugConvert?</h3>
               <p class="muted">เทียบความคุ้มค่าระหว่างเว็บแปลงไฟล์รายเดือนทั่วไป กับระบบ HeyCoin ของเรา</p>
             </div>
             <button type="button" class="btn btn--primary" id="hubOpenCoinBtn">🪙 ดูแพ็กเกจ HeyCoin (เริ่ม 29฿)</button>
@@ -189,7 +230,7 @@
                 <tr>
                   <th>หัวข้อเปรียบเทียบ</th>
                   <th>เว็บแปลงไฟล์ทั่วไป (Cloud)</th>
-                  <th class="hi">HeyConvert (ของเรา ✨)</th>
+                  <th class="hi">HugConvert (ของเรา ✨)</th>
                 </tr>
               </thead>
               <tbody>
@@ -228,6 +269,13 @@
       </section>
 
       <section class="tool" id="toolWorkspaceSection">
+        <div class="workspace-head">
+          <a href="?tool=home" class="workspace-back">← หน้ารวมเครื่องมือ</a>
+          <div class="workspace-head__titles">
+            <h1 class="topbar__title" id="pageTitle">บีบอัดวิดีโอ</h1>
+            <p class="topbar__desc" id="pageDesc">ลดขนาดไฟล์วิดีโอ กำหนดขนาด MB ได้ตามต้องการโดยไม่ให้ภาพแตก</p>
+          </div>
+        </div>
         <div class="layout">
           <!-- ===== คอลัมน์ซ้าย: Dropzone + PDF Editor / รายการไฟล์ + ดาวน์โหลด ===== -->
           <div class="col-main">
@@ -335,7 +383,7 @@
                   <span>รวมเป็นไฟล์ ZIP</span>
                 </label>
                 <div class="zipname" id="zipNameWrap">
-                  <input type="text" id="zipName" class="input" value="heyconvert-files" />
+                  <input type="text" id="zipName" class="input" value="hugconvert-files" />
                   <span class="suffix">.zip</span>
                 </div>
               </div>
@@ -956,7 +1004,7 @@
 
         <div class="seo-body">
           <h2 id="seoH2">เว็บบีบอัดวิดีโอออนไลน์ (Video Compressor) กำหนดขนาด MB ได้ตามต้องการ</h2>
-          <p id="seoIntro">HeyConvert ช่วยให้คุณลดขนาดไฟล์วิดีโอขนาดใหญ่ (เช่น 400 MB เหลือ 10 MB หรือ 25 MB) เพื่อส่งผ่าน LINE, Discord, Gmail หรืออัปโหลดขึ้นระบบออนไลน์ได้อย่างรวดเร็ว รองรับการทำพร้อมกันสูงสุด 20 ไฟล์ โดยประมวลผลในเบราว์เซอร์ของคุณเอง 100%</p>
+          <p id="seoIntro">HugConvert ช่วยให้คุณลดขนาดไฟล์วิดีโอขนาดใหญ่ (เช่น 400 MB เหลือ 10 MB หรือ 25 MB) เพื่อส่งผ่าน LINE, Discord, Gmail หรืออัปโหลดขึ้นระบบออนไลน์ได้อย่างรวดเร็ว รองรับการทำพร้อมกันสูงสุด 20 ไฟล์ โดยประมวลผลในเบราว์เซอร์ของคุณเอง 100%</p>
 
           <h3>คำถามที่พบบ่อย (FAQ)</h3>
           <div class="seo-faqs" id="seoFaqs"></div>
@@ -1063,7 +1111,7 @@
         <div class="auth-brand">
           <div class="logo logo--sm">HC</div>
           <div>
-            <h3 id="authModalTitle">เข้าสู่ระบบ HeyConvert</h3>
+            <h3 id="authModalTitle">เข้าสู่ระบบ HugConvert</h3>
             <span class="muted" id="authModalSub">ซิงก์เหรียญ HeyCoin และประวัติการใช้งานของคุณ</span>
           </div>
         </div>

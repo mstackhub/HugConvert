@@ -124,7 +124,7 @@ export function renderLandingAds(isAdFree, onOpenCoin) {
     `;
 
     el.querySelector('.ad-vip-btn')?.addEventListener('click', () => {
-      onOpenCoin?.('เปิดใช้งานแพ็กเกจ Unlimited Pass (149฿ / 30 วัน) เพื่อใช้ HeyConvert แบบไร้โฆษณาทั้งหมดครับ');
+      onOpenCoin?.('เปิดใช้งานแพ็กเกจ Unlimited Pass (149฿ / 30 วัน) เพื่อใช้ HugConvert แบบไร้โฆษณาทั้งหมดครับ');
     });
   });
 }

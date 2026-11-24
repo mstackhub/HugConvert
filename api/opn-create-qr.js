@@ -41,7 +41,7 @@ export default async function handler(req, res) {
       amount: String(pkg.amountSatang),
       currency: 'THB',
       source: source.id,
-      description: `HeyConvert: ${pkg.name} (${email || userId})`,
+      description: `HugConvert: ${pkg.name} (${email || userId})`,
       'metadata[user_id]': String(userId),
       'metadata[pkg_id]': String(pkgId),
       'metadata[email]': String(email || ''),

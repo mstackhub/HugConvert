@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://mstackhub.github.io/HeyConvert/sitemap.xml
+Sitemap: https://mstackhub.github.io/HugConvert/sitemap.xml

@@ -101,7 +101,7 @@ export async function createSamplePdfFile() {
 
     // Header bar
     page.drawRectangle({ x: 0, y: height - 90, width, height: 90, color: rgb(0.357, 0.357, 0.941) });
-    page.drawText(`HeyConvert Sample PDF — Page ${i} of 2`, {
+    page.drawText(`HugConvert Sample PDF — Page ${i} of 2`, {
       x: 45, y: height - 55, size: 22, font: fontBold, color: rgb(1, 1, 1),
     });
 
@@ -111,7 +111,7 @@ export async function createSamplePdfFile() {
     });
 
     const lines = [
-      'You can test all HeyConvert PDF features with this sample document:',
+      'You can test all HugConvert PDF features with this sample document:',
       '1. PDF Editor: Add text, draw freehand signatures, stamp images, rotate or reorder pages.',
       '2. Compress PDF: Reduce file size by target MB or quality level.',
       '3. Merge & Split PDF: Combine multiple PDFs or extract specific page ranges (e.g. 1-2).',

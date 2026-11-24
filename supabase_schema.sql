@@ -1,5 +1,5 @@
 -- ============================================================
---  HeyConvert — Supabase PostgreSQL Schema (Production Ready)
+--  HugConvert — Supabase PostgreSQL Schema (Production Ready)
 --  รองรับ: 1,000+ ผู้ใช้/วัน, ป้องกันแก้ยอดเหรียญจากเบราว์เซอร์ (RLS + Atomic RPC)
 --  วิธีใช้: คัดลอกทั้งหมดไปวางและกด Run ใน SQL Editor ของ Supabase.com
 -- ============================================================
@@ -139,7 +139,7 @@ begin
   end if;
 
   insert into public.coin_transactions (user_id, delta, label)
-  values (v_uid, -p_amount, coalesce(p_reason, '⚡ ใช้งานฟีเจอร์ HeyConvert'));
+  values (v_uid, -p_amount, coalesce(p_reason, '⚡ ใช้งานฟีเจอร์ HugConvert'));
 
   return jsonb_build_object('ok', true, 'balance', v_new_bal);
 end;
