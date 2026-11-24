@@ -130,8 +130,17 @@ export async function registerWithEmail({ name, email, password }) {
     });
     if (error) return { ok: false, msg: error.message };
     const u = data.user ? mapSupabaseUser(data.user) : null;
-    if (u) setCurrentUser(u);
-    return { ok: true, user: u, isNew: true, msg: 'สมัครสมาชิกสำเร็จ! รับฟรี +15 HugCoins ต้อนรับสมาชิกใหม่ 🎉' };
+    if (data.session && u) {
+      setCurrentUser(u);
+      return { ok: true, user: u, isNew: true, msg: 'สมัครสมาชิกสำเร็จและบันทึกลง Supabase แล้ว! รับฟรี +15 HugCoins 🎉' };
+    }
+    return {
+      ok: true,
+      needsConfirm: true,
+      user: null,
+      isNew: true,
+      msg: 'สมัครสมาชิกและบันทึกลง Supabase แล้ว! กรุณากดยืนยันอีเมลในกล่องจดหมายก่อนเข้าสู่ระบบ (หรือปิด Confirm email ใน Supabase)',
+    };
   }
 
   // Local Auth Mode
@@ -166,7 +175,13 @@ export async function loginWithEmail({ email, password }) {
   const sb = await getSupabase();
   if (sb) {
     const { data, error } = await sb.auth.signInWithPassword({ email: cleanEmail, password });
-    if (error) return { ok: false, msg: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' };
+    if (error) {
+      const m = String(error.message || '').toLowerCase();
+      if (m.includes('not confirmed')) {
+        return { ok: false, msg: 'กรุณากดยืนยันอีเมลในกล่องจดหมายของคุณก่อนเข้าสู่ระบบ (หรือปิด Confirm email ใน Supabase)' };
+      }
+      return { ok: false, msg: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง (หากยังไม่เคยสมัครบน Supabase ให้กดสมัครสมาชิกก่อนครับ)' };
+    }
     const u = mapSupabaseUser(data.user);
     setCurrentUser(u);
     return { ok: true, user: u, msg: `ยินดีต้อนรับกลับมาครับ คุณ ${u.name}!` };

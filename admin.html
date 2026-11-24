@@ -60,8 +60,11 @@
           <label for="admPw">รหัสผ่าน</label>
           <input type="password" id="admPw" class="input" required />
         </div>
-        <button type="submit" class="btn btn--primary btn--block">เข้าสู่ระบบ</button>
+        <button type="submit" class="btn btn--primary btn--block" id="admSubmitBtn">เข้าสู่ระบบ</button>
       </form>
+      <div style="text-align:center;margin-top:12px;">
+        <button type="button" class="btn btn--sm btn--ghost" id="admToggleModeBtn">ยังไม่มีบัญชี? สมัครสมาชิกลง Supabase</button>
+      </div>
     </div>
 
     <!-- Error / Unauthorized Banner -->
@@ -199,7 +202,7 @@
   </div>
 
   <script type="module">
-    import { initAuth, getCurrentUser, getAccessToken, loginWithEmail, loginWithGoogle, logoutUser } from './js/auth.js';
+    import { initAuth, getCurrentUser, getAccessToken, registerWithEmail, loginWithEmail, loginWithGoogle, logoutUser } from './js/auth.js';
 
     const TOOL_LABELS = {
       'pdf-edit': '✏️ แก้ไข & กรอกฟอร์ม PDF',
@@ -400,13 +403,28 @@
       await loadDashboard();
     });
 
+    let admMode = 'signin';
+    $('#admToggleModeBtn').onclick = () => {
+      admMode = admMode === 'signin' ? 'signup' : 'signin';
+      $('#admSubmitBtn').textContent = admMode === 'signup' ? 'สมัครสมาชิก & บันทึกลง Supabase' : 'เข้าสู่ระบบ';
+      $('#admToggleModeBtn').textContent = admMode === 'signup' ? 'มีบัญชีแล้ว? กลับไปเข้าสู่ระบบ' : 'ยังไม่มีบัญชี? สมัครสมาชิกลง Supabase';
+      $('#adminLoginErr').hidden = true;
+    };
+
     $('#adminGoogleBtn').onclick = () => loginWithGoogle();
     $('#adminLoginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const res = await loginWithEmail({ email: $('#admEmail').value, password: $('#admPw').value });
-      if (!res.ok) {
-        $('#adminLoginErr').hidden = false;
-        $('#adminLoginErr').textContent = res.msg;
+      const fb = $('#adminLoginErr');
+      fb.hidden = true;
+      const email = $('#admEmail').value;
+      const password = $('#admPw').value;
+      const res = admMode === 'signup'
+        ? await registerWithEmail({ name: email.split('@')[0], email, password })
+        : await loginWithEmail({ email, password });
+      if (!res.ok || res.needsConfirm) {
+        fb.hidden = false;
+        fb.className = `auth-feedback ${res.ok ? 'ok' : 'err'}`;
+        fb.textContent = res.msg;
         return;
       }
       await loadDashboard();
