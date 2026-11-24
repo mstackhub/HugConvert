@@ -245,9 +245,9 @@ function updateSeoForTool(tool) {
   if (metaKw) metaKw.setAttribute('content', seo.keywords);
   if (ogTitle) ogTitle.setAttribute('content', seo.title);
   if (ogDesc) ogDesc.setAttribute('content', seo.intro);
+  const baseUrl = `${location.origin}${location.pathname}`;
   if (canonical) {
-    const base = 'https://mstackhub.github.io/HugConvert/';
-    canonical.setAttribute('href', tool.id === 'video-compress' ? base : `${base}?tool=${tool.id}`);
+    canonical.setAttribute('href', tool.id === 'home' ? baseUrl : `${baseUrl}?tool=${tool.id}`);
   }
 
   const h2 = $('#seoH2');
@@ -264,23 +264,57 @@ function updateSeoForTool(tool) {
     `).join('');
   }
 
-  // อัปเดต Structured Data (SoftwareApplication + FAQPage) สำหรับ Google Rich Results
+  // อัปเดต Structured Data (Organization + WebSite + WebApplication + BreadcrumbList + FAQPage)
   const ldEl = $('#seoJsonLd');
   if (ldEl) {
+    const pageUrl = tool.id === 'home' ? baseUrl : `${baseUrl}?tool=${tool.id}`;
+    const breadcrumbs = [
+      { '@type': 'ListItem', position: 1, name: 'HugConvert', item: baseUrl },
+    ];
+    if (tool.id !== 'home') {
+      breadcrumbs.push({ '@type': 'ListItem', position: 2, name: tool.label, item: pageUrl });
+    }
     const graph = [
       {
-        '@context': 'https://schema.org',
-        '@type': 'SoftwareApplication',
-        name: `${tool.label} — HugConvert`,
-        applicationCategory: 'MultimediaApplication',
+        '@type': 'Organization',
+        '@id': `${baseUrl}#organization`,
+        name: 'HugConvert',
+        url: baseUrl,
+        description: 'เครื่องมือจัดการไฟล์ PDF, วิดีโอ, รูปภาพ และเสียง 100% Client-Side ปลอดภัยตามมาตรฐาน PDPA',
+      },
+      {
+        '@type': 'WebSite',
+        '@id': `${baseUrl}#website`,
+        name: 'HugConvert',
+        url: baseUrl,
+        inLanguage: 'th',
+        publisher: { '@id': `${baseUrl}#organization` },
+      },
+      {
+        '@type': 'WebApplication',
+        name: tool.id === 'home' ? 'HugConvert' : `${tool.label} — HugConvert`,
+        url: pageUrl,
+        applicationCategory: tool.cat === 'pdf' ? 'BusinessApplication' : 'MultimediaApplication',
         operatingSystem: 'Web, Windows, macOS, iOS, Android',
-        offers: { '@type': 'Offer', price: '0', priceCurrency: 'THB' },
+        browserRequirements: 'Requires JavaScript, HTML5, WebCodecs / WebAssembly',
+        inLanguage: 'th',
+        isAccessibleForFree: true,
+        offers: {
+          '@type': 'AggregateOffer',
+          lowPrice: '0',
+          highPrice: '199',
+          priceCurrency: 'THB',
+          offerCount: 5,
+        },
         description: seo.intro,
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: breadcrumbs,
       },
     ];
     if (seo.faqs?.length) {
       graph.push({
-        '@context': 'https://schema.org',
         '@type': 'FAQPage',
         mainEntity: seo.faqs.map((f) => ({
           '@type': 'Question',
@@ -289,7 +323,7 @@ function updateSeoForTool(tool) {
         })),
       });
     }
-    ldEl.textContent = JSON.stringify(graph);
+    ldEl.textContent = JSON.stringify({ '@context': 'https://schema.org', '@graph': graph });
   }
 }
 

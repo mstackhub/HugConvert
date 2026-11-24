@@ -20,12 +20,47 @@
   <script type="application/ld+json" id="seoJsonLd">
   {
     "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "HugConvert",
-    "applicationCategory": "MultimediaApplication",
-    "operatingSystem": "Web, Windows, macOS, iOS, Android",
-    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "THB" },
-    "description": "เว็บบีบอัดวิดีโอ บีบอัดรูปภาพ แก้ไขไฟล์ PDF เซ็นลายเซ็น และแปลงไฟล์มีเดียครบวงจร ประมวลผลในเบราว์เซอร์ 100% ปลอดภัยตามมาตรฐาน PDPA"
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "#organization",
+        "name": "HugConvert",
+        "description": "เครื่องมือจัดการไฟล์ PDF, วิดีโอ, รูปภาพ และเสียง 100% Client-Side ปลอดภัยตามมาตรฐาน PDPA"
+      },
+      {
+        "@type": "WebSite",
+        "@id": "#website",
+        "name": "HugConvert",
+        "inLanguage": "th",
+        "publisher": { "@id": "#organization" }
+      },
+      {
+        "@type": "WebApplication",
+        "name": "HugConvert",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Web, Windows, macOS, iOS, Android",
+        "inLanguage": "th",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "AggregateOffer",
+          "lowPrice": "0",
+          "highPrice": "199",
+          "priceCurrency": "THB",
+          "offerCount": 5
+        },
+        "featureList": [
+          "แก้ไขและเซ็นเอกสาร PDF ออนไลน์",
+          "บีบอัดไฟล์ PDF กำหนดขนาด MB",
+          "ปลดล็อกรหัสผ่านและคาดลายน้ำ PDF",
+          "รวมและแยกหน้า PDF",
+          "บีบอัดวิดีโอ MP4 กำหนดขนาด MB ส่ง LINE/Discord",
+          "แปลงไฟล์วิดีโอ MOV/MKV เป็น MP4",
+          "แปลงรูปภาพ iPhone HEIC เป็น JPG/PNG",
+          "แยกและแปลงเสียง MP3"
+        ],
+        "description": "เว็บบีบอัดวิดีโอ บีบอัดรูปภาพ แก้ไขไฟล์ PDF เซ็นลายเซ็น และแปลงไฟล์มีเดียครบวงจร ประมวลผลในเบราว์เซอร์ 100% ปลอดภัยตามมาตรฐาน PDPA"
+      }
+    ]
   }
   </script>
 </head>
