@@ -163,6 +163,10 @@ export function makePdfCompressPlan(meta, size, s) {
     if (s.quality === 'extreme') rating = 'fair';
     advice.push(`บีบอัดทั้ง ${meta.pageCount} หน้า ด้วยโหมดคุณภาพ${s.quality === 'high' ? 'สูง' : s.quality === 'low' || s.quality === 'extreme' ? 'ประหยัดพื้นที่' : 'สมดุล'}`);
   }
+  if (s.grayscale) {
+    estBytes *= 0.82;
+    advice.push('🖤 เปิดโหมดขาว-ดำ (Grayscale): แปลงเอกสารทุกหน้าเป็นโทนขาว-ดำเพื่อลดขนาดไฟล์');
+  }
   return {
     ext: 'pdf',
     width: meta.width,
@@ -177,7 +181,7 @@ async function renderCompressedPdf(pdfDoc, scale, jpegQuality, gray, onPageProgr
   const outDoc = await PDFDocument.create();
   const numPages = pdfDoc.numPages;
   const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { willReadFrequently: !!gray });
 
   for (let i = 1; i <= numPages; i++) {
     const page = await pdfDoc.getPage(i);
@@ -188,9 +192,20 @@ async function renderCompressedPdf(pdfDoc, scale, jpegQuality, gray, onPageProgr
 
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    if (gray) ctx.filter = 'grayscale(100%)';
     await page.render({ canvasContext: ctx, viewport: renderVp }).promise;
-    ctx.filter = 'none';
+
+    // แปลงพิกเซลเป็นขาว-ดำ (Luminance Grayscale) โดยตรง รองรับ 100% ทุกเบราว์เซอร์รวมถึง Safari
+    if (gray) {
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const d = imgData.data;
+      for (let p = 0; p < d.length; p += 4) {
+        const lum = (d[p] * 77 + d[p + 1] * 150 + d[p + 2] * 29) >> 8;
+        d[p] = lum;
+        d[p + 1] = lum;
+        d[p + 2] = lum;
+      }
+      ctx.putImageData(imgData, 0, 0);
+    }
 
     const jpgBlob = await canvasToBlob(canvas, 'image/jpeg', jpegQuality);
     const jpgBytes = await jpgBlob.arrayBuffer();
@@ -243,7 +258,11 @@ export async function compressPdf(file, meta, s, { onProgress }) {
     if (blob.size >= file.size && !s.grayscale) {
       return { blob: file, ext: 'pdf', note: 'ไฟล์เดิมมีขนาดเล็กที่สุดอยู่แล้ว — ใช้ไฟล์ต้นฉบับ' };
     }
-    return { blob, ext: 'pdf' };
+    return {
+      blob,
+      ext: 'pdf',
+      note: s.grayscale ? 'บีบอัดและแปลงเป็นขาว-ดำเรียบร้อย' : null,
+    };
   } finally {
     try { await pdf.destroy(); } catch { /* ignore */ }
   }

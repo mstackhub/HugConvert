@@ -1372,7 +1372,11 @@ function updateCard(it) {
   }
   if (it.kind === 'pdf' && meta?.thumbUrl) {
     const imgEl = $('.thumb img', el);
-    if (imgEl && imgEl.getAttribute('src') !== meta.thumbUrl) imgEl.src = meta.thumbUrl;
+    if (imgEl) {
+      if (imgEl.getAttribute('src') !== meta.thumbUrl) imgEl.src = meta.thumbUrl;
+      const isGray = tool.id === 'pdf-compress' && $('#pcGrayscale')?.checked;
+      imgEl.style.filter = isGray ? 'grayscale(100%)' : 'none';
+    }
   }
   $('.ext', el).textContent = '.' + (it.resultExt || plan?.ext || (it.kind === 'pdf' ? 'pdf' : it.kind === 'image' ? 'webp' : 'mp4'));
 
@@ -1593,15 +1597,19 @@ function refreshUI() {
   $('#addMoreBtn').disabled = n >= MAX_FILES || state.running;
   dz.hidden = n >= MAX_FILES;
 
+  const done = items.filter((it) => it.status === 'done');
   const pending = tool.id === 'pdf-edit'
     ? items.filter((it) => it.meta)
     : items.filter((it) => ['ready', 'cancelled'].includes(it.status));
+  const runnableCount = pending.length > 0 ? pending.length : done.length;
+  const isRerun = pending.length === 0 && done.length > 0 && tool.id !== 'pdf-edit';
+
   const startBtn = $('#startBtn');
   const needWebCodecs = tool.kind === 'video' || tool.kind === 'audio';
-  startBtn.disabled = state.running || pending.length === 0 || (needWebCodecs && !isSupported());
+  startBtn.disabled = state.running || runnableCount === 0 || (needWebCodecs && !isSupported());
 
   const s = readSettings();
-  const jobCost = calculateJobCost(tool.id, pending.length || 1, s);
+  const jobCost = calculateJobCost(tool.id, runnableCount || 1, s);
   const costBox = $('#costPreview');
   if (costBox) {
     costBox.hidden = false;
@@ -1616,16 +1624,17 @@ function refreshUI() {
     }
   }
 
-  const actualJobCost = calculateJobCost(tool.id, pending.length, s);
-  const costSuffix = pending.length > 0
+  const actualJobCost = calculateJobCost(tool.id, runnableCount, s);
+  const costSuffix = runnableCount > 0
     ? (actualJobCost.cost > 0 ? ` · 🪙 ${actualJobCost.cost}` : ' · ฟรี')
     : '';
   startBtn.textContent = state.running
     ? '⏳ กำลังประมวลผล…'
-    : `${tool.actionLabel}${pending.length && tool.id !== 'pdf-edit' ? ` (${pending.length} ไฟล์${costSuffix})` : costSuffix}`;
+    : isRerun
+      ? `🔄 ประมวลผลใหม่ (${runnableCount} ไฟล์${costSuffix})`
+      : `${tool.actionLabel}${runnableCount && tool.id !== 'pdf-edit' ? ` (${runnableCount} ไฟล์${costSuffix})` : costSuffix}`;
   $('#cancelBtn').hidden = !state.running;
 
-  const done = items.filter((it) => it.status === 'done');
   const selected = done.filter((it) => it.selected);
   $('#downloadCard').hidden = done.length === 0;
   $('#dlAll').disabled = done.length === 0;
@@ -1774,10 +1783,13 @@ $('#startBtn').onclick = async () => {
   const tool = currentTool();
   const settings = readSettings();
 
-  // กรณีโหมดแก้ไข PDF: บันทึกไฟล์ที่กำลังแก้ไขอยู่ (หรือทุกไฟล์ที่พร้อม)
-  const queue = tool.id === 'pdf-edit'
+  // กรณีโหมดแก้ไข PDF หรือกรณีผู้ใช้ปรับตั้งค่าใหม่หลังทำเสร็จแล้ว (Re-run)
+  let queue = tool.id === 'pdf-edit'
     ? items.filter((it) => it.meta)
     : items.filter((it) => ['ready', 'cancelled'].includes(it.status));
+  if (!queue.length) {
+    queue = items.filter((it) => it.status === 'done' && it.meta);
+  }
   if (!queue.length) return;
 
   // ตรวจสอบยอดเหรียญ HeyCoin ก่อนเริ่มทำงาน
