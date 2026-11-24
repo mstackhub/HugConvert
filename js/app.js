@@ -1,5 +1,5 @@
 // ============================================================
-//  app.js — UI, Sidebar router (7 เครื่องมือ), คิวไฟล์, ดาวน์โหลด
+//  app.js — UI, Sidebar router (12 เครื่องมือ: วิดีโอ / รูปภาพ / เสียง / PDF ครบชุด)
 // ============================================================
 import { zipSync } from 'https://cdn.jsdelivr.net/npm/fflate@0.8.2/+esm';
 import {
@@ -7,9 +7,14 @@ import {
   probe, probeImage, makePlan, makeImagePlan,
   compress, convertOrTrimVideo, extractAudio, videoToGif, processImage, fmtSize,
 } from './compressor.js';
+import {
+  probePdf, createSamplePdfFile, makePdfCompressPlan, compressPdf,
+  mergePdfItems, splitPdfFile, pdfToImages, imagesToPdf,
+  loadPdfEditorSession, renderEditorPageToCanvas, renderAnnotationsToCanvas, exportEditedPdf,
+} from './pdf-tools.js';
 
 // ------------------------------------------------------------
-//  รายการเครื่องมือใน Sidebar — ใช้งานได้จริงครบทุกตัว
+//  รายการเครื่องมือใน Sidebar — ใช้งานได้จริงครบทุกตัว (12 เครื่องมือ)
 // ------------------------------------------------------------
 const TOOLS = [
   { group: 'วิดีโอ (Video)' },
@@ -44,6 +49,32 @@ const TOOLS = [
     desc: 'แปลงรูปภาพเป็น WebP, JPG, PNG พร้อมย่อความละเอียดได้ในคลิกเดียว',
     settingsTitle: 'ตั้งค่าการแปลงไฟล์รูปภาพ', actionLabel: '🔁 เริ่มแปลงไฟล์รูปภาพ', suffix: '_converted',
   },
+  { group: 'เอกสาร (PDF)' },
+  {
+    id: 'pdf-edit', icon: '✏️', label: 'แก้ไขไฟล์ PDF', kind: 'pdf', panel: 'pdf-edit',
+    desc: 'พิมพ์ข้อความ วาดเขียน เซ็นลายเซ็น แทรกรูป ลบคำผิด หมุน/ลบ/เรียงหน้า PDF บนหน้าจอ',
+    settingsTitle: 'เครื่องมือแก้ไขหน้า PDF', actionLabel: '💾 บันทึกเป็นไฟล์ PDF', suffix: '_edited',
+  },
+  {
+    id: 'pdf-compress', icon: '📉', label: 'บีบอัดไฟล์ PDF', kind: 'pdf', panel: 'pdf-compress',
+    desc: 'ลดขนาดไฟล์ PDF ครั้งละ 20 ไฟล์ กำหนดขนาด MB หรือระดับความคมชัดได้',
+    settingsTitle: 'ตั้งค่าการบีบอัด PDF', actionLabel: '📉 เริ่มบีบอัด PDF', suffix: '_compressed',
+  },
+  {
+    id: 'pdf-merge', icon: '📑', label: 'รวม & แยกหน้า PDF', kind: 'pdf', panel: 'pdf-merge',
+    desc: 'รวมหลายไฟล์ PDF เข้าเป็นเล่มเดียว หรือเลือกแยกเฉพาะบางหน้า (เช่น 1-3, 5)',
+    settingsTitle: 'ตั้งค่ารวม / แยกหน้า PDF', actionLabel: '📑 เริ่มรวม/แยกไฟล์ PDF', suffix: '_merged',
+  },
+  {
+    id: 'pdf-to-image', icon: '📸', label: 'PDF เป็นรูปภาพ', kind: 'pdf', panel: 'pdf-to-image',
+    desc: 'แปลงแต่ละหน้าของไฟล์ PDF ออกเป็นไฟล์รูปภาพ JPG, PNG หรือ WebP ความชัดสูง',
+    settingsTitle: 'ตั้งค่าแปลง PDF เป็นรูปภาพ', actionLabel: '📸 เริ่มแปลงเป็นรูปภาพ', suffix: '_page',
+  },
+  {
+    id: 'image-to-pdf', icon: '📄', label: 'รูปภาพเป็น PDF', kind: 'image-pdf', panel: 'image-to-pdf',
+    desc: 'รวมรูปภาพหลายๆ รูปเข้าเป็นไฟล์ PDF เล่มเดียว หรือแยกเป็นรายไฟล์',
+    settingsTitle: 'ตั้งค่าแปลงรูปภาพเป็น PDF', actionLabel: '📄 เริ่มสร้างไฟล์ PDF', suffix: '_document',
+  },
   { group: 'เสียง (Audio)' },
   {
     id: 'audio-extract', icon: '🎵', label: 'แยกเสียงจากวิดีโอ', kind: 'audio', panel: 'audio-extract',
@@ -57,11 +88,20 @@ const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 
 const state = {
   toolId: 'video-compress',
-  batches: {}, // แยกรายการไฟล์ตามประเภท (video / image) เพื่อสลับเมนูได้สะดวก
+  batches: {}, // แยกตาม bucket: video / image / pdf / image-pdf
   support: { video: { avc: true, 'avc-gpu': true }, audio: { aac: true, opus: true } },
   running: false,
   cancelFn: null,
   cancelled: false,
+  // สำหรับโหมดแก้ไข PDF (pdf-edit)
+  editor: {
+    itemId: null,
+    session: null,
+    pageIdx: 0, // index ใน activePages
+    tool: 'select', // 'select' | 'text' | 'draw' | 'highlight' | 'whiteout'
+    selectedAnnId: null,
+    drawing: null,
+  },
 };
 let uid = 0;
 
@@ -69,15 +109,21 @@ function currentTool() {
   return TOOLS.find((t) => t.id === state.toolId) || TOOLS[1];
 }
 
+function getBucket(tool = currentTool()) {
+  if (tool.kind === 'image') return 'image';
+  if (tool.kind === 'pdf') return 'pdf';
+  if (tool.kind === 'image-pdf') return 'image-pdf';
+  return 'video';
+}
+
 function getItems() {
-  const bucket = currentTool().kind === 'image' ? 'image' : 'video';
-  if (!state.batches[bucket]) state.batches[bucket] = [];
-  return state.batches[bucket];
+  const b = getBucket();
+  if (!state.batches[b]) state.batches[b] = [];
+  return state.batches[b];
 }
 
 function setItems(arr) {
-  const bucket = currentTool().kind === 'image' ? 'image' : 'video';
-  state.batches[bucket] = arr;
+  state.batches[getBucket()] = arr;
 }
 
 // ---------------- Sidebar / Router ----------------
@@ -111,12 +157,18 @@ function route() {
 
   // ปรับ Dropzone ตามประเภทไฟล์
   const fileInput = $('#fileInput');
-  if (tool.kind === 'image') {
+  if (tool.kind === 'image' || tool.kind === 'image-pdf') {
     fileInput.accept = 'image/*,.jpg,.jpeg,.png,.webp,.gif,.bmp,.avif';
     $('#dropIcon').textContent = tool.icon;
     $('#dropTitle').innerHTML = 'ลากไฟล์รูปภาพมาวาง หรือ <u>คลิกเลือกไฟล์</u>';
     $('#dropSub').innerHTML = 'สูงสุด <b>20 รูป</b> ต่อครั้ง · JPG, PNG, WebP, GIF, BMP';
     $('#demoBtn').textContent = '✨ ทดลองสร้างรูปภาพตัวอย่าง';
+  } else if (tool.kind === 'pdf') {
+    fileInput.accept = 'application/pdf,.pdf';
+    $('#dropIcon').textContent = tool.icon;
+    $('#dropTitle').innerHTML = 'ลากไฟล์ PDF มาวาง หรือ <u>คลิกเลือกไฟล์</u>';
+    $('#dropSub').innerHTML = 'สูงสุด <b>20 ไฟล์</b> ต่อครั้ง · รองรับไฟล์ .PDF ทุกขนาด';
+    $('#demoBtn').textContent = '✨ ทดลองสร้างไฟล์ PDF ตัวอย่าง';
   } else {
     fileInput.accept = 'video/*,audio/*,.mkv,.mov,.webm,.mp4,.m4v,.avi';
     $('#dropIcon').textContent = tool.icon;
@@ -125,9 +177,8 @@ function route() {
     $('#demoBtn').textContent = '✨ ทดลองสร้างวิดีโอตัวอย่าง';
   }
 
-  // สำหรับเมนูแปลงไฟล์รูปภาพ ให้เน้นเลือกฟอร์แมต
-  if (tool.id === 'image-convert') {
-    if ($('#imgFormat').value === 'original') $('#imgFormat').value = 'webp';
+  if (tool.id === 'image-convert' && $('#imgFormat').value === 'original') {
+    $('#imgFormat').value = 'webp';
   }
 
   $('#renamePattern').value = `{name}${tool.suffix}`;
@@ -136,6 +187,7 @@ function route() {
   toggleSidebar(false);
   onSettingsChange();
   rebuildFileListDOM();
+  syncEditorVisibility();
   refreshUI();
 }
 
@@ -169,7 +221,7 @@ const baseName = (n) => n.replace(/\.[^.]+$/, '');
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 // ---------------- Settings ----------------
-const SETTINGS_KEY = 'mk.all.settings.v2';
+const SETTINGS_KEY = 'mk.all.settings.v3';
 const settingIds = [
   'codec', 'method', 'targetMB', 'percent', 'quality', 'maxMbps',
   'resMode', 'resolution', 'resScale', 'customW', 'customH', 'compatOld', 'fps', 'audio',
@@ -178,6 +230,11 @@ const settingIds = [
   'vgStart', 'vgDur', 'vgWidth', 'vgFps', 'vgColors',
   'imgFormat', 'imgMethod', 'imgQuality', 'imgTargetKB', 'imgPercent', 'imgMaxDim',
   'aeFormat', 'aeBitrate', 'aeChannels',
+  'edTextVal', 'edColor', 'edFontSize', 'edStrokeSize',
+  'pcMethod', 'pcTargetMB', 'pcPercent', 'pcQuality', 'pcGrayscale',
+  'pmMode', 'pmRange',
+  'p2iFormat', 'p2iScale', 'p2iRange',
+  'i2pMerge', 'i2pSize', 'i2pOrient', 'i2pMargin',
 ];
 
 function readSettings() {
@@ -222,6 +279,29 @@ function readSettings() {
     aeFormat: $('#aeFormat').value,
     aeBitrate: $('#aeBitrate').value,
     aeChannels: $('#aeChannels').value,
+    // pdf-edit
+    edTextVal: $('#edTextVal').value || 'ข้อความ',
+    edColor: $('#edColor').value || '#1e40af',
+    edFontSize: Math.max(8, Number($('#edFontSize').value) || 22),
+    edStrokeSize: Math.max(1, Number($('#edStrokeSize').value) || 4),
+    // pdf-compress
+    pcMethod: $('#pcMethod').value,
+    pcTargetMB: Math.max(0.1, parseFloat($('#pcTargetMB').value) || 2),
+    pcPercent: Number($('#pcPercent').value) || 50,
+    pcQuality: $('#pcQuality').value,
+    pcGrayscale: $('#pcGrayscale').checked,
+    // pdf-merge
+    pmMode: $('#pmMode').value,
+    pmRange: $('#pmRange').value.trim(),
+    // pdf-to-image
+    p2iFormat: $('#p2iFormat').value,
+    p2iScale: Number($('#p2iScale').value) || 2,
+    p2iRange: $('#p2iRange').value.trim(),
+    // image-to-pdf
+    i2pMerge: $('#i2pMerge').value,
+    i2pSize: $('#i2pSize').value,
+    i2pOrient: $('#i2pOrient').value,
+    i2pMargin: Number($('#i2pMargin').value) || 0,
   };
 }
 
@@ -299,6 +379,47 @@ function computeItemPlan(it, s) {
       advice: it.meta.hasAudio ? [`แยกเสียงเป็น .${ext.toUpperCase()}`] : ['⚠️ ไฟล์นี้ไม่มีแทร็กเสียง'],
     };
   }
+  if (tool.id === 'pdf-edit') {
+    return {
+      ext: 'pdf', width: it.meta.width, height: it.meta.height,
+      estBytes: it.file.size, rating: 'excellent',
+      advice: [`คลิกปุ่ม "✏️ เปิดในกระดานแก้ไข" หรือแก้ไขบนกระดานด้านบน แล้วกดบันทึกเป็นไฟล์ PDF`],
+    };
+  }
+  if (tool.id === 'pdf-compress') {
+    return makePdfCompressPlan(it.meta, it.file.size, {
+      method: s.pcMethod,
+      targetMB: s.pcTargetMB,
+      percent: s.pcPercent,
+      quality: s.pcQuality,
+      grayscale: s.pcGrayscale,
+    });
+  }
+  if (tool.id === 'pdf-merge') {
+    const r = (it.pageRange != null && it.pageRange !== '') ? it.pageRange : s.pmRange;
+    return {
+      ext: 'pdf', width: it.meta.width, height: it.meta.height,
+      estBytes: it.file.size, rating: 'good',
+      advice: [s.pmMode === 'merge'
+        ? `เตรียมรวมเข้าเป็นไฟล์เดียว (${r ? `เฉพาะหน้า ${r}` : `ครบทั้ง ${it.meta.pageCount} หน้า`})`
+        : `แยกหน้า ${r || `1-${it.meta.pageCount}`} ออกเป็นไฟล์ PDF ใหม่`],
+    };
+  }
+  if (tool.id === 'pdf-to-image') {
+    const ext = s.p2iFormat === 'png' ? 'png' : s.p2iFormat === 'webp' ? 'webp' : 'jpg';
+    return {
+      ext, width: Math.round(it.meta.width * s.p2iScale), height: Math.round(it.meta.height * s.p2iScale),
+      estBytes: it.meta.pageCount * 180 * 1024, rating: 'excellent',
+      advice: [`แปลง ${it.meta.pageCount} หน้า เป็นไฟล์รูป .${ext.toUpperCase()}`],
+    };
+  }
+  if (tool.id === 'image-to-pdf') {
+    return {
+      ext: 'pdf', width: it.meta.width, height: it.meta.height,
+      estBytes: it.file.size * 0.85, rating: 'excellent',
+      advice: [s.i2pMerge === 'single' ? 'รวมรูปนี้เข้าในไฟล์ PDF เล่มเดียวกัน' : 'แปลงรูปนี้เป็น 1 ไฟล์ PDF'],
+    };
+  }
   return null;
 }
 
@@ -318,6 +439,23 @@ function onSettingsChange() {
   $('#imgQualityLabel').textContent = `${s.imgQuality}%`;
   $('#imgPercentLabel').textContent = `${s.imgPercent}%`;
   $$('#kbChips button').forEach((b) => b.classList.toggle('on', Number(b.dataset.kb) === s.imgTargetKB));
+
+  // ซ่อน/แสดงฟิลด์ของ pdf-compress
+  $$('[data-pcshow]').forEach((el) => (el.hidden = el.dataset.pcshow !== s.pcMethod));
+  $('#pcPercentLabel').textContent = `${s.pcPercent}%`;
+  $$('#pdfMbChips button').forEach((b) => b.classList.toggle('on', Number(b.dataset.mb) === s.pcTargetMB));
+
+  // pdf-edit
+  $('#edStrokeLabel').textContent = `${s.edStrokeSize} px`;
+  if (state.editor.selectedAnnId) {
+    const pageObj = currentEditorPageObj();
+    const ann = pageObj?.annotations.find((a) => a.id === state.editor.selectedAnnId);
+    if (ann && ann.type === 'text') {
+      ann.color = s.edColor;
+      ann.fontSize = s.edFontSize;
+      renderEditorOverlay();
+    }
+  }
 
   // ซ่อน bitrate ถ้าเลือก WAV
   $('#aeBitrateField').hidden = s.aeFormat === 'wav';
@@ -356,6 +494,12 @@ $('#kbChips').addEventListener('click', (e) => {
   $('#imgTargetKB').value = b.dataset.kb;
   onSettingsChange();
 });
+$('#pdfMbChips').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  $('#pcTargetMB').value = b.dataset.mb;
+  onSettingsChange();
+});
 
 // ---------------- Add files & Demo generator ----------------
 const fileInput = $('#fileInput');
@@ -377,7 +521,7 @@ window.addEventListener('drop', (e) => e.preventDefault());
 $('#demoBtn').addEventListener('click', async (e) => {
   e.stopPropagation();
   const tool = currentTool();
-  if (tool.kind === 'image') {
+  if (tool.kind === 'image' || tool.kind === 'image-pdf') {
     toast('กำลังสร้างรูปภาพตัวอย่าง…');
     const c = document.createElement('canvas');
     c.width = 1280; c.height = 720;
@@ -401,6 +545,15 @@ $('#demoBtn').addEventListener('click', async (e) => {
       const f = new File([blob], 'sample-photo.png', { type: 'image/png' });
       addFiles([f]);
     }, 'image/png');
+  } else if (tool.kind === 'pdf') {
+    toast('กำลังสร้างไฟล์ PDF ตัวอย่าง (2 หน้า)…');
+    try {
+      const f = await createSamplePdfFile();
+      addFiles([f]);
+    } catch (err) {
+      console.error(err);
+      toast('สร้างไฟล์ PDF ตัวอย่างไม่สำเร็จ: ' + err.message);
+    }
   } else {
     toast('กำลังสร้างวิดีโอตัวอย่าง (2 วินาที)…');
     try {
@@ -448,13 +601,14 @@ async function createSampleVideoFile() {
 
 function addFiles(list) {
   const tool = currentTool();
-  const isImg = tool.kind === 'image';
-  const files = [...list].filter((f) =>
-    isImg
-      ? f.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp|avif)$/i.test(f.name)
-      : f.type.startsWith('video/') || f.type.startsWith('audio/') || /\.(mp4|mov|m4v|webm|mkv|avi|3gp)$/i.test(f.name)
-  );
-  if (!files.length) return toast(isImg ? 'กรุณาเลือกไฟล์รูปภาพ' : 'กรุณาเลือกไฟล์วิดีโอ');
+  const isImg = tool.kind === 'image' || tool.kind === 'image-pdf';
+  const isPdf = tool.kind === 'pdf';
+  const files = [...list].filter((f) => {
+    if (isImg) return f.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp|avif)$/i.test(f.name);
+    if (isPdf) return f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
+    return f.type.startsWith('video/') || f.type.startsWith('audio/') || /\.(mp4|mov|m4v|webm|mkv|avi|3gp)$/i.test(f.name);
+  });
+  if (!files.length) return toast(isImg ? 'กรุณาเลือกไฟล์รูปภาพ' : isPdf ? 'กรุณาเลือกไฟล์ PDF' : 'กรุณาเลือกไฟล์วิดีโอ');
 
   const items = getItems();
   const room = MAX_FILES - items.length;
@@ -464,7 +618,7 @@ function addFiles(list) {
   for (const file of files.slice(0, room)) {
     const it = {
       id: ++uid,
-      kind: isImg ? 'image' : 'video',
+      kind: isPdf ? 'pdf' : isImg ? 'image' : 'video',
       file,
       url: URL.createObjectURL(file),
       name: sanitize(baseName(file.name) + tool.suffix),
@@ -474,9 +628,12 @@ function addFiles(list) {
       meta: null,
       plan: null,
       result: null,
+      extraResults: null, // สำหรับกรณี PDF เป็นรูปภาพหลายหน้า
       error: null,
       trimStart: null,
       trimEnd: null,
+      pageRange: '',
+      editorSession: null,
     };
     items.push(it);
     $('#fileList').insertAdjacentHTML('beforeend', cardHTML(it));
@@ -489,6 +646,10 @@ async function probeItem(it) {
   try {
     if (it.kind === 'image') {
       it.meta = await probeImage(it.file);
+    } else if (it.kind === 'pdf') {
+      it.meta = await probePdf(it.file);
+      const thumbImg = $(`.file[data-id="${it.id}"] .thumb img`);
+      if (thumbImg && it.meta.thumbUrl) thumbImg.src = it.meta.thumbUrl;
     } else {
       it.meta = await probe(it.file);
       if (!it.meta.canDecode) throw new Error('เบราว์เซอร์นี้ถอดรหัสวิดีโอนี้ไม่ได้ (codec ไม่รองรับ)');
@@ -496,6 +657,11 @@ async function probeItem(it) {
     }
     it.plan = computeItemPlan(it, readSettings());
     it.status = 'ready';
+
+    // ถ้าอยู่ในเมนูแก้ไข PDF และยังไม่ได้เปิดไฟล์ในกระดาน ให้เปิดไฟล์แรกอัตโนมัติ
+    if (currentTool().id === 'pdf-edit' && !state.editor.session) {
+      await openItemInPdfEditor(it);
+    }
   } catch (e) {
     it.status = 'error';
     it.error = e.message || String(e);
@@ -504,7 +670,455 @@ async function probeItem(it) {
   refreshUI();
 }
 
-// ---------------- Render ----------------
+// ============================================================
+//  Interactive Visual PDF Editor
+// ============================================================
+function activeEditorPages() {
+  if (!state.editor.session) return [];
+  return state.editor.session.pages.filter((p) => !p.deleted);
+}
+
+function currentEditorPageObj() {
+  const pages = activeEditorPages();
+  if (!pages.length) return null;
+  state.editor.pageIdx = Math.max(0, Math.min(pages.length - 1, state.editor.pageIdx));
+  return pages[state.editor.pageIdx];
+}
+
+async function openItemInPdfEditor(it) {
+  try {
+    if (!it.editorSession) {
+      it.editorSession = await loadPdfEditorSession(it.file);
+    }
+    state.editor.itemId = it.id;
+    state.editor.session = it.editorSession;
+    state.editor.pageIdx = 0;
+    state.editor.selectedAnnId = null;
+    syncEditorVisibility();
+    await renderCurrentEditorPage();
+  } catch (e) {
+    console.error(e);
+    toast('เปิดไฟล์ PDF ในกระดานแก้ไขไม่สำเร็จ: ' + e.message);
+  }
+}
+
+function syncEditorVisibility() {
+  const isEditTool = currentTool().id === 'pdf-edit';
+  const items = getItems();
+  if (isEditTool && items.length > 0) {
+    const activeItem = items.find((x) => x.id === state.editor.itemId) || items.find((x) => x.meta);
+    if (activeItem && (!state.editor.session || state.editor.itemId !== activeItem.id)) {
+      openItemInPdfEditor(activeItem);
+      return;
+    }
+    $('#pdfEditorCard').hidden = !state.editor.session;
+  } else {
+    $('#pdfEditorCard').hidden = true;
+  }
+}
+
+function setEditorTool(toolName) {
+  state.editor.tool = toolName;
+  $$('[data-edtool]').forEach((b) => b.classList.toggle('active', b.dataset.edtool === toolName));
+  const hints = {
+    select: '💡 โหมดเลือก: คลิกที่ข้อความ/ลายเซ็น/รูปภาพเพื่อลากย้าย หรือย่อขยายที่มุมขวาล่าง',
+    text: '🔤 โหมดเพิ่มข้อความ: คลิกจุดใดก็ได้บนหน้ากระดาษเพื่อวางข้อความ (ดับเบิลคลิกเพื่อแก้ข้อความ)',
+    draw: '✏️ โหมดปากกาวาด: กดเมาส์หรือใช้นิ้วลากวาดเส้นอิสระลงบนหน้ากระดาษ',
+    highlight: '🖍️ โหมดไฮไลต์: ลากป้ายทับข้อความที่ต้องการเน้น (โปร่งแสง)',
+    whiteout: '⬜ โหมดลบคำผิด/ปิดทับ: คลิกบนจุดที่ต้องการสร้างแถบสีขาวปิดทับข้อความเดิม',
+  };
+  $('#edToolHint').textContent = hints[toolName] || '';
+  $('#pdfDrawCanvas').style.pointerEvents = (toolName === 'draw' || toolName === 'highlight') ? 'auto' : 'none';
+}
+
+$$('[data-edtool]').forEach((btn) => {
+  btn.addEventListener('click', () => setEditorTool(btn.dataset.edtool));
+});
+
+async function renderCurrentEditorPage() {
+  const session = state.editor.session;
+  const pageObj = currentEditorPageObj();
+  if (!session || !pageObj) return;
+
+  const pages = activeEditorPages();
+  $('#edPageCounter').textContent = `หน้า ${state.editor.pageIdx + 1} / ${pages.length}`;
+  $('#edPrevPage').disabled = state.editor.pageIdx <= 0;
+  $('#edNextPage').disabled = state.editor.pageIdx >= pages.length - 1;
+
+  // รายการหน้าย่อด้านซ้าย
+  $('#pdfThumbs').innerHTML = pages.map((p, idx) => {
+    const annCount = p.annotations.length;
+    return `<div class="pdf-thumb-item ${idx === state.editor.pageIdx ? 'active' : ''}" data-pidx="${idx}">
+      <div>หน้า ${idx + 1} ${annCount ? `<span class="pdf-thumb-item__badge">${annCount}</span>` : ''}</div>
+      <div class="muted" style="font-size:10.5px">ต้นฉบับ #${p.origPageNum}${p.rotation ? ` · ${p.rotation}°` : ''}</div>
+    </div>`;
+  }).join('');
+
+  const baseCanvas = $('#pdfBaseCanvas');
+  const drawCanvas = $('#pdfDrawCanvas');
+  const dims = await renderEditorPageToCanvas(session, pageObj, baseCanvas, 740);
+  drawCanvas.width = dims.width;
+  drawCanvas.height = dims.height;
+  await renderEditorOverlay();
+}
+
+async function renderEditorOverlay() {
+  const pageObj = currentEditorPageObj();
+  if (!pageObj) return;
+  const baseCanvas = $('#pdfBaseCanvas');
+  const drawCanvas = $('#pdfDrawCanvas');
+  const w = baseCanvas.width;
+  const h = baseCanvas.height;
+
+  // วาดเส้นปากกา & ไฮไลต์ลงบน drawCanvas
+  const dCtx = drawCanvas.getContext('2d');
+  dCtx.clearRect(0, 0, w, h);
+  const strokeAnns = pageObj.annotations.filter((a) => a.type === 'draw' || a.type === 'highlight');
+  if (strokeAnns.length) {
+    const rendered = await renderAnnotationsToCanvas(strokeAnns, w, h);
+    dCtx.drawImage(rendered, 0, 0);
+  }
+
+  // สร้าง DOM elements สำหรับข้อความ, กล่องปิดทับ (rect), และรูปภาพ/ลายเซ็น เพื่อให้ลากย้ายและย่อขยายได้
+  const layer = $('#pdfItemsLayer');
+  const boxAnns = pageObj.annotations.filter((a) => a.type === 'text' || a.type === 'rect' || a.type === 'image');
+  layer.innerHTML = boxAnns.map((ann) => {
+    const left = (ann.x * 100).toFixed(2) + '%';
+    const top = (ann.y * 100).toFixed(2) + '%';
+    const isSel = ann.id === state.editor.selectedAnnId ? 'selected' : '';
+    if (ann.type === 'text') {
+      const fs = Math.round((ann.fontSize || 20) * (w / 700));
+      return `<div class="pdf-item ${isSel}" data-annid="${ann.id}" style="left:${left};top:${top};color:${esc(ann.color || '#1f2333')};font-size:${fs}px;font-weight:600;line-height:1.25;white-space:pre;">${esc(ann.text)}<button type="button" class="pdf-item__del" title="ลบ">✕</button></div>`;
+    }
+    if (ann.type === 'rect') {
+      const rw = ((ann.w || 0.22) * 100).toFixed(2) + '%';
+      const rh = ((ann.h || 0.06) * 100).toFixed(2) + '%';
+      return `<div class="pdf-item ${isSel}" data-annid="${ann.id}" style="left:${left};top:${top};width:${rw};height:${rh};background:${esc(ann.color || '#ffffff')};border:1px solid #cbd5e1;"><button type="button" class="pdf-item__del" title="ลบ">✕</button><span class="pdf-item__resize"></span></div>`;
+    }
+    if (ann.type === 'image') {
+      const rw = ((ann.w || 0.25) * 100).toFixed(2) + '%';
+      return `<div class="pdf-item ${isSel}" data-annid="${ann.id}" style="left:${left};top:${top};width:${rw};"><img src="${ann.dataUrl}" alt="" style="width:100%;height:auto;display:block;pointer-events:none;" /><button type="button" class="pdf-item__del" title="ลบ">✕</button><span class="pdf-item__resize"></span></div>`;
+    }
+    return '';
+  }).join('');
+}
+
+// คลิกสลับหน้าจากแถบหน้าย่อ
+$('#pdfThumbs').addEventListener('click', (e) => {
+  const item = e.target.closest('.pdf-thumb-item');
+  if (!item) return;
+  state.editor.pageIdx = Number(item.dataset.pidx) || 0;
+  state.editor.selectedAnnId = null;
+  renderCurrentEditorPage();
+});
+
+$('#edPrevPage').onclick = () => {
+  if (state.editor.pageIdx > 0) { state.editor.pageIdx--; renderCurrentEditorPage(); }
+};
+$('#edNextPage').onclick = () => {
+  const pages = activeEditorPages();
+  if (state.editor.pageIdx < pages.length - 1) { state.editor.pageIdx++; renderCurrentEditorPage(); }
+};
+
+// คลิกบนหน้ากระดาษเพื่อวางข้อความ หรือกล่องลบคำผิด
+$('#pdfStage').addEventListener('click', (e) => {
+  if (e.target.closest('.pdf-item')) return;
+  const pageObj = currentEditorPageObj();
+  if (!pageObj) return;
+  const rect = $('#pdfStage').getBoundingClientRect();
+  const x = Math.max(0.02, Math.min(0.9, (e.clientX - rect.left) / rect.width));
+  const y = Math.max(0.02, Math.min(0.92, (e.clientY - rect.top) / rect.height));
+  const s = readSettings();
+
+  if (state.editor.tool === 'text') {
+    const text = s.edTextVal.trim() || 'ข้อความ';
+    const ann = {
+      id: 'ann_' + (++uid),
+      type: 'text',
+      x, y,
+      text,
+      color: s.edColor,
+      fontSize: s.edFontSize,
+    };
+    pageObj.annotations.push(ann);
+    state.editor.selectedAnnId = ann.id;
+    setEditorTool('select');
+    renderCurrentEditorPage();
+  } else if (state.editor.tool === 'whiteout') {
+    const ann = {
+      id: 'ann_' + (++uid),
+      type: 'rect',
+      x, y,
+      w: 0.24, h: 0.055,
+      color: '#ffffff',
+    };
+    pageObj.annotations.push(ann);
+    state.editor.selectedAnnId = ann.id;
+    setEditorTool('select');
+    renderCurrentEditorPage();
+  } else {
+    state.editor.selectedAnnId = null;
+    renderEditorOverlay();
+  }
+});
+
+// ลากย้าย / ย่อขยาย / ลบ / ดับเบิลคลิกแก้ข้อความบนหน้า PDF
+let dragState = null;
+$('#pdfItemsLayer').addEventListener('pointerdown', (e) => {
+  const delBtn = e.target.closest('.pdf-item__del');
+  const itemEl = e.target.closest('.pdf-item');
+  const pageObj = currentEditorPageObj();
+  if (!itemEl || !pageObj) return;
+  const annId = itemEl.dataset.annid;
+  const ann = pageObj.annotations.find((a) => a.id === annId);
+  if (!ann) return;
+
+  if (delBtn) {
+    e.stopPropagation();
+    pageObj.annotations = pageObj.annotations.filter((a) => a.id !== annId);
+    state.editor.selectedAnnId = null;
+    renderCurrentEditorPage();
+    return;
+  }
+
+  e.stopPropagation();
+  state.editor.selectedAnnId = annId;
+  $$('.pdf-item').forEach((el) => el.classList.toggle('selected', el.dataset.annid === annId));
+
+  const stageRect = $('#pdfStage').getBoundingClientRect();
+  const isResize = !!e.target.closest('.pdf-item__resize');
+  dragState = {
+    ann,
+    isResize,
+    startX: e.clientX,
+    startY: e.clientY,
+    origX: ann.x,
+    origY: ann.y,
+    origW: ann.w || 0.24,
+    origH: ann.h || 0.06,
+    stageW: stageRect.width,
+    stageH: stageRect.height,
+  };
+  itemEl.setPointerCapture?.(e.pointerId);
+});
+
+window.addEventListener('pointermove', (e) => {
+  if (!dragState) return;
+  const dx = (e.clientX - dragState.startX) / Math.max(1, dragState.stageW);
+  const dy = (e.clientY - dragState.startY) / Math.max(1, dragState.stageH);
+  if (dragState.isResize) {
+    dragState.ann.w = Math.max(0.05, Math.min(0.95, dragState.origW + dx));
+    if (dragState.ann.type === 'rect') {
+      dragState.ann.h = Math.max(0.02, Math.min(0.95, dragState.origH + dy));
+    }
+  } else {
+    dragState.ann.x = Math.max(0, Math.min(0.95, dragState.origX + dx));
+    dragState.ann.y = Math.max(0, Math.min(0.95, dragState.origY + dy));
+  }
+  renderEditorOverlay();
+});
+
+window.addEventListener('pointerup', () => {
+  dragState = null;
+});
+
+$('#pdfItemsLayer').addEventListener('dblclick', (e) => {
+  const itemEl = e.target.closest('.pdf-item');
+  const pageObj = currentEditorPageObj();
+  if (!itemEl || !pageObj) return;
+  const ann = pageObj.annotations.find((a) => a.id === itemEl.dataset.annid);
+  if (ann && ann.type === 'text') {
+    const next = prompt('แก้ไขข้อความ:', ann.text);
+    if (next !== null) {
+      ann.text = next;
+      $('#edTextVal').value = next;
+      renderEditorOverlay();
+    }
+  }
+});
+
+// วาดเส้นอิสระ (ปากกา / ไฮไลต์) บน #pdfDrawCanvas
+const drawCanvasEl = $('#pdfDrawCanvas');
+drawCanvasEl.addEventListener('pointerdown', (e) => {
+  if (state.editor.tool !== 'draw' && state.editor.tool !== 'highlight') return;
+  const pageObj = currentEditorPageObj();
+  if (!pageObj) return;
+  const rect = drawCanvasEl.getBoundingClientRect();
+  const s = readSettings();
+  const isHl = state.editor.tool === 'highlight';
+  const ann = {
+    id: 'ann_' + (++uid),
+    type: isHl ? 'highlight' : 'draw',
+    color: isHl ? '#facc15' : s.edColor,
+    size: isHl ? Math.max(14, s.edStrokeSize * 3) : s.edStrokeSize,
+    points: [{ x: (e.clientX - rect.left) / rect.width, y: (e.clientY - rect.top) / rect.height }],
+  };
+  pageObj.annotations.push(ann);
+  state.editor.drawing = { ann, rect };
+  drawCanvasEl.setPointerCapture?.(e.pointerId);
+});
+
+drawCanvasEl.addEventListener('pointermove', (e) => {
+  if (!state.editor.drawing) return;
+  const { ann, rect } = state.editor.drawing;
+  ann.points.push({
+    x: Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)),
+    y: Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height)),
+  });
+  renderEditorOverlay();
+});
+
+drawCanvasEl.addEventListener('pointerup', () => {
+  if (state.editor.drawing) {
+    state.editor.drawing = null;
+    renderCurrentEditorPage();
+  }
+});
+
+// แทรกรูปภาพลงในหน้า PDF
+$('#edImgInput').addEventListener('change', (e) => {
+  const file = e.target.files?.[0];
+  e.target.value = '';
+  if (!file) return;
+  const pageObj = currentEditorPageObj();
+  if (!pageObj) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const ann = {
+      id: 'ann_' + (++uid),
+      type: 'image',
+      x: 0.35, y: 0.35, w: 0.28,
+      dataUrl: reader.result,
+    };
+    pageObj.annotations.push(ann);
+    state.editor.selectedAnnId = ann.id;
+    setEditorTool('select');
+    renderCurrentEditorPage();
+    toast('แทรกรูปภาพแล้ว — ลากไปยังตำแหน่งที่ต้องการได้เลย');
+  };
+  reader.readAsDataURL(file);
+});
+
+// หมุนหน้า / เลื่อนลำดับหน้า / ลบหน้า / ย้อนกลับ
+$('#edRotateLeft').onclick = () => {
+  const p = currentEditorPageObj();
+  if (!p) return;
+  p.rotation = (p.rotation + 270) % 360;
+  renderCurrentEditorPage();
+};
+$('#edRotateRight').onclick = () => {
+  const p = currentEditorPageObj();
+  if (!p) return;
+  p.rotation = (p.rotation + 90) % 360;
+  renderCurrentEditorPage();
+};
+$('#edMoveUp').onclick = () => moveEditorPage(-1);
+$('#edMoveDown').onclick = () => moveEditorPage(1);
+
+function moveEditorPage(dir) {
+  const session = state.editor.session;
+  const p = currentEditorPageObj();
+  if (!session || !p) return;
+  const all = session.pages;
+  const idx = all.indexOf(p);
+  const targetIdx = idx + dir;
+  if (targetIdx < 0 || targetIdx >= all.length) return;
+  [all[idx], all[targetIdx]] = [all[targetIdx], all[idx]];
+  state.editor.pageIdx = Math.max(0, state.editor.pageIdx + dir);
+  renderCurrentEditorPage();
+}
+
+$('#edDeletePage').onclick = () => {
+  const pages = activeEditorPages();
+  if (pages.length <= 1) return toast('ไม่สามารถลบได้ ต้องเหลืออย่างน้อย 1 หน้า');
+  const p = currentEditorPageObj();
+  if (!p) return;
+  p.deleted = true;
+  state.editor.pageIdx = Math.max(0, Math.min(pages.length - 2, state.editor.pageIdx));
+  renderCurrentEditorPage();
+  toast('ลบหน้านี้แล้ว');
+};
+
+$('#edUndoBtn').onclick = () => {
+  const p = currentEditorPageObj();
+  if (!p || !p.annotations.length) return toast('ไม่มีรายการให้ย้อนกลับในหน้านี้');
+  p.annotations.pop();
+  state.editor.selectedAnnId = null;
+  renderCurrentEditorPage();
+};
+
+$('#edClearPageBtn').onclick = () => {
+  const p = currentEditorPageObj();
+  if (!p) return;
+  p.annotations = [];
+  state.editor.selectedAnnId = null;
+  renderCurrentEditorPage();
+  toast('ล้างสิ่งที่แก้ไขในหน้านี้เรียบร้อย');
+};
+
+// ---------------- Modal วาดลายเซ็น (Signature Pad) ----------------
+const signModal = $('#signModal');
+const signCanvas = $('#signPadCanvas');
+const signCtx = signCanvas.getContext('2d');
+let signDrawing = false;
+let signHasInk = false;
+
+function clearSignPad() {
+  signCtx.clearRect(0, 0, signCanvas.width, signCanvas.height);
+  signHasInk = false;
+}
+
+$('#edSignBtn').onclick = () => {
+  clearSignPad();
+  signModal.hidden = false;
+};
+$('#signCloseBtn').onclick = () => (signModal.hidden = true);
+$('#signClearBtn').onclick = clearSignPad;
+
+signCanvas.addEventListener('pointerdown', (e) => {
+  signDrawing = true;
+  signHasInk = true;
+  const r = signCanvas.getBoundingClientRect();
+  const sx = (e.clientX - r.left) * (signCanvas.width / r.width);
+  const sy = (e.clientY - r.top) * (signCanvas.height / r.height);
+  signCtx.beginPath();
+  signCtx.strokeStyle = $('#edColor').value || '#1e40af';
+  signCtx.lineWidth = 3.5;
+  signCtx.lineCap = 'round';
+  signCtx.lineJoin = 'round';
+  signCtx.moveTo(sx, sy);
+  signCanvas.setPointerCapture?.(e.pointerId);
+});
+signCanvas.addEventListener('pointermove', (e) => {
+  if (!signDrawing) return;
+  const r = signCanvas.getBoundingClientRect();
+  const sx = (e.clientX - r.left) * (signCanvas.width / r.width);
+  const sy = (e.clientY - r.top) * (signCanvas.height / r.height);
+  signCtx.lineTo(sx, sy);
+  signCtx.stroke();
+});
+signCanvas.addEventListener('pointerup', () => { signDrawing = false; });
+
+$('#signApplyBtn').onclick = () => {
+  if (!signHasInk) return toast('กรุณาวาดลายเซ็นก่อน');
+  const pageObj = currentEditorPageObj();
+  if (!pageObj) { signModal.hidden = true; return; }
+  const dataUrl = signCanvas.toDataURL('image/png');
+  const ann = {
+    id: 'ann_' + (++uid),
+    type: 'image',
+    x: 0.55, y: 0.75, w: 0.28,
+    dataUrl,
+  };
+  pageObj.annotations.push(ann);
+  state.editor.selectedAnnId = ann.id;
+  signModal.hidden = true;
+  setEditorTool('select');
+  renderCurrentEditorPage();
+  toast('วางลายเซ็นแล้ว — ลากย้ายหรือย่อขยายที่มุมขวาล่างได้เลย');
+};
+
+// ---------------- Render File List ----------------
 function rebuildFileListDOM() {
   const items = getItems();
   const s = readSettings();
@@ -518,9 +1132,15 @@ function rebuildFileListDOM() {
 }
 
 function cardHTML(it) {
-  const mediaTag = it.kind === 'image'
-    ? `<img src="${it.url}" alt="" />`
-    : `<video src="${it.url}#t=0.5" muted playsinline preload="metadata"></video><span class="thumb__dur"></span>`;
+  let mediaTag;
+  if (it.kind === 'image') {
+    mediaTag = `<img src="${it.url}" alt="" />`;
+  } else if (it.kind === 'pdf') {
+    const src = it.meta?.thumbUrl || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 60"><rect width="80" height="60" fill="%231c1e33"/><text x="50%25" y="54%25" text-anchor="middle" dominant-baseline="middle" fill="white" font-family="sans-serif" font-size="14">PDF</text></svg>';
+    mediaTag = `<img src="${src}" alt="PDF" /><span class="thumb__dur"></span>`;
+  } else {
+    mediaTag = `<video src="${it.url}#t=0.5" muted playsinline preload="metadata"></video><span class="thumb__dur"></span>`;
+  }
   return `
   <li class="file" data-id="${it.id}">
     <label class="file__check"><input type="checkbox" class="sel" ${it.selected ? 'checked' : ''} disabled /></label>
@@ -547,13 +1167,20 @@ function updateCard(it) {
   const tool = currentTool();
 
   const durEl = $('.thumb__dur', el);
-  if (durEl && meta?.duration) durEl.textContent = fmtTime(meta.duration);
-  $('.ext', el).textContent = '.' + (it.resultExt || plan?.ext || (it.kind === 'image' ? 'webp' : 'mp4'));
+  if (durEl && meta) {
+    durEl.textContent = it.kind === 'pdf' ? `${meta.pageCount} หน้า` : fmtTime(meta.duration);
+  }
+  if (it.kind === 'pdf' && meta?.thumbUrl) {
+    const imgEl = $('.thumb img', el);
+    if (imgEl && imgEl.getAttribute('src') !== meta.thumbUrl) imgEl.src = meta.thumbUrl;
+  }
+  $('.ext', el).textContent = '.' + (it.resultExt || plan?.ext || (it.kind === 'pdf' ? 'pdf' : it.kind === 'image' ? 'webp' : 'mp4'));
 
   // meta
   let metaHTML = `<span>ต้นฉบับ <b>${fmtSize(it.file.size)}</b></span>`;
-  if (meta && meta.width) {
-    metaHTML += `<span>${meta.width}×${meta.height}${meta.fps ? ` · ${Math.round(meta.fps)}fps` : ''}</span>`;
+  if (meta) {
+    if (it.kind === 'pdf') metaHTML += `<span>${meta.pageCount} หน้า · ${meta.width}×${meta.height} pt</span>`;
+    else if (meta.width) metaHTML += `<span>${meta.width}×${meta.height}${meta.fps ? ` · ${Math.round(meta.fps)}fps` : ''}</span>`;
   }
   if (plan) {
     const target = outBytes ? `<b>${fmtSize(outBytes)}</b>` : `~<b>${fmtSize(plan.estBytes)}</b>`;
@@ -570,7 +1197,7 @@ function updateCard(it) {
   }
   $('.meta', el).innerHTML = metaHTML;
 
-  // กล่องตั้งเวลาตัดแยกแต่ละไฟล์ (เฉพาะโหมดตัดวิดีโอ)
+  // กล่องตั้งค่าเฉพาะไฟล์ (สำหรับ video-trim และ pdf-merge)
   const trimBox = $('.trim-box', el);
   if (tool.id === 'video-trim' && meta && it.status !== 'done') {
     trimBox.hidden = false;
@@ -581,6 +1208,27 @@ function updateCard(it) {
       <span>✂️ ช่วงเวลาไฟล์นี้:</span>
       <label>เริ่ม <input type="number" class="item-trim-start" min="0" max="${meta.duration}" step="0.5" value="${stVal}" /> s</label>
       <label>ถึง <input type="number" class="item-trim-end" min="0" max="${meta.duration}" step="0.5" value="${endVal}" /> s</label>
+    `;
+  } else if (tool.id === 'pdf-merge' && meta && it.status !== 'done') {
+    trimBox.hidden = false;
+    trimBox.className = 'trim-box trim-inline';
+    trimBox.innerHTML = `
+      <span>📄 เลือกหน้าของไฟล์นี้ (1–${meta.pageCount}):</span>
+      <input type="text" class="item-page-range" style="width:120px" placeholder="ทุกหน้า (เช่น 1-2)" value="${esc(it.pageRange || '')}" />
+      <span class="order-btns">
+        <button type="button" class="act-move-up" title="เลื่อนลำดับขึ้น">↑</button>
+        <button type="button" class="act-move-down" title="เลื่อนลำดับลง">↓</button>
+      </span>
+    `;
+  } else if (tool.id === 'image-to-pdf' && meta && it.status !== 'done') {
+    trimBox.hidden = false;
+    trimBox.className = 'trim-box trim-inline';
+    trimBox.innerHTML = `
+      <span>เรียงลำดับหน้า:</span>
+      <span class="order-btns">
+        <button type="button" class="act-move-up" title="เลื่อนลำดับขึ้น">↑ เลื่อนขึ้น</button>
+        <button type="button" class="act-move-down" title="เลื่อนลำดับลง">↓ เลื่อนลง</button>
+      </span>
     `;
   } else {
     trimBox.hidden = true;
@@ -624,7 +1272,11 @@ function updateCard(it) {
 
   // actions
   const busy = it.status === 'processing' || it.status === 'queued';
+  const editBtn = (tool.id === 'pdf-edit' && it.meta)
+    ? `<button class="btn btn--sm ${state.editor.itemId === it.id ? 'btn--primary' : 'btn--outline'} act-open-editor">✏️ ${state.editor.itemId === it.id ? 'กำลังแก้ไข' : 'แก้ไขไฟล์นี้'}</button>`
+    : '';
   $('.file__actions', el).innerHTML = [
+    editBtn,
     it.status === 'done' ? '<button class="btn btn--sm btn--outline act-dl">⬇ โหลด</button>' : '',
     it.status === 'done' ? '<button class="link-btn act-redo">ทำใหม่</button>' : '',
     !busy ? '<button class="link-btn danger act-rm">ลบ</button>' : '',
@@ -641,12 +1293,17 @@ $('#fileList').addEventListener('input', (e) => {
   if (e.target.classList.contains('item-trim-start')) {
     it.trimStart = Math.max(0, parseFloat(e.target.value) || 0);
     it.plan = computeItemPlan(it, readSettings());
-    $('.meta', li).innerHTML = ''; // จะอัปเดตผ่านข้อแนะนำด้านล่าง
     const adv = $('.advice', li);
     if (it.plan?.advice?.length) adv.innerHTML = `<span>💡</span><span>${it.plan.advice.map(esc).join('<br>')}</span>`;
   }
   if (e.target.classList.contains('item-trim-end')) {
     it.trimEnd = Math.max(0, parseFloat(e.target.value) || 0);
+    it.plan = computeItemPlan(it, readSettings());
+    const adv = $('.advice', li);
+    if (it.plan?.advice?.length) adv.innerHTML = `<span>💡</span><span>${it.plan.advice.map(esc).join('<br>')}</span>`;
+  }
+  if (e.target.classList.contains('item-page-range')) {
+    it.pageRange = e.target.value.trim();
     it.plan = computeItemPlan(it, readSettings());
     const adv = $('.advice', li);
     if (it.plan?.advice?.length) adv.innerHTML = `<span>💡</span><span>${it.plan.advice.map(esc).join('<br>')}</span>`;
@@ -662,12 +1319,23 @@ $('#fileList').addEventListener('change', (e) => {
 });
 $('#fileList').addEventListener('click', (e) => {
   const li = e.target.closest('.file');
-  const it = li && getItems().find((x) => x.id === Number(li.dataset.id));
+  const items = getItems();
+  const it = li && items.find((x) => x.id === Number(li.dataset.id));
   if (!it) return;
   if (e.target.closest('.act-rm')) removeItem(it);
-  else if (e.target.closest('.act-dl')) downloadBlob(it.result, `${sanitize(it.name)}.${it.resultExt}`);
-  else if (e.target.closest('.act-redo')) {
-    it.status = 'ready'; it.result = null; it.note = null; it.resultW = null; it.resultH = null;
+  else if (e.target.closest('.act-dl')) downloadItemResult(it);
+  else if (e.target.closest('.act-open-editor')) {
+    openItemInPdfEditor(it);
+    items.forEach(updateCard);
+    $('#pdfEditorCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } else if (e.target.closest('.act-move-up')) {
+    const idx = items.indexOf(it);
+    if (idx > 0) { [items[idx - 1], items[idx]] = [items[idx], items[idx - 1]]; rebuildFileListDOM(); }
+  } else if (e.target.closest('.act-move-down')) {
+    const idx = items.indexOf(it);
+    if (idx < items.length - 1) { [items[idx + 1], items[idx]] = [items[idx], items[idx + 1]]; rebuildFileListDOM(); }
+  } else if (e.target.closest('.act-redo')) {
+    it.status = 'ready'; it.result = null; it.extraResults = null; it.note = null; it.resultW = null; it.resultH = null;
     it.plan = computeItemPlan(it, readSettings());
     updateCard(it); refreshUI();
   }
@@ -677,6 +1345,11 @@ function removeItem(it) {
   URL.revokeObjectURL(it.url);
   setItems(getItems().filter((x) => x !== it));
   $(`.file[data-id="${it.id}"]`)?.remove();
+  if (state.editor.itemId === it.id) {
+    state.editor.itemId = null;
+    state.editor.session = null;
+  }
+  syncEditorVisibility();
   refreshUI();
 }
 
@@ -719,11 +1392,15 @@ function refreshUI() {
   $('#addMoreBtn').disabled = n >= MAX_FILES || state.running;
   dz.hidden = n >= MAX_FILES;
 
-  const pending = items.filter((it) => ['ready', 'cancelled'].includes(it.status));
+  const pending = tool.id === 'pdf-edit'
+    ? items.filter((it) => it.meta)
+    : items.filter((it) => ['ready', 'cancelled'].includes(it.status));
   const startBtn = $('#startBtn');
-  const needWebCodecs = tool.kind !== 'image';
+  const needWebCodecs = tool.kind === 'video' || tool.kind === 'audio';
   startBtn.disabled = state.running || pending.length === 0 || (needWebCodecs && !isSupported());
-  startBtn.textContent = state.running ? '⏳ กำลังประมวลผล…' : `${tool.actionLabel}${pending.length ? ` (${pending.length} ไฟล์)` : ''}`;
+  startBtn.textContent = state.running
+    ? '⏳ กำลังประมวลผล…'
+    : `${tool.actionLabel}${pending.length && tool.id !== 'pdf-edit' ? ` (${pending.length} ไฟล์)` : ''}`;
   $('#cancelBtn').hidden = !state.running;
 
   const done = items.filter((it) => it.status === 'done');
@@ -740,7 +1417,7 @@ function refreshUI() {
 
   const zip = $('#zipToggle').checked;
   $('#zipNameWrap').hidden = !zip;
-  const total = selected.reduce((a, it) => a + it.result.size, 0);
+  const total = selected.reduce((a, it) => a + (it.result?.size || 0), 0);
   $('#dlHint').textContent = zip
     ? `ไฟล์ที่เลือกรวม ${fmtSize(total)} (หากเลือกไฟล์เดียวจะโหลดไฟล์ตรงๆ ทันที)`
     : 'ไม่ใช้ ZIP: จะดาวน์โหลดแยกทีละไฟล์';
@@ -812,15 +1489,75 @@ async function executeToolOnItem(it, tool, settings, callbacks) {
       channels: settings.aeChannels,
     }, callbacks);
   }
+  if (tool.id === 'pdf-edit') {
+    if (!it.editorSession) it.editorSession = await loadPdfEditorSession(it.file);
+    const blob = await exportEditedPdf(it.editorSession, (p) => callbacks.onProgress(p, 1, 1));
+    const activeCount = it.editorSession.pages.filter((p) => !p.deleted).length;
+    return { blob, ext: 'pdf', note: `บันทึกการแก้ไขแล้ว (${activeCount} หน้า)` };
+  }
+  if (tool.id === 'pdf-compress') {
+    return await compressPdf(it.file, it.meta, {
+      method: settings.pcMethod,
+      targetMB: settings.pcTargetMB,
+      percent: settings.pcPercent,
+      quality: settings.pcQuality,
+      grayscale: settings.pcGrayscale,
+    }, callbacks);
+  }
+  if (tool.id === 'pdf-merge') {
+    const r = (it.pageRange != null && it.pageRange !== '') ? it.pageRange : settings.pmRange;
+    return await splitPdfFile(it.file, r, callbacks);
+  }
+  if (tool.id === 'pdf-to-image') {
+    const pages = await pdfToImages(it.file, {
+      format: settings.p2iFormat,
+      scale: settings.p2iScale,
+      range: settings.p2iRange,
+    }, callbacks);
+    if (pages.length === 1) {
+      return {
+        blob: pages[0].blob,
+        ext: pages[0].ext,
+        width: pages[0].width,
+        height: pages[0].height,
+        note: `แปลงหน้า ${pages[0].pageNum} เป็นรูปภาพแล้ว`,
+      };
+    }
+    // ถ้ามีหลายหน้า ให้เก็บหน้าแรกไว้ที่ result และเก็บทุกหน้าไว้ใน extraResults เพื่อให้สร้าง ZIP แยกทุกหน้าได้
+    const totalBytes = pages.reduce((a, p) => a + p.blob.size, 0);
+    const dummyBlob = new Blob([new Uint8Array(0)], { type: pages[0].blob.type });
+    Object.defineProperty(dummyBlob, 'size', { value: totalBytes });
+    return {
+      blob: pages[0].blob,
+      ext: pages[0].ext,
+      width: pages[0].width,
+      height: pages[0].height,
+      extraResults: pages,
+      note: `แปลงสำเร็จ ${pages.length} รูป (${fmtSize(totalBytes)})`,
+    };
+  }
+  if (tool.id === 'image-to-pdf') {
+    const res = await imagesToPdf([it.file], {
+      pageSize: settings.i2pSize,
+      orientation: settings.i2pOrient,
+      margin: settings.i2pMargin,
+    }, (p) => callbacks.onProgress(p, 1, 1));
+    return { blob: res.blob, ext: 'pdf', note: 'แปลงเป็น PDF 1 หน้า' };
+  }
   throw new Error('ไม่รู้จักเครื่องมือนี้');
 }
 
 $('#startBtn').onclick = async () => {
   const items = getItems();
-  const queue = items.filter((it) => ['ready', 'cancelled'].includes(it.status));
-  if (!queue.length) return;
   const tool = currentTool();
   const settings = readSettings();
+
+  // กรณีโหมดแก้ไข PDF: บันทึกไฟล์ที่กำลังแก้ไขอยู่ (หรือทุกไฟล์ที่พร้อม)
+  const queue = tool.id === 'pdf-edit'
+    ? items.filter((it) => it.meta)
+    : items.filter((it) => ['ready', 'cancelled'].includes(it.status));
+  if (!queue.length) return;
+
   state.running = true;
   state.cancelled = false;
   queue.forEach((it) => { it.status = 'queued'; it.plan = computeItemPlan(it, settings); updateCard(it); });
@@ -828,54 +1565,106 @@ $('#startBtn').onclick = async () => {
   refreshUI();
   keepAwake(true);
 
-  const totalWeight = queue.reduce((a, it) => a + (it.meta.duration || 1), 0);
-  let doneWeight = 0;
-
-  for (const [i, it] of queue.entries()) {
-    const w = it.meta.duration || 1;
-    if (state.cancelled) { it.status = 'cancelled'; updateCard(it); continue; }
-    it.status = 'processing'; it.progress = 0;
-    updateCard(it);
-    $('#overallText').textContent = `กำลังประมวลผลไฟล์ ${i + 1}/${queue.length}`;
-    try {
-      const res = await executeToolOnItem(it, tool, settings, {
-        onProgress: (p, pass, maxPass) => {
-          it.progress = p;
-          it.passLabel = pass > 1 ? ` · รอบปรับขนาด ${pass}/${maxPass}` : '';
-          const fill = $(`.file[data-id="${it.id}"] .bar__fill`);
-          const txt = fill?.parentElement.nextElementSibling;
-          if (fill) { fill.style.width = `${Math.round(p * 100)}%`; if (txt) txt.textContent = `${Math.round(p * 100)}%${it.passLabel}`; }
-          const overall = (doneWeight + w * p) / totalWeight;
-          $('#overallBar').style.width = `${overall * 100}%`;
-          $('#overallPct').textContent = `${Math.round(overall * 100)}%`;
-        },
-        setCancel: (fn) => (state.cancelFn = fn),
+  try {
+    // กรณีพิเศษ 1: รวมหลายไฟล์ PDF เป็นเล่มเดียว (pdf-merge && pmMode === 'merge')
+    if (tool.id === 'pdf-merge' && settings.pmMode === 'merge') {
+      $('#overallText').textContent = `กำลังรวมไฟล์ PDF ทั้ง ${queue.length} ไฟล์เข้าด้วยกัน…`;
+      const res = await mergePdfItems(queue, settings.pmRange, (p) => {
+        $('#overallBar').style.width = `${p * 100}%`;
+        $('#overallPct').textContent = `${Math.round(p * 100)}%`;
       });
-      it.result = res.blob;
-      it.resultExt = res.ext;
-      it.resultW = res.width;
-      it.resultH = res.height;
-      it.note = res.note || null;
-      it.status = 'done';
-      it.selected = true;
-    } catch (e) {
-      if (state.cancelled || e?.name === 'ConversionCanceledError') it.status = 'cancelled';
-      else { it.status = 'error'; it.error = e?.message || String(e); console.error(e); }
+      queue.forEach((it, idx) => {
+        if (idx === 0) {
+          it.result = res.blob;
+          it.resultExt = 'pdf';
+          it.note = `รวม ${queue.length} ไฟล์ สำเร็จ (ทั้งหมด ${res.pageCount} หน้า)`;
+          it.status = 'done';
+          it.selected = true;
+        } else {
+          it.result = res.blob;
+          it.resultExt = 'pdf';
+          it.note = `รวมเข้ากับไฟล์แรกเรียบร้อยแล้ว`;
+          it.status = 'done';
+          it.selected = false;
+        }
+        updateCard(it);
+      });
     }
-    doneWeight += w;
-    updateCard(it);
-    refreshUI();
-  }
+    // กรณีพิเศษ 2: รวมรูปภาพหลายรูปเป็น PDF เล่มเดียว (image-to-pdf && i2pMerge === 'single')
+    else if (tool.id === 'image-to-pdf' && settings.i2pMerge === 'single') {
+      $('#overallText').textContent = `กำลังรวมรูปภาพ ${queue.length} รูป เป็นไฟล์ PDF เล่มเดียว…`;
+      const res = await imagesToPdf(queue.map((x) => x.file), {
+        pageSize: settings.i2pSize,
+        orientation: settings.i2pOrient,
+        margin: settings.i2pMargin,
+      }, (p) => {
+        $('#overallBar').style.width = `${p * 100}%`;
+        $('#overallPct').textContent = `${Math.round(p * 100)}%`;
+      });
+      queue.forEach((it, idx) => {
+        it.result = res.blob;
+        it.resultExt = 'pdf';
+        it.note = idx === 0
+          ? `สร้าง PDF รวม ${res.pageCount} หน้า เรียบร้อยแล้ว`
+          : 'ถูกรวมอยู่ในไฟล์ PDF แรกแล้ว';
+        it.status = 'done';
+        it.selected = idx === 0;
+        updateCard(it);
+      });
+    }
+    // กรณีทั่วไป: ประมวลผลทีละไฟล์ตามคิว
+    else {
+      const totalWeight = queue.reduce((a, it) => a + (it.meta.duration || 1), 0);
+      let doneWeight = 0;
 
-  state.running = false;
-  state.cancelFn = null;
-  keepAwake(false);
-  $('#overallText').textContent = state.cancelled ? 'หยุดการทำงานแล้ว' : 'ประมวลผลเสร็จทั้งหมด 🎉';
-  if (!state.cancelled) { $('#overallBar').style.width = '100%'; $('#overallPct').textContent = '100%'; }
-  refreshUI();
-  if (!state.cancelled) {
-    toast('เสร็จเรียบร้อย พร้อมดาวน์โหลด!');
-    $('#downloadCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      for (const [i, it] of queue.entries()) {
+        const w = it.meta.duration || 1;
+        if (state.cancelled) { it.status = 'cancelled'; updateCard(it); continue; }
+        it.status = 'processing'; it.progress = 0;
+        updateCard(it);
+        $('#overallText').textContent = `กำลังประมวลผลไฟล์ ${i + 1}/${queue.length}`;
+        try {
+          const res = await executeToolOnItem(it, tool, settings, {
+            onProgress: (p, pass, maxPass) => {
+              it.progress = p;
+              it.passLabel = pass > 1 ? ` · รอบปรับขนาด ${pass}/${maxPass}` : '';
+              const fill = $(`.file[data-id="${it.id}"] .bar__fill`);
+              const txt = fill?.parentElement.nextElementSibling;
+              if (fill) { fill.style.width = `${Math.round(p * 100)}%`; if (txt) txt.textContent = `${Math.round(p * 100)}%${it.passLabel}`; }
+              const overall = (doneWeight + w * p) / totalWeight;
+              $('#overallBar').style.width = `${overall * 100}%`;
+              $('#overallPct').textContent = `${Math.round(overall * 100)}%`;
+            },
+            setCancel: (fn) => (state.cancelFn = fn),
+          });
+          it.result = res.blob;
+          it.resultExt = res.ext;
+          it.resultW = res.width;
+          it.resultH = res.height;
+          it.extraResults = res.extraResults || null;
+          it.note = res.note || null;
+          it.status = 'done';
+          it.selected = true;
+        } catch (e) {
+          if (state.cancelled || e?.name === 'ConversionCanceledError') it.status = 'cancelled';
+          else { it.status = 'error'; it.error = e?.message || String(e); console.error(e); }
+        }
+        doneWeight += w;
+        updateCard(it);
+        refreshUI();
+      }
+    }
+  } finally {
+    state.running = false;
+    state.cancelFn = null;
+    keepAwake(false);
+    $('#overallText').textContent = state.cancelled ? 'หยุดการทำงานแล้ว' : 'ประมวลผลเสร็จทั้งหมด 🎉';
+    if (!state.cancelled) { $('#overallBar').style.width = '100%'; $('#overallPct').textContent = '100%'; }
+    refreshUI();
+    if (!state.cancelled) {
+      toast('เสร็จเรียบร้อย พร้อมดาวน์โหลด!');
+      $('#downloadCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
   }
 };
 
@@ -900,29 +1689,59 @@ function downloadBlob(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(a.href), 60_000);
 }
 
-function uniqueNames(items) {
+async function downloadItemResult(it) {
+  if (it.extraResults && it.extraResults.length > 1) {
+    if ($('#zipToggle').checked) {
+      const entries = {};
+      for (const p of it.extraResults) {
+        const fname = `${sanitize(it.name)}_p${String(p.pageNum).padStart(2, '0')}.${p.ext}`;
+        entries[fname] = [new Uint8Array(await p.blob.arrayBuffer()), { level: 0 }];
+      }
+      const zipped = zipSync(entries);
+      downloadBlob(new Blob([zipped], { type: 'application/zip' }), `${sanitize(it.name)}_images.zip`);
+    } else {
+      for (const p of it.extraResults) {
+        downloadBlob(p.blob, `${sanitize(it.name)}_p${String(p.pageNum).padStart(2, '0')}.${p.ext}`);
+        await new Promise((r) => setTimeout(r, 350));
+      }
+    }
+    return;
+  }
+  downloadBlob(it.result, `${sanitize(it.name)}.${it.resultExt}`);
+}
+
+function expandNamedDownloads(items) {
   const used = new Map();
-  return items.map((it) => {
-    let name = `${sanitize(it.name)}.${it.resultExt}`;
-    const key = name.toLowerCase();
-    const count = used.get(key) || 0;
-    used.set(key, count + 1);
-    if (count) name = `${sanitize(it.name)} (${count + 1}).${it.resultExt}`;
-    return { it, name };
-  });
+  const list = [];
+  for (const it of items) {
+    if (it.extraResults && it.extraResults.length > 1) {
+      for (const p of it.extraResults) {
+        const name = `${sanitize(it.name)}_p${String(p.pageNum).padStart(2, '0')}.${p.ext}`;
+        list.push({ blob: p.blob, name });
+      }
+    } else {
+      let name = `${sanitize(it.name)}.${it.resultExt}`;
+      const key = name.toLowerCase();
+      const count = used.get(key) || 0;
+      used.set(key, count + 1);
+      if (count) name = `${sanitize(it.name)} (${count + 1}).${it.resultExt}`;
+      list.push({ blob: it.result, name });
+    }
+  }
+  return list;
 }
 
 async function download(items) {
   if (!items.length) return;
-  const named = uniqueNames(items);
-  if ($('#zipToggle').checked && items.length > 1) {
+  const named = expandNamedDownloads(items);
+  if ($('#zipToggle').checked && named.length > 1) {
     const btns = [$('#dlAll'), $('#dlSelected')];
     btns.forEach((b) => (b.disabled = true));
     toast('กำลังสร้างไฟล์ ZIP…');
     try {
       const entries = {};
-      for (const { it, name } of named) {
-        entries[name] = [new Uint8Array(await it.result.arrayBuffer()), { level: 0 }];
+      for (const { blob, name } of named) {
+        entries[name] = [new Uint8Array(await blob.arrayBuffer()), { level: 0 }];
       }
       const zipped = zipSync(entries);
       downloadBlob(new Blob([zipped], { type: 'application/zip' }), `${sanitize($('#zipName').value || 'mediakit-files')}.zip`);
@@ -933,8 +1752,8 @@ async function download(items) {
       refreshUI();
     }
   } else {
-    for (const { it, name } of named) {
-      downloadBlob(it.result, name);
+    for (const { blob, name } of named) {
+      downloadBlob(blob, name);
       await new Promise((r) => setTimeout(r, 450));
     }
   }

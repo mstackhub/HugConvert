@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>MediaKit — บีบอัดวิดีโอ รูปภาพ และแปลงไฟล์ออนไลน์</title>
-  <meta name="description" content="บีบอัดวิดีโอ รูปภาพ แปลงไฟล์ ตัดวิดีโอ แปลงเป็น GIF และแยกเสียง ครั้งละ 20 ไฟล์ กำหนดขนาด MB ได้ ประมวลผลในเครื่อง 100% ไม่อัปโหลดไฟล์" />
+  <title>MediaKit — บีบอัดวิดีโอ รูปภาพ แก้ไข PDF และแปลงไฟล์ออนไลน์</title>
+  <meta name="description" content="บีบอัดวิดีโอ รูปภาพ แก้ไขไฟล์ PDF เซ็นเอกสาร บีบอัด PDF รวม/แยกหน้า PDF แปลงไฟล์ ตัดวิดีโอ ทำ GIF และแยกเสียง ครั้งละ 20 ไฟล์ ประมวลผลในเครื่อง 100%" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='16' fill='%235b5bf0'/><text x='50%25' y='56%25' text-anchor='middle' dominant-baseline='middle' fill='white' font-family='sans-serif' font-weight='700' font-size='28'>MK</text></svg>" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -19,7 +19,7 @@
         <div class="logo">MK</div>
         <div>
           <div class="brand__name">MediaKit</div>
-          <div class="brand__tag">เครื่องมือไฟล์มีเดียครบวงจร</div>
+          <div class="brand__tag">เครื่องมือมีเดีย & PDF ครบวงจร</div>
         </div>
         <button class="icon-btn sidebar__close" id="sidebarClose" aria-label="ปิดเมนู">✕</button>
       </div>
@@ -52,7 +52,7 @@
 
       <section class="tool">
         <div class="layout">
-          <!-- ===== คอลัมน์ซ้าย: Dropzone + รายการไฟล์ + ดาวน์โหลด ===== -->
+          <!-- ===== คอลัมน์ซ้าย: Dropzone + PDF Editor / รายการไฟล์ + ดาวน์โหลด ===== -->
           <div class="col-main">
             <div class="dropzone" id="dropzone" role="button" tabindex="0">
               <input type="file" id="fileInput" accept="video/*,.mkv,.mov,.webm,.mp4,.m4v" multiple hidden />
@@ -64,6 +64,55 @@
               </div>
             </div>
 
+            <!-- ===== Interactive Visual PDF Editor Workspace ===== -->
+            <div class="card pdf-editor" id="pdfEditorCard" hidden>
+              <div class="pdf-toolbar">
+                <div class="pdf-toolbar__group">
+                  <button type="button" class="tool-btn active" data-edtool="select" title="เลือก/เลื่อนตำแหน่ง">👆 เลือก/ย้าย</button>
+                  <button type="button" class="tool-btn" data-edtool="text" title="คลิกบนหน้ากระดาษเพื่อพิมพ์ข้อความ">🔤 เพิ่มข้อความ</button>
+                  <button type="button" class="tool-btn" data-edtool="draw" title="วาดเส้นอิสระด้วยเมาส์หรือนิ้ว">✏️ ปากกาวาด</button>
+                  <button type="button" class="tool-btn" data-edtool="highlight" title="ป้ายไฮไลต์โปร่งแสง">🖍️ ไฮไลต์</button>
+                  <button type="button" class="tool-btn" data-edtool="whiteout" title="สร้างกล่องสีขาวทับข้อความเดิม">⬜ ลบคำผิด/ปิดทับ</button>
+                </div>
+                <div class="pdf-toolbar__group">
+                  <button type="button" class="tool-btn" id="edSignBtn" title="วาดลายเซ็นแล้ววางลงบนหน้า">✍️ เซ็นลายเซ็น</button>
+                  <label class="tool-btn" title="แทรกรูปภาพหรือตราประทับ">
+                    🖼️ แทรกรูป
+                    <input type="file" id="edImgInput" accept="image/*" hidden />
+                  </label>
+                </div>
+                <div class="pdf-toolbar__group">
+                  <button type="button" class="tool-btn" id="edRotateLeft" title="หมุนซ้าย 90°">↺ หมุนซ้าย</button>
+                  <button type="button" class="tool-btn" id="edRotateRight" title="หมุนขวา 90°">↻ หมุนขวา</button>
+                  <button type="button" class="tool-btn" id="edMoveUp" title="เลื่อนหน้านี้ขึ้น">↑ เลื่อนหน้าขึ้น</button>
+                  <button type="button" class="tool-btn" id="edMoveDown" title="เลื่อนหน้านี้ลง">↓ เลื่อนหน้าลง</button>
+                  <button type="button" class="tool-btn danger" id="edDeletePage" title="ลบหน้านี้ออก">🗑️ ลบหน้านี้</button>
+                  <button type="button" class="tool-btn" id="edUndoBtn" title="ย้อนกลับสิ่งที่เพิ่งเพิ่มในหน้านี้">↩ ย้อนกลับ</button>
+                </div>
+              </div>
+
+              <div class="pdf-editor__subbar">
+                <span id="edToolHint">💡 โหมดเลือก: คลิกที่ข้อความ/ลายเซ็น/รูปภาพเพื่อลากย้าย หรือกดเลือกเครื่องมือด้านบน</span>
+                <div class="pdf-editor__pageinfo">
+                  <button type="button" class="btn btn--sm btn--ghost" id="edPrevPage">◀ หน้าก่อน</button>
+                  <span id="edPageCounter">หน้า 1 / 1</span>
+                  <button type="button" class="btn btn--sm btn--ghost" id="edNextPage">หน้าถัดไป ▶</button>
+                </div>
+              </div>
+
+              <div class="pdf-editor__body">
+                <div class="pdf-thumbs" id="pdfThumbs"><!-- รายการหน้าย่อ --></div>
+                <div class="pdf-stage-wrap">
+                  <div class="pdf-stage" id="pdfStage">
+                    <canvas id="pdfBaseCanvas"></canvas>
+                    <canvas id="pdfDrawCanvas"></canvas>
+                    <div class="pdf-items-layer" id="pdfItemsLayer"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ===== รายการไฟล์ในคิว ===== -->
             <div class="card list-card" id="listCard" hidden>
               <div class="list-head">
                 <div class="list-head__left">
@@ -99,6 +148,7 @@
               </div>
             </div>
 
+            <!-- ===== การ์ดดาวน์โหลด ===== -->
             <div class="card download-card" id="downloadCard" hidden>
               <div class="download-card__title">ดาวน์โหลดผลลัพธ์</div>
               <div class="download-row">
@@ -451,6 +501,157 @@
                 </div>
               </div>
 
+              <!-- 7. แผงตั้งค่า: แก้ไขไฟล์ PDF (pdf-edit) -->
+              <div class="tool-panel" data-panel="pdf-edit" hidden>
+                <div class="field">
+                  <label for="edTextVal">ข้อความสำหรับวางบนหน้า PDF</label>
+                  <input type="text" id="edTextVal" class="input" value="ข้อความตัวอย่าง" placeholder="พิมพ์ข้อความที่นี่..." />
+                  <p class="hint">เมื่อเลือกเครื่องมือ <b>🔤 เพิ่มข้อความ</b> แล้วคลิกบนหน้า PDF จะวางข้อความนี้ (ดับเบิลคลิกที่ข้อความบนหน้าเพื่อแก้ไขภายหลังได้)</p>
+                </div>
+                <div class="row-2">
+                  <div class="field">
+                    <label for="edColor">สีข้อความ / ปากกา</label>
+                    <input type="color" id="edColor" class="input color-input" value="#1e40af" />
+                  </div>
+                  <div class="field">
+                    <label for="edFontSize">ขนาดตัวอักษร</label>
+                    <input type="number" id="edFontSize" class="input" min="8" max="96" value="22" />
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="edStrokeSize">ความหนาเส้นปากกา / ไฮไลต์: <b id="edStrokeLabel">4 px</b></label>
+                  <input type="range" id="edStrokeSize" min="1" max="30" step="1" value="4" />
+                </div>
+                <div class="field">
+                  <button type="button" class="btn btn--outline btn--block" id="edClearPageBtn">🧹 ล้างสิ่งที่วาด/พิมพ์ในหน้านี้ทั้งหมด</button>
+                </div>
+                <p class="hint">คุณสามารถหมุนหน้า เลื่อนลำดับหน้า หรือลบหน้าได้จากแถบเครื่องมือเหนือกระดาษ เมื่อแก้ไขเสร็จแล้วกดปุ่ม <b>บันทึกเป็นไฟล์ PDF</b> ด้านล่าง</p>
+              </div>
+
+              <!-- 8. แผงตั้งค่า: บีบอัดไฟล์ PDF (pdf-compress) -->
+              <div class="tool-panel" data-panel="pdf-compress" hidden>
+                <div class="field">
+                  <label for="pcMethod">วิธีบีบอัด PDF</label>
+                  <select id="pcMethod" class="select">
+                    <option value="size" selected>Target a file size (MB) — กำหนดขนาด MB</option>
+                    <option value="percent">Target a file size (%) — กำหนดเปอร์เซ็นต์</option>
+                    <option value="quality">Target quality — เลือกระดับความคมชัด</option>
+                  </select>
+                </div>
+
+                <div class="field" data-pcshow="size">
+                  <label for="pcTargetMB">ขนาดเป้าหมายต่อไฟล์ (MB)</label>
+                  <div class="input-group">
+                    <input type="number" id="pcTargetMB" class="input" min="0.1" step="0.5" value="2" inputmode="decimal" />
+                    <span class="suffix">MB</span>
+                  </div>
+                  <div class="chips" id="pdfMbChips">
+                    <button type="button" data-mb="0.5">0.5 MB</button>
+                    <button type="button" data-mb="1">1 MB</button>
+                    <button type="button" data-mb="2">2 MB</button>
+                    <button type="button" data-mb="5">5 MB</button>
+                    <button type="button" data-mb="10">10 MB</button>
+                  </div>
+                </div>
+
+                <div class="field" data-pcshow="percent" hidden>
+                  <label for="pcPercent">ขนาดเป้าหมาย: <b id="pcPercentLabel">50%</b> ของไฟล์เดิม</label>
+                  <input type="range" id="pcPercent" min="10" max="90" step="5" value="50" />
+                </div>
+
+                <div class="field" data-pcshow="quality" hidden>
+                  <label for="pcQuality">ระดับการบีบอัด</label>
+                  <select id="pcQuality" class="select">
+                    <option value="high">คมชัดสูง (ลดขนาดปานกลาง)</option>
+                    <option value="medium" selected>สมดุล (แนะนำ — ชัดและไฟล์เล็ก)</option>
+                    <option value="low">ไฟล์เล็กมาก (สำหรับส่งอีเมล)</option>
+                    <option value="extreme">บีบอัดสูงสุด (Extreme)</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label class="check compat-check">
+                    <input type="checkbox" id="pcGrayscale" />
+                    <span>แปลงเป็นขาว-ดำ (Grayscale) ช่วยลดขนาดเอกสารสแกนได้มากขึ้น</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- 9. แผงตั้งค่า: รวมไฟล์ & แยกหน้า PDF (pdf-merge) -->
+              <div class="tool-panel" data-panel="pdf-merge" hidden>
+                <div class="field">
+                  <label for="pmMode">รูปแบบการทำงาน</label>
+                  <select id="pmMode" class="select">
+                    <option value="merge" selected>รวมทุกไฟล์เป็น PDF ไฟล์เดียว (Merge PDF)</option>
+                    <option value="split">แยกหน้าออกเป็นรายไฟล์ตามช่วงหน้าที่ระบุ (Split PDF)</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="pmRange">ระบุหน้าที่ต้องการ (เว้นว่าง = ทุกหน้า)</label>
+                  <input type="text" id="pmRange" class="input" placeholder="เช่น 1-3, 5, 7-10" />
+                  <p class="hint">คุณสามารถระบุช่วงหน้าแยกของแต่ละไฟล์ได้ที่การ์ดด้านซ้าย และกดลูกศร <b>↑ ↓</b> เพื่อสลับลำดับไฟล์ก่อนรวมได้</p>
+                </div>
+              </div>
+
+              <!-- 10. แผงตั้งค่า: แปลง PDF เป็นรูปภาพ (pdf-to-image) -->
+              <div class="tool-panel" data-panel="pdf-to-image" hidden>
+                <div class="field">
+                  <label for="p2iFormat">ฟอร์แมตรูปภาพ</label>
+                  <select id="p2iFormat" class="select">
+                    <option value="jpeg" selected>JPG / JPEG (นิยมที่สุด)</option>
+                    <option value="png">PNG (คมชัดสูงสุด)</option>
+                    <option value="webp">WebP (ไฟล์เล็ก)</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="p2iScale">ความละเอียดภาพ (DPI / Scale)</label>
+                  <select id="p2iScale" class="select">
+                    <option value="1.5">มาตรฐาน (150 DPI)</option>
+                    <option value="2" selected>คมชัดสูง (200 DPI — แนะนำ)</option>
+                    <option value="3">คมชัดพิเศษ (300 DPI สำหรับพิมพ์)</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="p2iRange">ช่วงหน้าที่ต้องการแปลง (เว้นว่าง = ทุกหน้า)</label>
+                  <input type="text" id="p2iRange" class="input" placeholder="เช่น 1-5 หรือเว้นว่างเพื่อแปลงทุกหน้า" />
+                </div>
+              </div>
+
+              <!-- 11. แผงตั้งค่า: แปลงรูปภาพเป็น PDF (image-to-pdf) -->
+              <div class="tool-panel" data-panel="image-to-pdf" hidden>
+                <div class="field">
+                  <label for="i2pMerge">การจัดไฟล์ PDF</label>
+                  <select id="i2pMerge" class="select">
+                    <option value="single" selected>รวมทุกรูปเป็นไฟล์ PDF เล่มเดียว</option>
+                    <option value="separate">แยก 1 รูป ต่อ 1 ไฟล์ PDF</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="i2pSize">ขนาดหน้ากระดาษ</label>
+                  <select id="i2pSize" class="select">
+                    <option value="a4" selected>A4 มาตรฐาน</option>
+                    <option value="fit">พอดีขนาดรูปภาพ (Fit to Image)</option>
+                    <option value="letter">US Letter</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="i2pOrient">แนวกระดาษ</label>
+                  <select id="i2pOrient" class="select">
+                    <option value="auto" selected>อัตโนมัติตามสัดส่วนรูป</option>
+                    <option value="portrait">แนวตั้ง (Portrait)</option>
+                    <option value="landscape">แนวนอน (Landscape)</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="i2pMargin">ระยะขอบกระดาษ (Margin)</label>
+                  <select id="i2pMargin" class="select">
+                    <option value="0">ไร้ขอบ (0 pt)</option>
+                    <option value="20" selected>ขอบเล็ก (20 pt)</option>
+                    <option value="40">ขอบมาตรฐาน (40 pt)</option>
+                  </select>
+                </div>
+              </div>
+
               <button class="btn btn--primary btn--block btn--lg" id="startBtn" disabled>🚀 เริ่มประมวลผล</button>
               <button class="btn btn--ghost btn--block danger" id="cancelBtn" hidden>หยุด</button>
               <p class="hint center">เปิดหน้านี้ไว้ระหว่างทำงาน · ประมวลผลในเครื่อง ปลอดภัย 100%</p>
@@ -458,6 +659,24 @@
           </aside>
         </div>
       </section>
+    </div>
+  </div>
+
+  <!-- ===== Modal เซ็นลายเซ็น (Signature Pad) ===== -->
+  <div class="modal-backdrop" id="signModal" hidden>
+    <div class="modal card">
+      <div class="modal__head">
+        <h3>✍️ วาดลายเซ็นของคุณ</h3>
+        <button type="button" class="icon-btn" id="signCloseBtn">✕</button>
+      </div>
+      <p class="hint">ใช้นิ้วหรือเมาส์วาดลายเซ็นในกรอบด้านล่าง แล้วกด "นำลายเซ็นไปวาง"</p>
+      <div class="sign-pad-wrap">
+        <canvas id="signPadCanvas" width="500" height="200"></canvas>
+      </div>
+      <div class="modal__foot">
+        <button type="button" class="btn btn--ghost" id="signClearBtn">ล้างกระดาน</button>
+        <button type="button" class="btn btn--primary" id="signApplyBtn">✓ นำลายเซ็นไปวางบนหน้านี้</button>
+      </div>
     </div>
   </div>
 
