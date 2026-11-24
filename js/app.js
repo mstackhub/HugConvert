@@ -150,7 +150,7 @@ function route() {
   $('#pageTitle').textContent = tool.label;
   $('#pageDesc').textContent = tool.desc;
   $('#settingsTitle').textContent = tool.settingsTitle;
-  document.title = `${tool.label} — MediaKit`;
+  document.title = `${tool.label} — HeyConvert`;
 
   // สลับแผงตั้งค่า
   $$('.tool-panel').forEach((p) => (p.hidden = p.dataset.panel !== tool.panel));
@@ -182,7 +182,7 @@ function route() {
   }
 
   $('#renamePattern').value = `{name}${tool.suffix}`;
-  $('#zipName').value = `mediakit-${tool.id}`;
+  $('#zipName').value = `heyconvert-${tool.id}`;
 
   toggleSidebar(false);
   onSettingsChange();
@@ -538,7 +538,7 @@ $('#demoBtn').addEventListener('click', async (e) => {
     ctx.fillStyle = '#fff';
     ctx.font = 'bold 54px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('MediaKit Sample Image (1280×720)', 640, 350);
+    ctx.fillText('HeyConvert Sample Image (1280×720)', 640, 350);
     ctx.font = '28px sans-serif';
     ctx.fillText('ทดสอบบีบอัดและแปลงไฟล์รูปภาพ', 640, 410);
     c.toBlob((blob) => {
@@ -592,7 +592,7 @@ async function createSampleVideoFile() {
     ctx.arc(100 + (i / totalFrames) * 440, 180 + Math.sin(t * Math.PI * 2) * 70, 36, 0, Math.PI * 2);
     ctx.fill();
     ctx.font = 'bold 28px sans-serif';
-    ctx.fillText(`MediaKit Sample Video  ${t.toFixed(1)}s`, 110, 60);
+    ctx.fillText(`HeyConvert Sample Video  ${t.toFixed(1)}s`, 110, 60);
     await source.add(t, 1 / fps);
   }
   await output.finalize();
@@ -1744,7 +1744,7 @@ async function download(items) {
         entries[name] = [new Uint8Array(await blob.arrayBuffer()), { level: 0 }];
       }
       const zipped = zipSync(entries);
-      downloadBlob(new Blob([zipped], { type: 'application/zip' }), `${sanitize($('#zipName').value || 'mediakit-files')}.zip`);
+      downloadBlob(new Blob([zipped], { type: 'application/zip' }), `${sanitize($('#zipName').value || 'heyconvert-files')}.zip`);
     } catch (e) {
       console.error(e);
       toast('สร้าง ZIP ไม่สำเร็จ (หน่วยความจำไม่พอ) ลองปิดสวิตช์ ZIP แล้วโหลดทีละไฟล์');
