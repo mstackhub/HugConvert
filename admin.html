@@ -48,23 +48,19 @@
     <!-- Login Gate -->
     <div class="card admin-login-box" id="adminLoginCard" hidden>
       <h2 style="margin:0 0 6px;">เข้าสู่ระบบหลังบ้าน Admin</h2>
-      <p class="muted" style="margin:0 0 16px;">เฉพาะอีเมลที่ตั้งค่าใน <code>ADMIN_EMAILS</code> บน Vercel เท่านั้น</p>
+      <p class="muted" style="margin:0 0 16px;">กรอกชื่อผู้ใช้และรหัสผ่านผู้ดูแลระบบ HugConvert</p>
       <div class="auth-feedback err" id="adminLoginErr" hidden></div>
-      <button type="button" class="btn btn--google btn--block" id="adminGoogleBtn" style="margin-bottom:12px;">เข้าสู่ระบบด้วย Google</button>
       <form id="adminLoginForm" class="stack">
         <div class="field">
-          <label for="admEmail">อีเมล</label>
-          <input type="email" id="admEmail" class="input" required placeholder="admin@example.com" />
+          <label for="admUser">ชื่อผู้ใช้ (Username)</label>
+          <input type="text" id="admUser" class="input" required placeholder="adminHugConvert" autocomplete="username" />
         </div>
         <div class="field">
-          <label for="admPw">รหัสผ่าน</label>
-          <input type="password" id="admPw" class="input" required />
+          <label for="admPw">รหัสผ่าน (Password)</label>
+          <input type="password" id="admPw" class="input" required autocomplete="current-password" />
         </div>
-        <button type="submit" class="btn btn--primary btn--block" id="admSubmitBtn">เข้าสู่ระบบ</button>
+        <button type="submit" class="btn btn--primary btn--block" id="admSubmitBtn">เข้าสู่ระบบ Admin</button>
       </form>
-      <div style="text-align:center;margin-top:12px;">
-        <button type="button" class="btn btn--sm btn--ghost" id="admToggleModeBtn">ยังไม่มีบัญชี? สมัครสมาชิกลง Supabase</button>
-      </div>
     </div>
 
     <!-- Error / Unauthorized Banner -->
@@ -202,7 +198,10 @@
   </div>
 
   <script type="module">
-    import { initAuth, getCurrentUser, getAccessToken, registerWithEmail, loginWithEmail, loginWithGoogle, logoutUser } from './js/auth.js';
+    const ADMIN_TOKEN_KEY = 'hc.admin.token.v1';
+    const ADMIN_USER_KEY = 'hc.admin.user.v1';
+    const getAdminToken = () => sessionStorage.getItem(ADMIN_TOKEN_KEY) || '';
+    const getAdminUser = () => sessionStorage.getItem(ADMIN_USER_KEY) || '';
 
     const TOOL_LABELS = {
       'pdf-edit': '✏️ แก้ไข & กรอกฟอร์ม PDF',
@@ -227,19 +226,20 @@
     let activeAdjUser = null;
 
     async function loadDashboard() {
-      const user = getCurrentUser();
-      if (!user) {
+      const token = getAdminToken();
+      const adminName = getAdminUser();
+      if (!token) {
         $('#adminLoginCard').hidden = false;
         $('#adminDashContent').hidden = true;
         $('#adminLogoutBtn').hidden = true;
         $('#adminErrorBanner').hidden = true;
+        $('#adminEmailLabel').textContent = '';
         return;
       }
       $('#adminLoginCard').hidden = true;
       $('#adminLogoutBtn').hidden = false;
-      $('#adminEmailLabel').textContent = user.email;
+      $('#adminEmailLabel').textContent = adminName || 'adminHugConvert';
 
-      const token = await getAccessToken();
       const range = $('#adminRangeSelect').value;
       const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
       let data = null;
@@ -259,7 +259,7 @@
           // Localhost static server: แสดงข้อมูลตัวอย่างเพื่อให้ดูหน้าตา Dashboard ได้
           $('#adminErrorBanner').hidden = false;
           $('#adminErrorBanner').style.cssText = 'background:#eff6ff;color:#1e40af;border-color:#bfdbfe;';
-          $('#adminErrorBanner').textContent = '💡 กำลังแสดงข้อมูลจำลอง (Localhost Demo) — เมื่อเปิดผ่าน Vercel หลังตั้งค่า ADMIN_EMAILS จะแสดงข้อมูลจริงจาก Supabase';
+          $('#adminErrorBanner').textContent = '💡 กำลังแสดงข้อมูลจำลอง (Localhost Demo) — เมื่อเปิดผ่าน Vercel จะแสดงข้อมูลจริงจาก Supabase';
           data = {
             summary: {
               totalUsers: 128, activePassCount: 14, totalLifetimeTopup: 24850,
@@ -275,16 +275,21 @@
               { toolId: 'audio-extract', runs: 54, files: 205, coinsSpent: 54 },
             ],
             users: [
-              { id: 'u1', email: user.email, name: user.name || 'Admin Demo', walletCode: 'HC-4WGX-CBJL', tier: '💎 Platinum VIP', balance: 618, lifetimeTopup: 5200 },
+              { id: 'u1', email: 'm.aekungkun@gmail.com', name: 'Admin Demo', walletCode: 'HC-4WGX-CBJL', tier: '💎 Platinum VIP', balance: 618, lifetimeTopup: 5200 },
               { id: 'u2', email: 'somchai.hr@company.co.th', name: 'สมชาย ฝ่ายบุคคล', walletCode: 'HC-91AB-20CD', tier: '🥇 Gold', balance: 340, lifetimeTopup: 1800 },
               { id: 'u3', email: 'nicha.design@gmail.com', name: 'ณิชา ครีเอเตอร์', walletCode: 'HC-77EF-11GH', tier: '🥈 Silver', balance: 120, lifetimeTopup: 600 },
             ],
             recentTx: [
               { email: 'somchai.hr@company.co.th', label: '💳 เติมแพ็กเกจ Pro Studio (+โบนัส 🥇 Gold +60)', delta: 660, createdAt: new Date().toISOString() },
               { email: 'nicha.design@gmail.com', label: '⚡ บีบอัดวิดีโอ (Batch 12 ไฟล์พร้อมกัน)', delta: -5, createdAt: new Date(Date.now() - 1800000).toISOString() },
-              { email: user.email, label: '⚡ ปลดล็อก & ลายน้ำ PDF (คาดลายน้ำเอกสาร PDF)', delta: -1, createdAt: new Date(Date.now() - 3600000).toISOString() },
+              { email: 'm.aekungkun@gmail.com', label: '⚡ ปลดล็อก & ลายน้ำ PDF (คาดลายน้ำเอกสาร PDF)', delta: -1, createdAt: new Date(Date.now() - 3600000).toISOString() },
             ],
           };
+        } else if (res.status === 401) {
+          sessionStorage.removeItem(ADMIN_TOKEN_KEY);
+          sessionStorage.removeItem(ADMIN_USER_KEY);
+          await loadDashboard();
+          return;
         } else {
           $('#adminDashContent').hidden = true;
           $('#adminErrorBanner').hidden = false;
@@ -386,7 +391,7 @@
     $('#adjustForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!activeAdjUser) return;
-      const token = await getAccessToken();
+      const token = getAdminToken();
       const res = await fetch('/api/admin-adjust', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -403,38 +408,55 @@
       await loadDashboard();
     });
 
-    let admMode = 'signin';
-    $('#admToggleModeBtn').onclick = () => {
-      admMode = admMode === 'signin' ? 'signup' : 'signin';
-      $('#admSubmitBtn').textContent = admMode === 'signup' ? 'สมัครสมาชิก & บันทึกลง Supabase' : 'เข้าสู่ระบบ';
-      $('#admToggleModeBtn').textContent = admMode === 'signup' ? 'มีบัญชีแล้ว? กลับไปเข้าสู่ระบบ' : 'ยังไม่มีบัญชี? สมัครสมาชิกลง Supabase';
-      $('#adminLoginErr').hidden = true;
-    };
-
-    $('#adminGoogleBtn').onclick = () => loginWithGoogle();
     $('#adminLoginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const fb = $('#adminLoginErr');
       fb.hidden = true;
-      const email = $('#admEmail').value;
+      const username = $('#admUser').value.trim();
       const password = $('#admPw').value;
-      const res = admMode === 'signup'
-        ? await registerWithEmail({ name: email.split('@')[0], email, password })
-        : await loginWithEmail({ email, password });
-      if (!res.ok || res.needsConfirm) {
+      const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+
+      try {
+        const res = await fetch('/api/admin-login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password }),
+        });
+        const text = await res.text();
+        let data = null;
+        try { data = JSON.parse(text); } catch { /* static server */ }
+
+        if (res.ok && data?.token) {
+          sessionStorage.setItem(ADMIN_TOKEN_KEY, data.token);
+          sessionStorage.setItem(ADMIN_USER_KEY, data.username || username);
+          await loadDashboard();
+          return;
+        }
+        if (isLocal && !data) {
+          if (username === 'adminHugConvert' && password === 'HugConvert1234') {
+            sessionStorage.setItem(ADMIN_TOKEN_KEY, 'local_demo_token');
+            sessionStorage.setItem(ADMIN_USER_KEY, username);
+            await loadDashboard();
+            return;
+          }
+          fb.hidden = false;
+          fb.textContent = 'ชื่อผู้ใช้หรือรหัสผ่าน Admin ไม่ถูกต้อง';
+          return;
+        }
         fb.hidden = false;
-        fb.className = `auth-feedback ${res.ok ? 'ok' : 'err'}`;
-        fb.textContent = res.msg;
-        return;
+        fb.textContent = data?.error || 'เข้าสู่ระบบไม่สำเร็จ';
+      } catch (err) {
+        fb.hidden = false;
+        fb.textContent = `เชื่อมต่อไม่สำเร็จ: ${err.message}`;
       }
-      await loadDashboard();
     });
+
     $('#adminLogoutBtn').onclick = async () => {
-      await logoutUser();
+      sessionStorage.removeItem(ADMIN_TOKEN_KEY);
+      sessionStorage.removeItem(ADMIN_USER_KEY);
       await loadDashboard();
     };
 
-    await initAuth();
     await loadDashboard();
   </script>
 </body>

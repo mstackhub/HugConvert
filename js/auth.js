@@ -19,7 +19,7 @@ const authListeners = new Set();
 export const isCloudAuthConfigured = () =>
   Boolean(SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey);
 
-async function getSupabase() {
+export async function getSupabase() {
   if (!isCloudAuthConfigured()) return null;
   if (supabaseClient) return supabaseClient;
   const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');

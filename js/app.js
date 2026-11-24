@@ -16,7 +16,7 @@ import {
 import {
   COIN_PACKAGES, DAILY_BONUS_COINS, FREE_DAILY_CAP, SEO_CONTENT,
   loadWallet, canClaimDaily, claimDailyBonus, redeemCoupon,
-  addCoinsFromPurchase, spendCoins, calculateJobCost, hasUnlimitedPass, getVipTier,
+  addCoinsFromPurchase, spendCoins, calculateJobCost, hasUnlimitedPass, getVipTier, syncWalletFromCloud,
 } from './heycoin.js';
 import {
   initAuth, getCurrentUser, onAuthStateChange,
@@ -2728,12 +2728,23 @@ $('#ddLogoutBtn').onclick = async () => {
   toast(res.msg);
 };
 
-onAuthStateChange(() => {
+onAuthStateChange(async (user) => {
   renderAuthUI();
   renderWalletBadge();
   if (state.toolId === 'topup') renderCoinModal();
+  if (state.toolId === 'history') renderHistoryPage();
   refreshUI();
   renderWatermarkPreview();
+  if (user) {
+    const synced = await syncWalletFromCloud();
+    if (synced) {
+      renderAuthUI();
+      renderWalletBadge();
+      if (state.toolId === 'topup') renderCoinModal();
+      if (state.toolId === 'history') renderHistoryPage();
+      refreshUI();
+    }
+  }
 });
 
 // ============================================================

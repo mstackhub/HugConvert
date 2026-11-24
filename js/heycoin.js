@@ -2,7 +2,7 @@
 //  heycoin.js — ระบบกระเป๋าเหรียญ HugCoin, โบนัสรายวัน, คูปอง, แพ็กเกจเติมเงิน
 //  และข้อมูล SEO รายเครื่องมือสำหรับ HugConvert (ผูกกับบัญชีผู้ใช้งานใน auth.js)
 // ============================================================
-import { getCurrentUser } from './auth.js';
+import { getCurrentUser, getSupabase } from './auth.js';
 
 const WALLET_PREFIX = 'hc.wallet.u.';
 export const WELCOME_COINS = 15;
@@ -151,7 +151,43 @@ export function claimDailyBonus() {
   w.balance = roundCoins(cur + added);
   w.history.unshift({ ts: Date.now(), delta: added, label: `☀️ เช็คอินรายวัน (${today})` });
   saveWallet(w);
+  getSupabase().then((sb) => sb?.rpc('claim_daily_bonus')).catch(() => {});
   return { ok: true, added, msg: `🎉 รับฟรี +${added} HugCoins เรียบร้อย!`, wallet: w };
+}
+
+/** ดึงยอดเหรียญ + ประวัติจริงจาก Supabase มาซิงก์ลงเครื่อง */
+export async function syncWalletFromCloud() {
+  const user = getCurrentUser();
+  if (!user || user.mode !== 'cloud') return null;
+  const sb = await getSupabase();
+  if (!sb) return null;
+  try {
+    const [{ data: wRow }, { data: txRows }] = await Promise.all([
+      sb.from('wallets').select('*').eq('user_id', user.id).maybeSingle(),
+      sb.from('coin_transactions').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(50),
+    ]);
+    if (!wRow) return null;
+    const synced = {
+      isGuest: false,
+      userId: user.id,
+      email: user.email,
+      walletId: wRow.wallet_code || randomWalletId(),
+      balance: roundCoins(wRow.balance),
+      lifetimeTopup: roundCoins(wRow.lifetime_topup || 0),
+      unlimitedUntil: wRow.unlimited_until ? new Date(wRow.unlimited_until).getTime() : 0,
+      lastCheckIn: wRow.last_check_in || '',
+      usedCoupons: Array.isArray(wRow.used_coupons) ? wRow.used_coupons : [],
+      history: (txRows || []).map((t) => ({
+        ts: new Date(t.created_at).getTime(),
+        delta: roundCoins(t.delta),
+        label: t.label,
+      })),
+    };
+    saveWallet(synced);
+    return synced;
+  } catch {
+    return null;
+  }
 }
 
 export function redeemCoupon(codeRaw) {
@@ -274,6 +310,7 @@ export function spendCoins(amount, reason) {
   w.balance = roundCoins(w.balance - amount);
   w.history.unshift({ ts: Date.now(), delta: -amount, label: reason });
   saveWallet(w);
+  getSupabase().then((sb) => sb?.rpc('spend_heycoins', { p_amount: amount, p_reason: reason })).catch(() => {});
   return { ok: true, wallet: w };
 }
 
