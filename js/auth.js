@@ -6,8 +6,8 @@
 // ============================================================
 
 export const SUPABASE_CONFIG = {
-  url: '',      // เช่น 'https://xxxx.supabase.co'
-  anonKey: '',  // ใส่ anon public key จาก Supabase Project Settings -> API
+  url: 'https://hmmievfvhbqrnifbspoh.supabase.co',
+  anonKey: 'sb_publishable_1tMLl6X39zET_CSYVduThg_qM4WiHAO',  // ใส่ anon/publishable key จาก Supabase Project Settings -> API
 };
 
 const USERS_DB_KEY = 'hc.auth.users.v1';
