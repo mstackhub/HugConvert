@@ -507,7 +507,7 @@ input[type="range"] { width: 100%; accent-color: var(--primary); }
   cursor: pointer; transition: all .15s; white-space: nowrap;
 }
 .coin-pill:hover { border-color: var(--primary); background: #fafaff; }
-.coin-pill__icon { font-size: 16px; }
+.coin-pill__icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .coin-pill__bal { font-size: 13.5px; color: var(--text-2); }
 .coin-pill__bal b { font-weight: 700; color: var(--primary); font-size: 14.5px; }
 .coin-pill__add {

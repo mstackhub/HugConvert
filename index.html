@@ -123,7 +123,19 @@
 
         <div class="topbar__actions">
           <button type="button" class="coin-pill" id="coinWalletBtn" title="กระเป๋าเหรียญ HugCoin & โบนัสรายวัน">
-            <span class="coin-pill__icon">🪙</span>
+            <span class="coin-pill__icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" fill="url(#hugCoinGrad)" stroke="#d97706" stroke-width="1.5"/>
+                <circle cx="12" cy="12" r="6.8" stroke="#fef3c7" stroke-width="1.1" stroke-opacity="0.75"/>
+                <text x="12" y="15.2" text-anchor="middle" fill="#fff" font-size="9.5" font-weight="800" font-family="sans-serif">H</text>
+                <defs>
+                  <linearGradient id="hugCoinGrad" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#fbbf24"/>
+                    <stop offset="1" stop-color="#d97706"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+            </span>
             <span class="coin-pill__bal"><b id="coinBalanceText">0</b> <span class="coin-pill__unit">HugCoins</span></span>
             <span class="coin-pill__add" id="coinPillAction">+ เติมเหรียญ</span>
             <span class="coin-pill__dot" id="coinDailyDot" hidden title="มีโบนัสฟรีรายวันให้กดรับ!"></span>
