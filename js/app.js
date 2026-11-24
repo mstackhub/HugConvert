@@ -20,7 +20,7 @@ import {
 } from './heycoin.js';
 import {
   initAuth, getCurrentUser, onAuthStateChange,
-  registerWithEmail, loginWithEmail, loginWithGoogle, requestPasswordReset, logoutUser,
+  registerWithEmail, loginWithEmail, requestPasswordReset, logoutUser,
 } from './auth.js';
 import { renderLandingAds } from './ads.js';
 
@@ -2590,8 +2590,6 @@ function setAuthMode(mode, infoMsg = '') {
   currentAuthMode = mode;
   $$('.auth-tab').forEach((t) => t.classList.toggle('active', t.dataset.authtab === mode));
   $('#authTabs').hidden = mode === 'reset';
-  $('#googleLoginBtn').hidden = mode === 'reset';
-  $('.auth-divider').hidden = mode === 'reset';
   $('#authNameField').hidden = mode !== 'signup';
   $('#authPasswordField').hidden = mode === 'reset';
   $('#forgotPwLink').hidden = mode !== 'signin';
@@ -2641,14 +2639,6 @@ $('#pwToggleBtn').onclick = (e) => {
   e.currentTarget.classList.toggle('is-shown', show);
 };
 
-$('#googleLoginBtn').onclick = async () => {
-  const res = await loginWithGoogle();
-  if (!res.ok) return showAuthFeedback(res.msg, false);
-  if (res.redirecting) return;
-  $('#authModal').hidden = true;
-  toast(res.msg);
-};
-
 $('#authForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const name = $('#authName').value;
@@ -2667,8 +2657,9 @@ $('#authForm').addEventListener('submit', async (e) => {
       ? await registerWithEmail({ name, email, password })
       : await loginWithEmail({ email, password });
 
-    if (!res.ok) {
-      showAuthFeedback(res.msg, false);
+    if (!res.ok || res.needsConfirm) {
+      showAuthFeedback(res.msg, Boolean(res.ok));
+      if (res.ok) $('#authPassword').value = '';
       return;
     }
     $('#authPassword').value = '';
