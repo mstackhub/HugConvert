@@ -28,8 +28,8 @@
 html, body { margin: 0; height: 100%; }
 body {
   -webkit-font-smoothing: antialiased;
-  font-size: 14.5px;
-  line-height: 1.55;
+  font-size: 15.5px;
+  line-height: 1.6;
   color: var(--text);
 }
 button, input, select, textarea { font: inherit; color: inherit; }
@@ -111,7 +111,7 @@ code {
 .topnav__link {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 7px 12px; border-radius: 9px; border: 0; background: transparent;
-  font-size: 13.5px; font-weight: 500; color: var(--text-2);
+  font-size: 14.5px; font-weight: 500; color: var(--text-2);
   text-decoration: none; cursor: pointer; transition: background .15s, color .15s;
 }
 .topnav__link:hover, .topnav__link.active { background: var(--surface-2); color: var(--primary); font-weight: 600; }
@@ -127,7 +127,7 @@ code {
 .topnav__drop:focus-within .topnav__menu { display: flex; flex-direction: column; gap: 2px; }
 .topnav__menu a {
   display: flex; align-items: center; gap: 8px; padding: 8px 11px; border-radius: 8px;
-  text-decoration: none; color: var(--text-2); font-size: 13.5px; font-weight: 500;
+  text-decoration: none; color: var(--text-2); font-size: 14.5px; font-weight: 500;
 }
 .topnav__menu a:hover { background: var(--surface-2); color: var(--text); }
 .topnav__menu a.active { background: var(--primary-soft); color: var(--primary); font-weight: 600; }
@@ -140,14 +140,14 @@ code {
 }
 .workspace-back {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 6px 12px; border-radius: 9px; border: 1px solid var(--line);
+  padding: 7px 13px; border-radius: 9px; border: 1px solid var(--line);
   background: var(--surface); color: var(--text-2); text-decoration: none;
-  font-size: 13px; font-weight: 600; transition: all .15s;
+  font-size: 14px; font-weight: 600; transition: all .15s;
 }
 .workspace-back:hover { border-color: var(--primary); color: var(--primary); }
 .workspace-head__titles { flex: 1; min-width: 200px; }
-.topbar__title { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.015em; line-height: 1.25; }
-.topbar__desc { margin: 2px 0 0; font-size: 13.5px; color: var(--muted); }
+.topbar__title { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.015em; line-height: 1.25; }
+.topbar__desc { margin: 2px 0 0; font-size: 14.5px; color: var(--muted); }
 .menu-btn { display: none; }
 .icon-btn {
   background: none; border: 0; font-size: 19px; cursor: pointer;
@@ -706,11 +706,11 @@ input[type="range"] { width: 100%; accent-color: var(--primary); }
 .hub-strip__info { flex: 1; min-width: 280px; }
 .hub-strip__badge {
   display: inline-block; padding: 5px 13px; border-radius: 99px;
-  background: #f0fdf4; color: #166534; font-size: 12.5px; font-weight: 600; margin-bottom: 12px;
+  background: #f0fdf4; color: #166534; font-size: 13px; font-weight: 600; margin-bottom: 12px;
   border: 1px solid #bbf7d0;
 }
-.hub-strip__title { margin: 0; font-size: 26px; font-weight: 700; line-height: 1.28; letter-spacing: -.015em; }
-.hub-strip__sub { margin: 8px 0 0; color: var(--text-2); font-size: 15px; }
+.hub-strip__title { margin: 0; font-size: 28px; font-weight: 700; line-height: 1.28; letter-spacing: -.015em; }
+.hub-strip__sub { margin: 8px 0 0; color: var(--text-2); font-size: 16px; }
 
 /* Member Workspace Mode (หลัง Login) */
 .hub-strip__member { display: none; }
@@ -749,11 +749,11 @@ body.is-member .hub-strip {
 }
 .smart-dropzone__btn {
   padding: 13px 26px; border-radius: 12px;
-  background: var(--primary); color: #fff; font-weight: 700; font-size: 15.5px;
+  background: var(--primary); color: #fff; font-weight: 700; font-size: 16px;
   box-shadow: 0 4px 12px rgba(79, 70, 229, .28);
 }
 .smart-dropzone:hover .smart-dropzone__btn { background: var(--primary-hover); }
-.smart-dropzone__types { font-size: 13px; color: var(--muted); margin-top: 10px; }
+.smart-dropzone__types { font-size: 14px; color: var(--muted); margin-top: 10px; }
 
 .smart-pdf-choice {
   padding: 14px 16px;
@@ -801,7 +801,7 @@ body.is-member .hub-strip {
 .hub-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
 .hub-tab {
   border: 1px solid var(--line); background: #fff; border-radius: 99px;
-  padding: 6px 14px; font-size: 13px; font-weight: 600; color: var(--muted);
+  padding: 7px 15px; font-size: 14px; font-weight: 600; color: var(--muted);
   cursor: pointer; transition: all .15s;
 }
 .hub-tab:hover { border-color: #cbd5e1; color: var(--text); }
@@ -830,12 +830,12 @@ body.is-member .hub-strip {
 .tool-card[data-cat="audio"] .tool-card__icon { background: #f0f9ff; }
 .tool-card__body { min-width: 0; flex: 1; }
 .tool-card__title {
-  font-weight: 700; font-size: 14.5px; color: var(--text);
+  font-weight: 700; font-size: 16px; color: var(--text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .tool-card:hover .tool-card__title { color: var(--primary); }
 .tool-card__desc {
-  font-size: 12.2px; color: var(--muted); margin-top: 2px;
+  font-size: 13.5px; color: var(--muted); margin-top: 2px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
@@ -874,14 +874,14 @@ body.is-member .hub-strip {
 }
 .why-item h4 {
   margin: 0 0 4px;
-  font-size: 14.5px;
+  font-size: 15.5px;
   color: var(--text);
 }
 .why-item p {
   margin: 0;
-  font-size: 12.5px;
+  font-size: 13.5px;
   color: var(--muted);
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 /* ===== Dedicated Pricing Section ===== */
@@ -930,16 +930,16 @@ body.is-member .hub-strip {
   font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 99px;
 }
 .price-card__tag.warn { background: #d97706; }
-.price-card__name { font-size: 14px; font-weight: 700; color: var(--text-2); }
+.price-card__name { font-size: 15px; font-weight: 700; color: var(--text-2); }
 .price-card__price {
-  font-size: 30px; font-weight: 700; color: var(--text); line-height: 1.15; margin-top: 8px;
+  font-size: 32px; font-weight: 700; color: var(--text); line-height: 1.15; margin-top: 8px;
 }
-.price-card__price span { font-size: 14px; font-weight: 500; color: var(--muted); }
-.price-card__coins { font-size: 15px; font-weight: 700; color: var(--primary); margin-top: 4px; }
-.price-card__note { font-size: 12px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+.price-card__price span { font-size: 15px; font-weight: 500; color: var(--muted); }
+.price-card__coins { font-size: 16px; font-weight: 700; color: var(--primary); margin-top: 4px; }
+.price-card__note { font-size: 13px; color: var(--muted); font-weight: 600; margin-top: 2px; }
 .price-card__note.ok { color: var(--ok); }
 .price-card__desc {
-  font-size: 12.5px; color: var(--muted); line-height: 1.5;
+  font-size: 13.5px; color: var(--muted); line-height: 1.55;
   margin: 10px 0 16px; flex: 1;
 }
 
@@ -989,19 +989,19 @@ body.is-member .hub-strip {
 }
 .site-footer__desc {
   margin: 12px 0 14px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--muted);
   line-height: 1.6;
-  max-width: 300px;
+  max-width: 320px;
 }
 .site-footer__pdpa {
   display: inline-block;
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 600;
   color: #166534;
   background: #f0fdf4;
   border: 1px solid #bbf7d0;
-  padding: 4px 10px;
+  padding: 4px 11px;
   border-radius: 99px;
 }
 .site-footer__col {
@@ -1011,13 +1011,13 @@ body.is-member .hub-strip {
 }
 .site-footer__col h4 {
   margin: 0 0 4px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--text);
 }
 .site-footer__col a,
 .site-footer__linkbtn {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--muted);
   text-decoration: none;
   background: none;
