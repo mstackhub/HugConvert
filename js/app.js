@@ -12,6 +12,11 @@ import {
   mergePdfItems, splitPdfFile, pdfToImages, imagesToPdf,
   loadPdfEditorSession, renderEditorPageToCanvas, renderAnnotationsToCanvas, exportEditedPdf,
 } from './pdf-tools.js';
+import {
+  COIN_PACKAGES, DAILY_BONUS_COINS, SEO_CONTENT,
+  loadWallet, canClaimDaily, claimDailyBonus, redeemCoupon,
+  addCoinsFromPurchase, spendCoins, calculateJobCost,
+} from './heycoin.js';
 
 // ------------------------------------------------------------
 //  รายการเครื่องมือใน Sidebar — ใช้งานได้จริงครบทุกตัว (12 เครื่องมือ)
@@ -126,15 +131,94 @@ function setItems(arr) {
   state.batches[getBucket()] = arr;
 }
 
-// ---------------- Sidebar / Router ----------------
+// ---------------- Sidebar / SEO Router ----------------
 function buildNav() {
   $('#nav').innerHTML = TOOLS.map((t) =>
     t.group
       ? `<div class="nav__group">${t.group}</div>`
-      : `<a class="nav__item" href="#${t.id}" data-id="${t.id}">
+      : `<a class="nav__item" href="?tool=${t.id}" data-id="${t.id}">
            <span class="nav__icon">${t.icon}</span><span>${t.label}</span>
          </a>`
   ).join('');
+}
+
+function getToolIdFromUrl() {
+  const params = new URLSearchParams(location.search);
+  const qTool = params.get('tool');
+  if (qTool && TOOLS.some((t) => t.id === qTool)) return qTool;
+  const hTool = location.hash.slice(1);
+  if (hTool && TOOLS.some((t) => t.id === hTool)) return hTool;
+  return 'video-compress';
+}
+
+function navigateToTool(id) {
+  if (state.running) {
+    toast('กรุณารอให้ประมวลผลเสร็จหรือกดหยุดก่อนเปลี่ยนเมนู');
+    return;
+  }
+  const url = id === 'video-compress' ? location.pathname : `${location.pathname}?tool=${id}`;
+  history.pushState({ tool: id }, '', url);
+  route();
+}
+
+function updateSeoForTool(tool) {
+  const seo = SEO_CONTENT[tool.id] || SEO_CONTENT['video-compress'];
+  document.title = seo.title;
+  const metaDesc = $('#metaDesc');
+  const metaKw = $('#metaKeywords');
+  const ogTitle = $('#ogTitle');
+  const ogDesc = $('#ogDesc');
+  const canonical = $('#canonicalLink');
+  if (metaDesc) metaDesc.setAttribute('content', seo.intro);
+  if (metaKw) metaKw.setAttribute('content', seo.keywords);
+  if (ogTitle) ogTitle.setAttribute('content', seo.title);
+  if (ogDesc) ogDesc.setAttribute('content', seo.intro);
+  if (canonical) {
+    const base = 'https://mstackhub.github.io/beebfile/';
+    canonical.setAttribute('href', tool.id === 'video-compress' ? base : `${base}?tool=${tool.id}`);
+  }
+
+  const h2 = $('#seoH2');
+  const intro = $('#seoIntro');
+  const faqsEl = $('#seoFaqs');
+  if (h2) h2.textContent = seo.h2;
+  if (intro) intro.textContent = seo.intro;
+  if (faqsEl && seo.faqs) {
+    faqsEl.innerHTML = seo.faqs.map((f, idx) => `
+      <details class="seo-faq-item" ${idx === 0 ? 'open' : ''}>
+        <summary>${esc(f.q)}</summary>
+        <p>${esc(f.a)}</p>
+      </details>
+    `).join('');
+  }
+
+  // อัปเดต Structured Data (SoftwareApplication + FAQPage) สำหรับ Google Rich Results
+  const ldEl = $('#seoJsonLd');
+  if (ldEl) {
+    const graph = [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        name: `${tool.label} — HeyConvert`,
+        applicationCategory: 'MultimediaApplication',
+        operatingSystem: 'Web, Windows, macOS, iOS, Android',
+        offers: { '@type': 'Offer', price: '0', priceCurrency: 'THB' },
+        description: seo.intro,
+      },
+    ];
+    if (seo.faqs?.length) {
+      graph.push({
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: seo.faqs.map((f) => ({
+          '@type': 'Question',
+          name: f.q,
+          acceptedAnswer: { '@type': 'Answer', text: f.a },
+        })),
+      });
+    }
+    ldEl.textContent = JSON.stringify(graph);
+  }
 }
 
 function route() {
@@ -142,7 +226,7 @@ function route() {
     toast('กรุณารอให้ประมวลผลเสร็จหรือกดหยุดก่อนเปลี่ยนเมนู');
     return;
   }
-  const id = location.hash.slice(1) || 'video-compress';
+  const id = getToolIdFromUrl();
   const tool = TOOLS.find((t) => t.id === id) || TOOLS[1];
   state.toolId = tool.id;
 
@@ -150,7 +234,7 @@ function route() {
   $('#pageTitle').textContent = tool.label;
   $('#pageDesc').textContent = tool.desc;
   $('#settingsTitle').textContent = tool.settingsTitle;
-  document.title = `${tool.label} — HeyConvert`;
+  updateSeoForTool(tool);
 
   // สลับแผงตั้งค่า
   $$('.tool-panel').forEach((p) => (p.hidden = p.dataset.panel !== tool.panel));
@@ -198,7 +282,19 @@ function toggleSidebar(open) {
 $('#menuBtn').onclick = () => toggleSidebar(true);
 $('#sidebarClose').onclick = () => toggleSidebar(false);
 $('#backdrop').onclick = () => toggleSidebar(false);
+window.addEventListener('popstate', route);
 window.addEventListener('hashchange', route);
+document.addEventListener('click', (e) => {
+  const link = e.target.closest('a[href^="?tool="]');
+  if (!link) return;
+  e.preventDefault();
+  const params = new URLSearchParams(link.getAttribute('href'));
+  const tId = params.get('tool');
+  if (tId) {
+    navigateToTool(tId);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+});
 
 // ---------------- Toast ----------------
 let toastTimer;
@@ -466,12 +562,15 @@ function onSettingsChange() {
       updateCard(it);
     }
   }
+  refreshUI();
 }
 
 function buildCodecSelect() {
+  const proKeys = new Set(['avc-gpu', 'hevc', 'hevc-gpu', 'av1']);
   $('#codec').innerHTML = Object.entries(CODECS).map(([k, c]) => {
     const ok = state.support.video[k];
-    return `<option value="${k}" ${ok ? '' : 'disabled'}>${c.label}${ok ? '' : ' — ไม่รองรับในเบราว์เซอร์นี้'}</option>`;
+    const tag = proKeys.has(k) ? ' [🪙 2]' : '';
+    return `<option value="${k}" ${ok ? '' : 'disabled'}>${c.label}${tag}${ok ? '' : ' — ไม่รองรับในเบราว์เซอร์นี้'}</option>`;
   }).join('');
   const first = Object.keys(CODECS).find((k) => state.support.video[k]);
   if (first) $('#codec').value = first;
@@ -1383,6 +1482,7 @@ $('#renameApply').onclick = () => {
 };
 
 function refreshUI() {
+  renderWalletBadge();
   const items = getItems();
   const tool = currentTool();
   const n = items.length;
@@ -1398,9 +1498,30 @@ function refreshUI() {
   const startBtn = $('#startBtn');
   const needWebCodecs = tool.kind === 'video' || tool.kind === 'audio';
   startBtn.disabled = state.running || pending.length === 0 || (needWebCodecs && !isSupported());
+
+  const s = readSettings();
+  const jobCost = calculateJobCost(tool.id, pending.length || 1, s);
+  const costBox = $('#costPreview');
+  if (costBox) {
+    costBox.hidden = false;
+    $('#costPreviewLabel').textContent = jobCost.reason || 'โหมดมาตรฐาน';
+    const badge = $('#costPreviewBadge');
+    if (jobCost.cost > 0) {
+      badge.textContent = `ใช้ 🪙 ${jobCost.cost} HeyCoin`;
+      badge.classList.add('paid');
+    } else {
+      badge.textContent = 'ฟรี 0 🪙';
+      badge.classList.remove('paid');
+    }
+  }
+
+  const actualJobCost = calculateJobCost(tool.id, pending.length, s);
+  const costSuffix = pending.length > 0
+    ? (actualJobCost.cost > 0 ? ` · 🪙 ${actualJobCost.cost}` : ' · ฟรี')
+    : '';
   startBtn.textContent = state.running
     ? '⏳ กำลังประมวลผล…'
-    : `${tool.actionLabel}${pending.length && tool.id !== 'pdf-edit' ? ` (${pending.length} ไฟล์)` : ''}`;
+    : `${tool.actionLabel}${pending.length && tool.id !== 'pdf-edit' ? ` (${pending.length} ไฟล์${costSuffix})` : costSuffix}`;
   $('#cancelBtn').hidden = !state.running;
 
   const done = items.filter((it) => it.status === 'done');
@@ -1558,6 +1679,16 @@ $('#startBtn').onclick = async () => {
     : items.filter((it) => ['ready', 'cancelled'].includes(it.status));
   if (!queue.length) return;
 
+  // ตรวจสอบยอดเหรียญ HeyCoin ก่อนเริ่มทำงาน
+  const jobCost = calculateJobCost(tool.id, queue.length, settings);
+  if (jobCost.cost > 0) {
+    const w = loadWallet();
+    if (w.balance < jobCost.cost) {
+      openCoinModal(`รอบนี้ใช้ 🪙 ${jobCost.cost} HeyCoins (${jobCost.reason}) — ตอนนี้คุณมี ${w.balance} เหรียญ สามารถกดรับโบนัสรายวันฟรี กรอกคูปอง หรือเติมเหรียญด้านล่างได้เลยครับ`);
+      return;
+    }
+  }
+
   state.running = true;
   state.cancelled = false;
   queue.forEach((it) => { it.status = 'queued'; it.plan = computeItemPlan(it, settings); updateCard(it); });
@@ -1659,10 +1790,17 @@ $('#startBtn').onclick = async () => {
     state.cancelFn = null;
     keepAwake(false);
     $('#overallText').textContent = state.cancelled ? 'หยุดการทำงานแล้ว' : 'ประมวลผลเสร็จทั้งหมด 🎉';
-    if (!state.cancelled) { $('#overallBar').style.width = '100%'; $('#overallPct').textContent = '100%'; }
+    if (!state.cancelled) {
+      $('#overallBar').style.width = '100%';
+      $('#overallPct').textContent = '100%';
+      const anyDone = queue.some((it) => it.status === 'done');
+      if (anyDone && jobCost.cost > 0) {
+        spendCoins(jobCost.cost, `⚡ ${tool.label} (${jobCost.reason})`);
+      }
+    }
     refreshUI();
     if (!state.cancelled) {
-      toast('เสร็จเรียบร้อย พร้อมดาวน์โหลด!');
+      toast(jobCost.cost > 0 ? `เสร็จเรียบร้อย! (ใช้ไป 🪙 ${jobCost.cost} HeyCoins)` : 'เสร็จเรียบร้อย พร้อมดาวน์โหลด!');
       $('#downloadCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }
@@ -1761,6 +1899,135 @@ async function download(items) {
 
 $('#dlAll').onclick = () => download(getItems().filter((it) => it.status === 'done'));
 $('#dlSelected').onclick = () => download(getItems().filter((it) => it.status === 'done' && it.selected));
+
+// ============================================================
+//  HeyCoin Wallet Modal & Top-up Logic
+// ============================================================
+let activeCheckoutPkg = null;
+
+function renderWalletBadge() {
+  const w = loadWallet();
+  const balEl = $('#coinBalanceText');
+  if (balEl) balEl.textContent = w.balance;
+  const dot = $('#coinDailyDot');
+  if (dot) dot.hidden = !canClaimDaily(w);
+}
+
+function renderCoinModal() {
+  const w = loadWallet();
+  renderWalletBadge();
+  $('#walletIdText').textContent = `Wallet ID: ${w.walletId}`;
+  $('#modalCoinBal').textContent = w.balance;
+
+  const dailyBtn = $('#dailyClaimBtn');
+  if (canClaimDaily(w)) {
+    dailyBtn.disabled = false;
+    dailyBtn.textContent = `☀️ รับฟรี +${DAILY_BONUS_COINS} HeyCoins วันนี้`;
+  } else {
+    dailyBtn.disabled = true;
+    dailyBtn.textContent = '✓ รับโบนัสวันนี้แล้ว (พรุ่งนี้รับใหม่ได้)';
+  }
+
+  $('#pkgGrid').innerHTML = COIN_PACKAGES.map((p) => `
+    <div class="pkg-card ${p.popular ? 'popular' : ''}">
+      ${p.popular ? '<span class="pkg-card__tag">ขายดีสุด ⭐</span>' : ''}
+      <div class="pkg-card__name">${esc(p.name)}</div>
+      <div class="pkg-card__coins">🪙 ${p.coins} <small style="font-size:12px;font-weight:500">Coins</small></div>
+      <div class="pkg-card__bonus">${esc(p.bonusText)}</div>
+      <div class="pkg-card__desc">${esc(p.desc)}</div>
+      <button type="button" class="btn ${p.popular ? 'btn--primary' : 'btn--outline'} btn--sm pkg-card__btn" data-pkg="${p.id}">
+        เติม ฿${p.priceTHB} (PromptPay)
+      </button>
+    </div>
+  `).join('');
+
+  $('#coinHistoryList').innerHTML = (w.history || []).map((h) => {
+    const d = new Date(h.ts);
+    const timeTxt = `${d.toLocaleDateString('th-TH', { day: '2-digit', month: 'short' })} ${d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}`;
+    const sign = h.delta >= 0 ? `+${h.delta}` : `${h.delta}`;
+    const cls = h.delta >= 0 ? 'coin-plus' : 'coin-minus';
+    return `<li><span>${esc(h.label)} <small class="muted">(${timeTxt})</small></span><span class="${cls}">${sign} 🪙</span></li>`;
+  }).join('');
+}
+
+function openCoinModal(reasonMsg = '') {
+  const alertEl = $('#coinModalReason');
+  if (reasonMsg) {
+    alertEl.hidden = false;
+    alertEl.textContent = `💡 ${reasonMsg}`;
+  } else {
+    alertEl.hidden = true;
+  }
+  $('#qrCheckoutBox').hidden = true;
+  activeCheckoutPkg = null;
+  renderCoinModal();
+  $('#coinModal').hidden = false;
+}
+
+$('#coinWalletBtn').onclick = () => openCoinModal();
+$('#coinCloseBtn').onclick = () => ($('#coinModal').hidden = true);
+$('#coinModal').addEventListener('click', (e) => {
+  if (e.target === $('#coinModal')) $('#coinModal').hidden = true;
+});
+
+$('#dailyClaimBtn').onclick = () => {
+  const res = claimDailyBonus();
+  toast(res.msg);
+  renderCoinModal();
+  refreshUI();
+};
+
+$('#couponApplyBtn').onclick = () => {
+  const input = $('#couponInput');
+  const res = redeemCoupon(input.value);
+  toast(res.msg);
+  if (res.ok) {
+    input.value = '';
+    $('#coinModalReason').hidden = true;
+    renderCoinModal();
+    refreshUI();
+  }
+};
+
+$('#pkgGrid').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-pkg]');
+  if (!btn) return;
+  const pkg = COIN_PACKAGES.find((p) => p.id === btn.dataset.pkg);
+  if (!pkg) return;
+
+  // ถ้าตั้งค่า paymentUrl (เช่น Stripe Payment Link) ไว้แล้ว ให้เปิดหน้าชำระเงินจริงทันที
+  if (pkg.paymentUrl) {
+    const w = loadWallet();
+    const sep = pkg.paymentUrl.includes('?') ? '&' : '?';
+    window.open(`${pkg.paymentUrl}${sep}client_reference_id=${encodeURIComponent(w.walletId)}`, '_blank');
+    return;
+  }
+
+  // โหมดแสดง PromptPay QR จำลองเพื่อทดสอบระบบรับเหรียญ
+  activeCheckoutPkg = pkg;
+  $('#qrPkgTitle').textContent = `แพ็กเกจ ${pkg.name} (+${pkg.coins} HeyCoins)`;
+  $('#qrAmountText').textContent = `ยอดชำระ ${pkg.priceTHB}.00 บาท`;
+  $('#qrCheckoutBox').hidden = false;
+  $('#qrCheckoutBox').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+});
+
+$('#qrCancelBtn').onclick = () => {
+  $('#qrCheckoutBox').hidden = true;
+  activeCheckoutPkg = null;
+};
+
+$('#qrConfirmSimBtn').onclick = () => {
+  if (!activeCheckoutPkg) return;
+  const res = addCoinsFromPurchase(activeCheckoutPkg.id, 'PromptPay');
+  if (res.ok) {
+    toast(`🎉 ชำระเงินสำเร็จ! เติม +${res.added} HeyCoins เข้ากระเป๋าแล้ว`);
+    $('#qrCheckoutBox').hidden = true;
+    $('#coinModalReason').hidden = true;
+    activeCheckoutPkg = null;
+    renderCoinModal();
+    refreshUI();
+  }
+};
 
 // ---------------- Init ----------------
 (async function init() {

@@ -4,12 +4,30 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>HeyConvert — บีบอัดวิดีโอ รูปภาพ แก้ไข PDF และแปลงไฟล์ออนไลน์</title>
-  <meta name="description" content="HeyConvert บีบอัดวิดีโอ รูปภาพ แก้ไขไฟล์ PDF เซ็นเอกสาร บีบอัด PDF รวม/แยกหน้า PDF แปลงไฟล์ ตัดวิดีโอ ทำ GIF และแยกเสียง ครั้งละ 20 ไฟล์ ประมวลผลในเครื่อง 100%" />
+  <meta name="description" id="metaDesc" content="HeyConvert เว็บบีบอัดวิดีโอ กำหนดขนาด MB ภาพไม่แตก บีบอัดรูปภาพ แก้ไขไฟล์ PDF เซ็นเอกสาร รวม/แยกหน้า PDF แปลงไฟล์ ตัดวิดีโอ ทำ GIF และแยกเสียง MP3 ปลอดภัยระดับ PDPA 100% ไม่อัปโหลดไฟล์ขึ้นเซิร์ฟเวอร์" />
+  <meta name="keywords" id="metaKeywords" content="บีบอัดวิดีโอ, ลดขนาดวิดีโอ mb, แก้ไขไฟล์ pdf, เซ็นเอกสาร pdf ออนไลน์, บีบอัด pdf, รวมไฟล์ pdf, บีบอัดรูปภาพ, แปลงวิดีโอเป็น mp4, แยกเสียง mp3, HeyConvert" />
+  <meta name="robots" content="index, follow" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="HeyConvert" />
+  <meta property="og:title" id="ogTitle" content="HeyConvert — บีบอัดวิดีโอ รูปภาพ แก้ไข PDF และแปลงไฟล์ออนไลน์ฟรี" />
+  <meta property="og:description" id="ogDesc" content="จัดการไฟล์วิดีโอ รูปภาพ และเอกสาร PDF ครบวงจร ทำพร้อมกันได้ 20 ไฟล์ ปลอดภัย 100% ประมวลผลในเครื่องคุณเอง" />
+  <link rel="canonical" id="canonicalLink" href="https://mstackhub.github.io/beebfile/" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='16' fill='%235b5bf0'/><text x='50%25' y='56%25' text-anchor='middle' dominant-baseline='middle' fill='white' font-family='sans-serif' font-weight='700' font-size='28'>HC</text></svg>" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
+  <script type="application/ld+json" id="seoJsonLd">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "HeyConvert",
+    "applicationCategory": "MultimediaApplication",
+    "operatingSystem": "Web, Windows, macOS, iOS, Android",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "THB" },
+    "description": "เว็บบีบอัดวิดีโอ บีบอัดรูปภาพ แก้ไขไฟล์ PDF เซ็นลายเซ็น และแปลงไฟล์มีเดียครบวงจร ประมวลผลในเบราว์เซอร์ 100% ปลอดภัยตามมาตรฐาน PDPA"
+  }
+  </script>
 </head>
 <body>
   <div class="app">
@@ -24,7 +42,24 @@
         <button class="icon-btn sidebar__close" id="sidebarClose" aria-label="ปิดเมนู">✕</button>
       </div>
 
-      <nav class="nav" id="nav"><!-- สร้างจาก TOOLS ใน js/app.js --></nav>
+      <nav class="nav" id="nav">
+        <div class="nav__group">วิดีโอ (Video)</div>
+        <a class="nav__item active" href="?tool=video-compress" data-id="video-compress"><span class="nav__icon">🎬</span><span>บีบอัดวิดีโอ</span></a>
+        <a class="nav__item" href="?tool=video-convert" data-id="video-convert"><span class="nav__icon">🔄</span><span>แปลงไฟล์วิดีโอ</span></a>
+        <a class="nav__item" href="?tool=video-trim" data-id="video-trim"><span class="nav__icon">✂️</span><span>ตัดวิดีโอ</span></a>
+        <a class="nav__item" href="?tool=video-to-gif" data-id="video-to-gif"><span class="nav__icon">🎞️</span><span>วิดีโอเป็น GIF</span></a>
+        <div class="nav__group">รูปภาพ (Image)</div>
+        <a class="nav__item" href="?tool=image-compress" data-id="image-compress"><span class="nav__icon">🖼️</span><span>บีบอัดรูปภาพ</span></a>
+        <a class="nav__item" href="?tool=image-convert" data-id="image-convert"><span class="nav__icon">🔁</span><span>แปลงไฟล์รูปภาพ</span></a>
+        <div class="nav__group">เอกสาร (PDF)</div>
+        <a class="nav__item" href="?tool=pdf-edit" data-id="pdf-edit"><span class="nav__icon">✏️</span><span>แก้ไขไฟล์ PDF</span></a>
+        <a class="nav__item" href="?tool=pdf-compress" data-id="pdf-compress"><span class="nav__icon">📉</span><span>บีบอัดไฟล์ PDF</span></a>
+        <a class="nav__item" href="?tool=pdf-merge" data-id="pdf-merge"><span class="nav__icon">📑</span><span>รวม & แยกหน้า PDF</span></a>
+        <a class="nav__item" href="?tool=pdf-to-image" data-id="pdf-to-image"><span class="nav__icon">📸</span><span>PDF เป็นรูปภาพ</span></a>
+        <a class="nav__item" href="?tool=image-to-pdf" data-id="image-to-pdf"><span class="nav__icon">📄</span><span>รูปภาพเป็น PDF</span></a>
+        <div class="nav__group">เสียง (Audio)</div>
+        <a class="nav__item" href="?tool=audio-extract" data-id="audio-extract"><span class="nav__icon">🎵</span><span>แยกเสียงจากวิดีโอ</span></a>
+      </nav>
 
       <div class="sidebar__foot">
         <div class="privacy">
@@ -39,10 +74,16 @@
     <div class="main">
       <header class="topbar">
         <button class="icon-btn menu-btn" id="menuBtn" aria-label="เปิดเมนู">☰</button>
-        <div>
+        <div class="topbar__titles">
           <h1 class="topbar__title" id="pageTitle">บีบอัดวิดีโอ</h1>
           <p class="topbar__desc" id="pageDesc">ลดขนาดไฟล์วิดีโอ กำหนดขนาด MB ได้ตามต้องการโดยไม่ให้ภาพแตก</p>
         </div>
+        <button type="button" class="coin-pill" id="coinWalletBtn" title="กระเป๋าเหรียญ HeyCoin & โบนัสรายวัน">
+          <span class="coin-pill__icon">🪙</span>
+          <span class="coin-pill__bal"><b id="coinBalanceText">15</b> HeyCoins</span>
+          <span class="coin-pill__add">+ เติมเหรียญ</span>
+          <span class="coin-pill__dot" id="coinDailyDot" title="มีโบนัสฟรีรายวันให้กดรับ!"></span>
+        </button>
       </header>
 
       <div class="banner banner--error" id="unsupported" hidden>
@@ -652,13 +693,131 @@
                 </div>
               </div>
 
+              <div class="cost-preview" id="costPreview" hidden>
+                <span id="costPreviewLabel">โหมดมาตรฐานใช้งานฟรี</span>
+                <span class="cost-preview__badge" id="costPreviewBadge">ฟรี 0 🪙</span>
+              </div>
               <button class="btn btn--primary btn--block btn--lg" id="startBtn" disabled>🚀 เริ่มประมวลผล</button>
               <button class="btn btn--ghost btn--block danger" id="cancelBtn" hidden>หยุด</button>
-              <p class="hint center">เปิดหน้านี้ไว้ระหว่างทำงาน · ประมวลผลในเครื่อง ปลอดภัย 100%</p>
+              <p class="hint center">เปิดหน้านี้ไว้ระหว่างทำงาน · ประมวลผลในเครื่อง ปลอดภัยระดับ PDPA 100%</p>
             </div>
           </aside>
         </div>
       </section>
+
+      <!-- ===== เนื้อหา SEO รายเครื่องมือ + จุดเด่น PDPA + คำถามพบบ่อย (FAQ) ===== -->
+      <article class="card seo-article" id="seoSection">
+        <div class="seo-highlights">
+          <div class="seo-hl">
+            <span class="seo-hl__icon">🔒</span>
+            <div>
+              <strong>ปลอดภัยมาตรฐาน PDPA 100%</strong>
+              <p>ไฟล์วิดีโอ รูปภาพ และสัญญา PDF ไม่เคยถูกอัปโหลดออกจากเครื่องของคุณ</p>
+            </div>
+          </div>
+          <div class="seo-hl">
+            <span class="seo-hl__icon">⚡</span>
+            <div>
+              <strong>รองรับ Batch สูงสุด 20 ไฟล์</strong>
+              <p>ทำพร้อมกันรวดเดียว ตั้งชื่อไฟล์อัตโนมัติ และดาวน์โหลดเป็นไฟล์ ZIP ได้ทันที</p>
+            </div>
+          </div>
+          <div class="seo-hl">
+            <span class="seo-hl__icon">🪙</span>
+            <div>
+              <strong>ฟรีโหมดพื้นฐาน + HeyCoin ไม่มีวันหมดอายุ</strong>
+              <p>ใช้งานทั่วไปฟรีทุกวัน ไม่ผูกมัดรายเดือน เติม HeyCoin เฉพาะตอนใช้งานหนัก</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="seo-body">
+          <h2 id="seoH2">เว็บบีบอัดวิดีโอออนไลน์ (Video Compressor) กำหนดขนาด MB ได้ตามต้องการ</h2>
+          <p id="seoIntro">HeyConvert ช่วยให้คุณลดขนาดไฟล์วิดีโอขนาดใหญ่ (เช่น 400 MB เหลือ 10 MB หรือ 25 MB) เพื่อส่งผ่าน LINE, Discord, Gmail หรืออัปโหลดขึ้นระบบออนไลน์ได้อย่างรวดเร็ว รองรับการทำพร้อมกันสูงสุด 20 ไฟล์ โดยประมวลผลในเบราว์เซอร์ของคุณเอง 100%</p>
+
+          <h3>คำถามที่พบบ่อย (FAQ)</h3>
+          <div class="seo-faqs" id="seoFaqs"></div>
+
+          <div class="seo-links">
+            <span>เครื่องมือยอดนิยมใน HeyConvert:</span>
+            <a href="?tool=video-compress">บีบอัดวิดีโอ MB</a> ·
+            <a href="?tool=pdf-edit">แก้ไขและเซ็นไฟล์ PDF</a> ·
+            <a href="?tool=pdf-compress">บีบอัด PDF ไม่เกิน 2MB</a> ·
+            <a href="?tool=pdf-merge">รวมไฟล์ PDF</a> ·
+            <a href="?tool=image-compress">บีบอัดรูปภาพ KB</a> ·
+            <a href="?tool=pdf-to-image">แปลง PDF เป็นรูป JPG</a> ·
+            <a href="?tool=image-to-pdf">รวมรูปเป็น PDF</a> ·
+            <a href="?tool=audio-extract">แยกเสียง MP3</a>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+
+  <!-- ===== Modal กระเป๋าเหรียญ HeyCoin & เติมเหรียญ ===== -->
+  <div class="modal-backdrop" id="coinModal" hidden>
+    <div class="modal modal--lg card">
+      <div class="modal__head">
+        <div class="coin-modal-title">
+          <span style="font-size:26px">🪙</span>
+          <div>
+            <h3>กระเป๋าเหรียญ HeyCoin</h3>
+            <span class="muted" id="walletIdText">Wallet ID: HC-0000-0000</span>
+          </div>
+        </div>
+        <button type="button" class="icon-btn" id="coinCloseBtn">✕</button>
+      </div>
+
+      <div class="coin-hero">
+        <div>
+          <div class="coin-hero__label">ยอดเหรียญคงเหลือ (ไม่มีวันหมดอายุ)</div>
+          <div class="coin-hero__val"><span id="modalCoinBal">15</span> <small>HeyCoins</small></div>
+        </div>
+        <button type="button" class="btn btn--primary" id="dailyClaimBtn">☀️ รับฟรี +3 HeyCoins วันนี้</button>
+      </div>
+
+      <div class="coin-alert" id="coinModalReason" hidden></div>
+
+      <div class="coin-section-title">แพ็กเกจเติมเหรียญสุดคุ้ม (จ่ายครั้งเดียว · ไม่ตัดบัตรรายเดือน)</div>
+      <div class="pkg-grid" id="pkgGrid"><!-- สร้างจาก COIN_PACKAGES --></div>
+
+      <!-- กล่องจำลองสแกนจ่าย PromptPay QR เมื่อเลือกแพ็กเกจ -->
+      <div class="qr-checkout" id="qrCheckoutBox" hidden>
+        <div class="qr-checkout__box">
+          <div class="qr-mock">
+            <div class="qr-mock__head">THAI QR PAYMENT · PromptPay</div>
+            <div class="qr-mock__code" id="qrCodeGraphic">▣ ▤ ▥</div>
+            <div class="qr-mock__amt" id="qrAmountText">ยอดชำระ 79.00 บาท</div>
+          </div>
+          <div class="qr-checkout__info">
+            <h4 id="qrPkgTitle">แพ็กเกจ Popular Pack (+180 HeyCoins)</h4>
+            <p class="hint">ในโหมดใช้งานจริง ปุ่มนี้จะเชื่อมต่อกับ <b>Stripe PromptPay / Webhook อัตโนมัติ</b> เมื่อสแกนโอนเสร็จ เหรียญจะเข้ากระเป๋าทันทีภายใน 2 วินาที</p>
+            <div class="qr-checkout__actions">
+              <button type="button" class="btn btn--primary" id="qrConfirmSimBtn">✓ จำลองการชำระเงินสำเร็จ (รับเหรียญทันที)</button>
+              <button type="button" class="btn btn--ghost" id="qrCancelBtn">ยกเลิก</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="coupon-row">
+        <input type="text" id="couponInput" class="input" placeholder="มีรหัสคูปองไหม? (ลองพิมพ์ HEYFREE20)" />
+        <button type="button" class="btn btn--outline" id="couponApplyBtn">🎟️ ใช้คูปอง</button>
+      </div>
+
+      <details class="coin-rules">
+        <summary>📋 อัตราการใช้ HeyCoin & ประวัติรายการล่าสุด</summary>
+        <div class="coin-rules__body">
+          <ul class="rules-list">
+            <li><b>ฟรี 0 เหรียญ:</b> บีบอัด/แปลงไฟล์ทั่วไปครั้งละ 1–2 ไฟล์ (โหมดมาตรฐาน)</li>
+            <li><b>1 HeyCoin / ไฟล์:</b> บันทึกการแก้ไข & เซ็น PDF, ล็อกขนาดไฟล์ MB เป๊ะๆ, ทำ GIF, แยกเสียง MP3</li>
+            <li><b>2 HeyCoins / ไฟล์:</b> เข้ารหัสวิดีโอความเร็วสูงระดับสตูดิโอ (GPU / H.265 / AV1)</li>
+            <li><b>เหมา 5 HeyCoins / รอบ:</b> ทำแบบกลุ่ม Batch Mode 3–20 ไฟล์พร้อมกัน + ดาวน์โหลดเป็น ZIP</li>
+          </ul>
+          <div class="history-title">ประวัติเหรียญล่าสุด</div>
+          <ul class="coin-history" id="coinHistoryList"></ul>
+        </div>
+      </details>
     </div>
   </div>
 
