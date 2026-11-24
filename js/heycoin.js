@@ -6,7 +6,12 @@ import { getCurrentUser } from './auth.js';
 
 const WALLET_PREFIX = 'hc.wallet.u.';
 export const WELCOME_COINS = 15;
-export const DAILY_BONUS_COINS = 3;
+export const DAILY_BONUS_COINS = 0.5;
+export const FREE_DAILY_CAP = 20;
+
+export function roundCoins(n) {
+  return Math.round((Number(n) || 0) * 10) / 10;
+}
 
 /**
  * แพ็กเกจเติมเหรียญ HugCoin
@@ -124,6 +129,7 @@ export function saveWallet(w) {
 
 export function canClaimDaily(w = loadWallet()) {
   if (w.isGuest) return false;
+  if (roundCoins(w.balance) >= FREE_DAILY_CAP) return false;
   return w.lastCheckIn !== todayStr();
 }
 
@@ -136,11 +142,16 @@ export function claimDailyBonus() {
   if (w.lastCheckIn === today) {
     return { ok: false, msg: 'วันนี้คุณรับโบนัสรายวันไปแล้ว พรุ่งนี้แวะมารับใหม่นะครับ!', wallet: w };
   }
+  const cur = roundCoins(w.balance);
+  if (cur >= FREE_DAILY_CAP) {
+    return { ok: false, msg: `ยอดเหรียญของคุณถึงเพดานโบนัสฟรี (${FREE_DAILY_CAP} HugCoins) แล้ว ใช้เหรียญก่อนแล้วค่อยมารับเพิ่มนะครับ`, wallet: w };
+  }
+  const added = Math.min(DAILY_BONUS_COINS, roundCoins(FREE_DAILY_CAP - cur));
   w.lastCheckIn = today;
-  w.balance += DAILY_BONUS_COINS;
-  w.history.unshift({ ts: Date.now(), delta: DAILY_BONUS_COINS, label: `☀️ เช็คอินรายวัน (${today})` });
+  w.balance = roundCoins(cur + added);
+  w.history.unshift({ ts: Date.now(), delta: added, label: `☀️ เช็คอินรายวัน (${today})` });
   saveWallet(w);
-  return { ok: true, added: DAILY_BONUS_COINS, msg: `🎉 รับฟรี +${DAILY_BONUS_COINS} HugCoins เรียบร้อย!`, wallet: w };
+  return { ok: true, added, msg: `🎉 รับฟรี +${added} HugCoins เรียบร้อย!`, wallet: w };
 }
 
 export function redeemCoupon(codeRaw) {
@@ -206,7 +217,7 @@ export function spendCoins(amount, reason) {
   if (w.balance < amount) {
     return { ok: false, msg: `เหรียญ HugCoin ไม่พอ (ต้องการ ${amount} เหรียญ แต่มี ${w.balance} เหรียญ)`, wallet: w };
   }
-  w.balance -= amount;
+  w.balance = roundCoins(w.balance - amount);
   w.history.unshift({ ts: Date.now(), delta: -amount, label: reason });
   saveWallet(w);
   return { ok: true, wallet: w };

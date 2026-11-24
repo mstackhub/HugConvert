@@ -8,7 +8,7 @@
 create table if not exists public.wallets (
   user_id uuid primary key references auth.users(id) on delete cascade,
   wallet_code text unique not null,
-  balance integer not null default 15 check (balance >= 0),
+  balance numeric(10,1) not null default 15 check (balance >= 0),
   unlimited_until timestamptz,
   last_check_in date,
   used_coupons text[] not null default '{}',
@@ -20,11 +20,15 @@ create table if not exists public.wallets (
 create table if not exists public.coin_transactions (
   id bigint generated always as identity primary key,
   user_id uuid not null references auth.users(id) on delete cascade,
-  delta integer not null,
+  delta numeric(10,1) not null,
   label text not null,
   payment_ref text,
   created_at timestamptz not null default now()
 );
+
+-- รองรับกรณีสร้างตารางไว้แล้ว ให้แปลงคอลัมน์เป็น numeric(10,1) เพื่อรองรับ 0.5 HugCoin
+alter table public.wallets alter column balance type numeric(10,1) using balance::numeric(10,1);
+alter table public.coin_transactions alter column delta type numeric(10,1) using delta::numeric(10,1);
 
 create index if not exists idx_coin_tx_user_created
   on public.coin_transactions (user_id, created_at desc);
@@ -70,7 +74,7 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user_wallet();
 
--- 5. RPC: เช็คอินรับโบนัสรายวัน (+3 HugCoins) แบบ Atomic กันกดเบิ้ล
+-- 5. RPC: เช็คอินรับโบนัสรายวัน (+0.5 HugCoin, เพดานโบนัสฟรี 20 HugCoins) แบบ Atomic กันกดเบิ้ล
 create or replace function public.claim_daily_bonus()
 returns jsonb
 language plpgsql
@@ -79,14 +83,29 @@ as $$
 declare
   v_uid uuid := auth.uid();
   v_today date := (now() at time zone 'Asia/Bangkok')::date;
-  v_new_bal integer;
+  v_daily constant numeric(10,1) := 0.5;
+  v_cap constant numeric(10,1) := 20.0;
+  v_cur_bal numeric(10,1);
+  v_added numeric(10,1);
+  v_new_bal numeric(10,1);
 begin
   if v_uid is null then
     return jsonb_build_object('ok', false, 'msg', 'กรุณาเข้าสู่ระบบก่อน');
   end if;
 
+  select balance into v_cur_bal from public.wallets where user_id = v_uid for update;
+  if not found then
+    return jsonb_build_object('ok', false, 'msg', 'ไม่พบกระเป๋าเหรียญ');
+  end if;
+
+  if v_cur_bal >= v_cap then
+    return jsonb_build_object('ok', false, 'msg', 'ยอดเหรียญถึงเพดานโบนัสฟรี (20 HugCoins) แล้ว ใช้เหรียญก่อนแล้วค่อยรับเพิ่มนะครับ');
+  end if;
+
+  v_added := least(v_daily, v_cap - v_cur_bal);
+
   update public.wallets
-  set balance = balance + 3,
+  set balance = balance + v_added,
       last_check_in = v_today,
       updated_at = now()
   where user_id = v_uid
@@ -98,14 +117,15 @@ begin
   end if;
 
   insert into public.coin_transactions (user_id, delta, label)
-  values (v_uid, 3, '☀️ เช็คอินรายวัน (' || v_today::text || ')');
+  values (v_uid, v_added, '☀️ เช็คอินรายวัน (' || v_today::text || ')');
 
-  return jsonb_build_object('ok', true, 'balance', v_new_bal, 'added', 3);
+  return jsonb_build_object('ok', true, 'balance', v_new_bal, 'added', v_added);
 end;
 $$;
 
 -- 6. RPC: หักเหรียญ HugCoin แบบ Atomic (หักเฉพาะเมื่อมียอดพอหรือมี Unlimited Pass)
-create or replace function public.spend_heycoins(p_amount integer, p_reason text)
+drop function if exists public.spend_heycoins(integer, text);
+create or replace function public.spend_heycoins(p_amount numeric, p_reason text)
 returns jsonb
 language plpgsql
 security definer set search_path = public
@@ -113,7 +133,7 @@ as $$
 declare
   v_uid uuid := auth.uid();
   v_pass timestamptz;
-  v_new_bal integer;
+  v_new_bal numeric(10,1);
 begin
   if v_uid is null then
     return jsonb_build_object('ok', false, 'msg', 'กรุณาเข้าสู่ระบบก่อน');

@@ -14,7 +14,7 @@ import {
   unlockPdf, watermarkPdf,
 } from './pdf-tools.js';
 import {
-  COIN_PACKAGES, DAILY_BONUS_COINS, SEO_CONTENT,
+  COIN_PACKAGES, DAILY_BONUS_COINS, FREE_DAILY_CAP, SEO_CONTENT,
   loadWallet, canClaimDaily, claimDailyBonus, redeemCoupon,
   addCoinsFromPurchase, spendCoins, calculateJobCost, hasUnlimitedPass,
 } from './heycoin.js';
@@ -2517,7 +2517,10 @@ function renderCoinModal() {
     dailyBtn.textContent = '🔐 เข้าสู่ระบบเพื่อรับ +15 🪙 ฟรี';
   } else if (canClaimDaily(w)) {
     dailyBtn.disabled = false;
-    dailyBtn.textContent = `☀️ รับฟรี +${DAILY_BONUS_COINS} HugCoins วันนี้`;
+    dailyBtn.textContent = `☀️ รับฟรี +${DAILY_BONUS_COINS} HugCoin วันนี้`;
+  } else if (w.balance >= FREE_DAILY_CAP) {
+    dailyBtn.disabled = true;
+    dailyBtn.textContent = `✓ ถึงเพดานโบนัสฟรี (${FREE_DAILY_CAP} 🪙) แล้ว`;
   } else {
     dailyBtn.disabled = true;
     dailyBtn.textContent = '✓ รับโบนัสวันนี้แล้ว (พรุ่งนี้รับใหม่ได้)';
