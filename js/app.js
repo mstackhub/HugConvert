@@ -391,8 +391,21 @@ $('#backdrop').onclick = () => toggleSidebar(false);
 window.addEventListener('popstate', route);
 window.addEventListener('hashchange', route);
 document.addEventListener('click', (e) => {
+  const dropBtn = e.target.closest('.topnav__btn');
+  if (dropBtn) {
+    const wrap = dropBtn.closest('.topnav__drop');
+    const willOpen = !wrap.classList.contains('open');
+    $$('.topnav__drop.open').forEach((d) => d.classList.remove('open'));
+    if (willOpen) wrap.classList.add('open');
+    return;
+  }
+  if (!e.target.closest('.topnav__drop')) {
+    $$('.topnav__drop.open').forEach((d) => d.classList.remove('open'));
+  }
+
   const link = e.target.closest('a[href^="?tool="]');
   if (!link) return;
+  $$('.topnav__drop.open').forEach((d) => d.classList.remove('open'));
   e.preventDefault();
   const params = new URLSearchParams(link.getAttribute('href'));
   const tId = params.get('tool');
