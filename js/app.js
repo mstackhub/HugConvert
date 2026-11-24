@@ -845,9 +845,11 @@ $('#wmPresetChips')?.addEventListener('click', (e) => {
   $('#psWmText').value = b.dataset.wm;
   onSettingsChange();
 });
-$('#psPwToggleBtn')?.addEventListener('click', () => {
+$('#psPwToggleBtn')?.addEventListener('click', (e) => {
   const pw = $('#psPassword');
-  pw.type = pw.type === 'password' ? 'text' : 'password';
+  const show = pw.type === 'password';
+  pw.type = show ? 'text' : 'password';
+  e.currentTarget.classList.toggle('is-shown', show);
 });
 $('#edColorChips').addEventListener('click', (e) => {
   const b = e.target.closest('button[data-color]');
@@ -2353,9 +2355,11 @@ $$('.auth-tab').forEach((btn) => {
 $('#forgotPwLink').onclick = () => setAuthMode('reset');
 $('#backToSignInBtn').onclick = () => setAuthMode('signin');
 
-$('#pwToggleBtn').onclick = () => {
+$('#pwToggleBtn').onclick = (e) => {
   const pw = $('#authPassword');
-  pw.type = pw.type === 'password' ? 'text' : 'password';
+  const show = pw.type === 'password';
+  pw.type = show ? 'text' : 'password';
+  e.currentTarget.classList.toggle('is-shown', show);
 };
 
 $('#googleLoginBtn').onclick = async () => {
