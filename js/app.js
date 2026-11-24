@@ -1171,7 +1171,7 @@ function syncEditorVisibility() {
   renderWatermarkPreview();
 }
 
-const wmPreviewCache = { itemId: null, baseCanvas: null, loadingId: null };
+const wmPreviewCache = { itemId: null, baseCanvas: null, loadingId: null, failedId: null };
 
 function drawSampleDocMock(canvas, w = 520, h = 680) {
   canvas.width = w;
@@ -1218,37 +1218,19 @@ async function renderWatermarkPreview() {
   const tagEl = $('#wmPreviewSourceTag');
   const s = currentSettings();
 
-  let baseCanvas = null;
-  if (firstPdf) {
-    if (wmPreviewCache.itemId === firstPdf.id && wmPreviewCache.baseCanvas) {
-      baseCanvas = wmPreviewCache.baseCanvas;
-      if (tagEl) tagEl.textContent = `หน้า 1 · ${firstPdf.name}.pdf`;
-    } else if (wmPreviewCache.loadingId !== firstPdf.id) {
-      wmPreviewCache.loadingId = firstPdf.id;
-      if (tagEl) tagEl.textContent = 'กำลังโหลดตัวอย่างหน้า 1…';
-      try {
-        const rendered = await renderPdfPageCanvas(firstPdf.file, 560);
-        wmPreviewCache.itemId = firstPdf.id;
-        wmPreviewCache.baseCanvas = rendered;
-        wmPreviewCache.loadingId = null;
-        if (currentTool().id === 'pdf-security' && $('#psMode')?.value === 'watermark') {
-          renderWatermarkPreview();
-        }
-        return;
-      } catch {
-        wmPreviewCache.loadingId = null;
-      }
-    }
-  } else {
-    if (tagEl) tagEl.textContent = 'ตัวอย่างจำลอง (โยนไฟล์ PDF เพื่อดูบนเอกสารจริง)';
-  }
-
-  if (baseCanvas) {
-    canvas.width = baseCanvas.width;
-    canvas.height = baseCanvas.height;
-    canvas.getContext('2d').drawImage(baseCanvas, 0, 0);
+  const hasCached = firstPdf && wmPreviewCache.itemId === firstPdf.id && wmPreviewCache.baseCanvas;
+  if (hasCached) {
+    canvas.width = wmPreviewCache.baseCanvas.width;
+    canvas.height = wmPreviewCache.baseCanvas.height;
+    canvas.getContext('2d').drawImage(wmPreviewCache.baseCanvas, 0, 0);
+    if (tagEl) tagEl.textContent = `หน้า 1 · ${firstPdf.name}.pdf`;
   } else {
     drawSampleDocMock(canvas);
+    if (tagEl) {
+      tagEl.textContent = firstPdf
+        ? (wmPreviewCache.failedId === firstPdf.id ? 'ตัวอย่างจำลอง (PDF เข้ารหัส)' : 'กำลังโหลดหน้า 1 ของไฟล์จริง…')
+        : 'ตัวอย่างจำลอง (โยนไฟล์ PDF เพื่อดูบนเอกสารจริง)';
+    }
   }
 
   drawWatermarkOnCtx(canvas.getContext('2d'), canvas.width, canvas.height, {
@@ -1258,6 +1240,25 @@ async function renderWatermarkPreview() {
     opacity: s.psWmOpacity,
     doubleLine: s.psWmDoubleLine,
   });
+
+  if (firstPdf && !hasCached && wmPreviewCache.loadingId !== firstPdf.id && wmPreviewCache.failedId !== firstPdf.id) {
+    wmPreviewCache.loadingId = firstPdf.id;
+    try {
+      const rendered = await renderPdfPageCanvas(firstPdf.file, 560);
+      wmPreviewCache.itemId = firstPdf.id;
+      wmPreviewCache.baseCanvas = rendered;
+      wmPreviewCache.loadingId = null;
+      if (currentTool().id === 'pdf-security' && $('#psMode')?.value === 'watermark') {
+        renderWatermarkPreview();
+      }
+    } catch {
+      wmPreviewCache.loadingId = null;
+      wmPreviewCache.failedId = firstPdf.id;
+      if (currentTool().id === 'pdf-security' && $('#psMode')?.value === 'watermark') {
+        renderWatermarkPreview();
+      }
+    }
+  }
 }
 
 function setEditorTool(toolName) {
