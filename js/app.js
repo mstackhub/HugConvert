@@ -973,8 +973,19 @@ function onSettingsChange() {
 
   // pdpa-redact
   if ($('#pdpaStrengthVal')) $('#pdpaStrengthVal').textContent = String(s.pdpaStrength);
+  const strengthField = $('#pdpaStrength')?.closest('.field');
+  if (strengthField) strengthField.hidden = s.pdpaMode === 'black';
   if ($('#pdpaStampCustomWrap')) {
     $('#pdpaStampCustomWrap').hidden = s.pdpaStampPreset === '';
+  }
+  if (currentTool().id === 'pdpa-redact') {
+    const activeItem = getItems().find((x) => x.id === pdpaState.activeItemId);
+    if (activeItem?.redactions?.length) {
+      activeItem.redactions.forEach((box) => {
+        box.mode = s.pdpaMode;
+        box.strength = s.pdpaStrength;
+      });
+    }
   }
   renderPdpaStage();
 
