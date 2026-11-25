@@ -2587,6 +2587,26 @@ function showAuthFeedback(msg, isOk = false) {
   fb.textContent = msg;
 }
 
+function syncOtpBoxes() {
+  const boxes = $$('#authOtpBoxes .otp-box');
+  const code = boxes.map((b) => {
+    const val = (b.value || '').replace(/\D/g, '').slice(-1);
+    b.value = val;
+    b.classList.toggle('is-filled', Boolean(val));
+    return val;
+  }).join('');
+  if ($('#authOtpCode')) $('#authOtpCode').value = code;
+  return code;
+}
+
+function clearOtpBoxes() {
+  $$('#authOtpBoxes .otp-box').forEach((b) => {
+    b.value = '';
+    b.classList.remove('is-filled');
+  });
+  if ($('#authOtpCode')) $('#authOtpCode').value = '';
+}
+
 function setAuthMode(mode, infoMsg = '') {
   currentAuthMode = mode;
   pendingOtpToken = '';
@@ -2595,7 +2615,7 @@ function setAuthMode(mode, infoMsg = '') {
   $('#authNameField').hidden = mode !== 'signup';
   $('#authPasswordField').hidden = mode === 'reset';
   $('#authOtpField').hidden = true;
-  if ($('#authOtpCode')) $('#authOtpCode').value = '';
+  clearOtpBoxes();
   $('#forgotPwLink').hidden = mode !== 'signin';
   $('#authResetBackWrap').hidden = mode !== 'reset';
 
@@ -2643,7 +2663,48 @@ $('#pwToggleBtn').onclick = (e) => {
   e.currentTarget.classList.toggle('is-shown', show);
 };
 
+$$('#authOtpBoxes .otp-box').forEach((box, idx, boxes) => {
+  box.addEventListener('input', () => {
+    const digits = (box.value || '').replace(/\D/g, '');
+    if (digits.length > 1) {
+      digits.slice(0, 6).split('').forEach((d, i) => {
+        if (boxes[idx + i]) boxes[idx + i].value = d;
+      });
+      syncOtpBoxes();
+      boxes[Math.min(idx + digits.length, boxes.length - 1)]?.focus();
+      return;
+    }
+    box.value = digits;
+    syncOtpBoxes();
+    if (digits && idx < boxes.length - 1) boxes[idx + 1].focus();
+  });
+
+  box.addEventListener('keydown', (e) => {
+    if (e.key === 'Backspace' && !box.value && idx > 0) {
+      boxes[idx - 1].value = '';
+      syncOtpBoxes();
+      boxes[idx - 1].focus();
+    } else if (e.key === 'ArrowLeft' && idx > 0) {
+      boxes[idx - 1].focus();
+    } else if (e.key === 'ArrowRight' && idx < boxes.length - 1) {
+      boxes[idx + 1].focus();
+    }
+  });
+
+  box.addEventListener('paste', (e) => {
+    const pasted = (e.clipboardData?.getData('text') || '').replace(/\D/g, '').slice(0, 6);
+    if (!pasted) return;
+    e.preventDefault();
+    pasted.split('').forEach((d, i) => {
+      if (boxes[i]) boxes[i].value = d;
+    });
+    syncOtpBoxes();
+    boxes[Math.min(pasted.length - 1, boxes.length - 1)]?.focus();
+  });
+});
+
 $('#resendOtpBtn')?.addEventListener('click', async () => {
+  clearOtpBoxes();
   const res = await sendSignUpOtp({
     name: $('#authName').value,
     email: $('#authEmail').value,
@@ -2651,6 +2712,7 @@ $('#resendOtpBtn')?.addEventListener('click', async () => {
   });
   if (res.otpToken) pendingOtpToken = res.otpToken;
   showAuthFeedback(res.msg, res.ok);
+  $('#authOtpBox0')?.focus();
 });
 
 $('#authForm').addEventListener('submit', async (e) => {
@@ -2677,10 +2739,11 @@ $('#authForm').addEventListener('submit', async (e) => {
         }
         if (res.otpRequired && res.otpToken) {
           pendingOtpToken = res.otpToken;
+          clearOtpBoxes();
           $('#authOtpField').hidden = false;
-          $('#authSubmitBtn').textContent = '✓ ยืนยันรหัส 6 หลัก & รับ 15 HugCoins';
+          $('#authSubmitBtn').textContent = 'ยืนยันรหัส';
           showAuthFeedback(res.msg, true);
-          $('#authOtpCode')?.focus();
+          $('#authOtpBox0')?.focus();
           return;
         }
         // Fallback (localhost/static): สมัครเสร็จทันที

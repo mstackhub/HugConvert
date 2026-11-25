@@ -1382,10 +1382,18 @@
 
         <div class="field" id="authOtpField" hidden>
           <div class="label-row">
-            <label for="authOtpCode">รหัสยืนยัน 6 หลัก (OTP จากอีเมล)</label>
+            <label for="authOtpBox0">รหัสยืนยัน 6 หลัก (OTP จากอีเมล)</label>
             <button type="button" class="link-btn" id="resendOtpBtn">ส่งรหัสใหม่</button>
           </div>
-          <input type="text" id="authOtpCode" class="input" inputmode="numeric" maxlength="6" placeholder="กรอกเลข 6 หลัก เช่น 123456" style="letter-spacing:4px;font-weight:700;text-align:center;" />
+          <div class="otp-boxes" id="authOtpBoxes">
+            <input type="text" id="authOtpBox0" class="input otp-box" inputmode="numeric" maxlength="1" autocomplete="one-time-code" aria-label="OTP digit 1" />
+            <input type="text" class="input otp-box" inputmode="numeric" maxlength="1" aria-label="OTP digit 2" />
+            <input type="text" class="input otp-box" inputmode="numeric" maxlength="1" aria-label="OTP digit 3" />
+            <input type="text" class="input otp-box" inputmode="numeric" maxlength="1" aria-label="OTP digit 4" />
+            <input type="text" class="input otp-box" inputmode="numeric" maxlength="1" aria-label="OTP digit 5" />
+            <input type="text" class="input otp-box" inputmode="numeric" maxlength="1" aria-label="OTP digit 6" />
+          </div>
+          <input type="hidden" id="authOtpCode" />
         </div>
 
         <button type="submit" class="btn btn--primary btn--block btn--lg" id="authSubmitBtn">เข้าสู่ระบบ</button>
