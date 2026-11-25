@@ -2559,6 +2559,7 @@ function renderAuthUI() {
   const userWrap = $('#userMenuWrap');
 
   document.body.classList.toggle('is-member', !!user);
+  document.documentElement.classList.remove('is-member-boot');
 
   if (!user) {
     guestBtn.hidden = false;
@@ -3263,8 +3264,11 @@ $('#qrConfirmSimBtn').onclick = () => {
 // ---------------- Init ----------------
 (async function init() {
   buildNav();
+  renderAuthUI();
+  renderCoinHeader();
   await initAuth();
   renderAuthUI();
+  renderCoinHeader();
   if (!isSupported()) {
     $('#unsupported').hidden = false;
   } else {

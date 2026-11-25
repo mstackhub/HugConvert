@@ -954,12 +954,20 @@ input[type="range"] { width: 100%; accent-color: var(--primary); }
 
 /* Member Workspace Mode (หลัง Login) */
 .hub-strip__member { display: none; }
+html.is-member-boot #authGuestBtn { display: none; }
+html.is-member-boot .hub-strip__guest,
 body.is-member .hub-strip__guest { display: none; }
+html.is-member-boot .hub-strip__member,
 body.is-member .hub-strip__member { display: block; }
+html.is-member-boot .compare-card,
+html.is-member-boot #pricingSection,
+html.is-member-boot #seoSection,
+html.is-member-boot #topPricingLink,
 body.is-member .compare-card,
 body.is-member #pricingSection,
 body.is-member #seoSection,
 body.is-member #topPricingLink { display: none; }
+html.is-member-boot .hub-strip,
 body.is-member .hub-strip {
   background: linear-gradient(135deg, #ffffff 0%, #eef2ff 100%);
   border-color: #c7d2fe;
