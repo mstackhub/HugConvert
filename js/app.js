@@ -856,6 +856,15 @@ function computeItemPlan(it, s) {
       advice: [`สร้าง GIF ${frames} เฟรม (${w}×${h}px, ${s.vgFps} fps)`],
     };
   }
+  if (tool.id === 'pdpa-redact') {
+    const ext = s.pdpaFormat || 'png';
+    const boxCount = (it.redactions || []).length;
+    return {
+      ext, width: it.meta.width, height: it.meta.height,
+      estBytes: it.file.size * 0.9, rating: 'excellent',
+      advice: [boxCount > 0 ? `ปกปิด ${boxCount} จุดลับ (${s.pdpaMode})` : 'ลากกรอบบนภาพตัวอย่างเพื่อปกปิดข้อมูลลับ'],
+    };
+  }
   if (tool.kind === 'image') {
     return makeImagePlan(it.meta, it.file.size, {
       format: s.imgFormat,
@@ -932,15 +941,6 @@ function computeItemPlan(it, s) {
       ext: 'pdf', width: it.meta.width, height: it.meta.height,
       estBytes: it.file.size * 0.75, rating: 'excellent',
       advice: [`จัดลงหน้า A4 (${s.rpPerPage} สลิป/หน้า)`],
-    };
-  }
-  if (tool.id === 'pdpa-redact') {
-    const ext = s.pdpaFormat || 'png';
-    const boxCount = (it.redactions || []).length;
-    return {
-      ext, width: it.meta.width, height: it.meta.height,
-      estBytes: it.file.size * 0.9, rating: 'excellent',
-      advice: [boxCount > 0 ? `ปกปิด ${boxCount} จุดลับ (${s.pdpaMode})` : 'ลากกรอบบนภาพตัวอย่างเพื่อปกปิดข้อมูลลับ'],
     };
   }
   return null;
@@ -2444,6 +2444,14 @@ async function executeToolOnItem(it, tool, settings, callbacks) {
       colors: settings.vgColors,
     }, callbacks);
   }
+  if (tool.id === 'pdpa-redact') {
+    return await exportPdpaRedactedFile(it.file, it.redactions || [], {
+      stampText: settings.pdpaStampText,
+      stampColor: settings.pdpaStampColor,
+      includeDate: settings.pdpaIncludeDate,
+      format: settings.pdpaFormat,
+    }, (p) => callbacks.onProgress(p, 1, 1));
+  }
   if (tool.kind === 'image') {
     return await processImage(it.file, it.meta, {
       format: settings.imgFormat,
@@ -2527,14 +2535,6 @@ async function executeToolOnItem(it, tool, settings, callbacks) {
       margin: settings.i2pMargin,
     }, (p) => callbacks.onProgress(p, 1, 1));
     return { blob: res.blob, ext: 'pdf', note: 'แปลงเป็น PDF 1 หน้า' };
-  }
-  if (tool.id === 'pdpa-redact') {
-    return await exportPdpaRedactedFile(it.file, it.redactions || [], {
-      stampText: settings.pdpaStampText,
-      stampColor: settings.pdpaStampColor,
-      includeDate: settings.pdpaIncludeDate,
-      format: settings.pdpaFormat,
-    }, (p) => callbacks.onProgress(p, 1, 1));
   }
   throw new Error('ไม่รู้จักเครื่องมือนี้');
 }
