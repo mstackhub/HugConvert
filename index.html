@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Kanit:wght@400;600;700&family=Noto+Serif+Thai:wght@400;600;700&family=Poppins:wght@400;500;600;700&family=Prompt:wght@400;600;700&family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=20261125-4" />
+  <link rel="stylesheet" href="css/style.css?v=20261125-5" />
   <script>
     try {
       const s = JSON.parse(localStorage.getItem('hc.auth.session.v1') || 'null');
@@ -220,6 +220,17 @@
 
     <!-- ===== Main ===== -->
     <div class="main">
+      <div class="banner banner--warn inapp-banner" id="inAppBrowserBanner" hidden>
+        <div class="inapp-banner__text">
+          <strong>⚠️ เปิดผ่านเบราว์เซอร์ในแอป (LINE / Facebook / TikTok) อาจดาวน์โหลดไฟล์ไม่ได้</strong>
+          <span>กรุณากดปุ่ม <b>⋮ / ⋯</b> มุมขวาบน แล้วเลือก <b>"เปิดใน Safari / Chrome"</b></span>
+        </div>
+        <div class="inapp-banner__actions">
+          <button type="button" class="btn btn--sm btn--primary" id="copyInAppUrlBtn">คัดลอกลิงก์</button>
+          <button type="button" class="btn btn--sm btn--ghost" id="closeInAppBannerBtn" aria-label="ปิด">✕</button>
+        </div>
+      </div>
+
       <div class="banner banner--error" id="unsupported" hidden>
         ⚠️ เบราว์เซอร์นี้ไม่รองรับการประมวลผลวิดีโอ (WebCodecs) — กรุณาใช้ Chrome / Edge เวอร์ชันล่าสุด, Safari 16.4+ หรือ Firefox 130+
         และเปิดผ่าน https:// หรือ localhost
@@ -1551,6 +1562,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script type="module" src="js/app.js?v=20261125-4"></script>
+  <script type="module" src="js/app.js?v=20261125-5"></script>
 </body>
 </html>

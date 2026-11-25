@@ -2697,25 +2697,49 @@ $('#startBtn').onclick = async () => {
       $('#overallPct').textContent = '100%';
       const doneItems = queue.filter((it) => it.status === 'done');
       if (doneItems.length > 0) {
+        const isMergedSingle =
+          (tool.id === 'pdf-merge' && settings.pmMode === 'merge') ||
+          (tool.id === 'image-to-pdf' && settings.i2pMerge === 'single') ||
+          tool.id === 'receipt-pack';
+
         if (jobCost.cost > 0) {
-          spendCoins(jobCost.cost, `⚡ ${tool.label} (${jobCost.reason})`);
+          if (isMergedSingle) {
+            doneItems.forEach((it, idx) => {
+              it.pendingCost = idx === 0 ? jobCost.cost : 0;
+              it.pendingCostReason = `${tool.label} (${jobCost.reason})`;
+              it.charged = false;
+            });
+          } else {
+            const base = Math.floor(jobCost.cost / doneItems.length);
+            const rem = jobCost.cost % doneItems.length;
+            doneItems.forEach((it, idx) => {
+              it.pendingCost = base + (idx < rem ? 1 : 0);
+              it.pendingCostReason = `${tool.label} (${jobCost.reason})`;
+              it.charged = false;
+            });
+          }
+        } else {
+          doneItems.forEach((it) => {
+            it.pendingCost = 0;
+            it.charged = true;
+          });
+          const curUser = getCurrentUser();
+          fetch('/api/track-usage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              toolId: tool.id,
+              fileCount: doneItems.length,
+              coinsSpent: 0,
+              userId: curUser?.id || null,
+            }),
+          }).catch(() => {});
         }
-        const curUser = getCurrentUser();
-        fetch('/api/track-usage', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            toolId: tool.id,
-            fileCount: doneItems.length,
-            coinsSpent: jobCost.cost || 0,
-            userId: curUser?.id || null,
-          }),
-        }).catch(() => {});
       }
     }
     refreshUI();
     if (!state.cancelled) {
-      toast(jobCost.cost > 0 ? `เสร็จเรียบร้อย! (ใช้ไป ${jobCost.cost} HugCoins)` : 'เสร็จเรียบร้อย พร้อมดาวน์โหลด!');
+      toast(jobCost.cost > 0 ? `เสร็จเรียบร้อย! (พร้อมดาวน์โหลด · ใช้ ${jobCost.cost} HugCoins เมื่อกดดาวน์โหลด)` : 'เสร็จเรียบร้อย พร้อมดาวน์โหลด!');
       $('#downloadCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }
@@ -2732,6 +2756,44 @@ window.addEventListener('beforeunload', (e) => {
 });
 
 // ---------------- Download ----------------
+function chargeItemsForDownload(items) {
+  const uncharged = items.filter((it) => it && !it.charged && Number(it.pendingCost) > 0);
+  const totalCost = uncharged.reduce((sum, it) => sum + Number(it.pendingCost || 0), 0);
+  if (totalCost <= 0) return true;
+
+  const w = loadWallet();
+  if (w.isGuest) {
+    openAuthModal('signup', `การดาวน์โหลดไฟล์นี้ใช้ ${totalCost} HugCoins — สมัครสมาชิกฟรีเพื่อรับโบนัส +15 HugCoins ทันที!`);
+    return false;
+  }
+  if (w.balance < totalCost) {
+    openCoinModal(`การดาวน์โหลดไฟล์นี้ใช้ ${totalCost} HugCoins — ตอนนี้คุณมี ${w.balance} เหรียญ สามารถกดรับโบนัสหรือเติมเหรียญได้เลยครับ`);
+    return false;
+  }
+
+  const reason = uncharged[0]?.pendingCostReason || 'ประมวลผลและดาวน์โหลดไฟล์';
+  const ok = spendCoins(totalCost, `⚡ ${reason}`);
+  if (!ok) return false;
+
+  uncharged.forEach((it) => {
+    it.charged = true;
+  });
+  const curUser = getCurrentUser();
+  fetch('/api/track-usage', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      toolId: currentTool().id,
+      fileCount: uncharged.length,
+      coinsSpent: totalCost,
+      userId: curUser?.id || null,
+    }),
+  }).catch(() => {});
+  renderWalletBadge();
+  toast(`หัก ${totalCost} HugCoins แล้ว — กำลังเริ่มดาวน์โหลด!`);
+  return true;
+}
+
 function downloadBlob(blob, filename) {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -2743,6 +2805,7 @@ function downloadBlob(blob, filename) {
 }
 
 async function downloadItemResult(it) {
+  if (!chargeItemsForDownload([it])) return;
   if (it.extraResults && it.extraResults.length > 1) {
     if ($('#zipToggle').checked) {
       const entries = {};
@@ -2786,6 +2849,7 @@ function expandNamedDownloads(items) {
 
 async function download(items) {
   if (!items.length) return;
+  if (!chargeItemsForDownload(items)) return;
   const named = expandNamedDownloads(items);
   if ($('#zipToggle').checked && named.length > 1) {
     const btns = [$('#dlAll'), $('#dlSelected')];
@@ -3532,5 +3596,26 @@ $('#qrConfirmSimBtn').onclick = () => {
   }
   buildCodecSelect();
   restoreSettings();
+  checkInAppBrowser();
   route();
 })();
+
+function checkInAppBrowser() {
+  const banner = $('#inAppBrowserBanner');
+  if (!banner) return;
+  const ua = navigator.userAgent || '';
+  const isInApp = /\b(Line|FBAN|FBAV|Instagram|BytedanceWebview|musical_ly|TikTok)\b/i.test(ua);
+  if (!isInApp) return;
+  banner.hidden = false;
+  $('#copyInAppUrlBtn')?.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast('คัดลอกลิงก์แล้ว — นำไปวางใน Safari / Chrome ได้เลยครับ');
+    } catch {
+      toast('กรุณาคัดลอก URL จากแถบด้านบนแล้วเปิดใน Safari / Chrome');
+    }
+  });
+  $('#closeInAppBannerBtn')?.addEventListener('click', () => {
+    banner.hidden = true;
+  });
+}
