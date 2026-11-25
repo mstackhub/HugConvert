@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Kanit:wght@400;600;700&family=Noto+Serif+Thai:wght@400;600;700&family=Poppins:wght@400;500;600;700&family=Prompt:wght@400;600;700&family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=20261125-3" />
+  <link rel="stylesheet" href="css/style.css?v=20261125-4" />
   <script>
     try {
       const s = JSON.parse(localStorage.getItem('hc.auth.session.v1') || 'null');
@@ -94,6 +94,7 @@
         <a class="nav__item" href="?tool=pdf-merge" data-id="pdf-merge"><span class="nav__icon">📑</span><span>รวม & แยกหน้า PDF</span></a>
         <a class="nav__item" href="?tool=pdf-to-image" data-id="pdf-to-image"><span class="nav__icon">📸</span><span>PDF เป็นรูปภาพ</span></a>
         <a class="nav__item" href="?tool=image-to-pdf" data-id="image-to-pdf"><span class="nav__icon">📄</span><span>รูปภาพเป็น PDF</span></a>
+        <a class="nav__item" href="?tool=receipt-pack" data-id="receipt-pack"><span class="nav__icon">🧾</span><span>รวมสลิปเป็น PDF รายเดือน</span></a>
         <div class="nav__group">วิดีโอ (Video)</div>
         <a class="nav__item" href="?tool=video-compress" data-id="video-compress"><span class="nav__icon">🎬</span><span>บีบอัดวิดีโอ</span></a>
         <a class="nav__item" href="?tool=video-convert" data-id="video-convert"><span class="nav__icon">🔄</span><span>แปลงไฟล์วิดีโอ</span></a>
@@ -102,6 +103,7 @@
         <div class="nav__group">รูปภาพ & เสียง</div>
         <a class="nav__item" href="?tool=image-compress" data-id="image-compress"><span class="nav__icon">🖼️</span><span>บีบอัดรูปภาพ</span></a>
         <a class="nav__item" href="?tool=image-convert" data-id="image-convert"><span class="nav__icon">🔁</span><span>แปลงรูป (รองรับ HEIC)</span></a>
+        <a class="nav__item" href="?tool=pdpa-redact" data-id="pdpa-redact"><span class="nav__icon">🛡️</span><span>เบลอจุดลับ PDPA</span></a>
         <a class="nav__item" href="?tool=audio-extract" data-id="audio-extract"><span class="nav__icon">🎵</span><span>แยก & บีบอัดเสียง MP3</span></a>
       </nav>
 
@@ -136,6 +138,7 @@
                 <a href="?tool=pdf-merge" data-id="pdf-merge">📑 รวม & แยกหน้า PDF</a>
                 <a href="?tool=pdf-to-image" data-id="pdf-to-image">📸 PDF เป็นรูปภาพ</a>
                 <a href="?tool=image-to-pdf" data-id="image-to-pdf">📄 รูปภาพเป็น PDF</a>
+                <a href="?tool=receipt-pack" data-id="receipt-pack">🧾 รวมสลิปเป็น PDF รายเดือน</a>
               </div>
             </div>
 
@@ -154,6 +157,7 @@
               <div class="topnav__menu">
                 <a href="?tool=image-compress" data-id="image-compress">🖼️ บีบอัดรูปภาพ</a>
                 <a href="?tool=image-convert" data-id="image-convert">🔁 แปลงรูป (รองรับ HEIC)</a>
+                <a href="?tool=pdpa-redact" data-id="pdpa-redact">🛡️ เบลอจุดลับ & คาดดำ PDPA</a>
                 <a href="?tool=audio-extract" data-id="audio-extract">🎵 แยก & บีบอัดเสียง MP3</a>
               </div>
             </div>
@@ -276,7 +280,7 @@
         <!-- แถบค้นหาและตัวกรองหมวดหมู่ -->
         <div class="hub-filter-bar">
           <div class="hub-tabs" id="hubCatTabs">
-            <button type="button" class="hub-tab active" data-hubcat="all">ทั้งหมด (13)</button>
+            <button type="button" class="hub-tab active" data-hubcat="all">ทั้งหมด (15)</button>
             <button type="button" class="hub-tab" data-hubcat="hugged" id="hubTabHugged">❤️ ที่ Hug ไว้ (<span id="huggedTabCount">0</span>)</button>
             <button type="button" class="hub-tab" data-hubcat="pdf">PDF</button>
             <button type="button" class="hub-tab" data-hubcat="video">วิดีโอ</button>
@@ -1266,6 +1270,121 @@
                 </div>
               </div>
 
+              <!-- 13. แผงตั้งค่า: เบลอ & คาดดำข้อมูลลับ PDPA (pdpa-redact) -->
+              <div class="tool-panel" data-panel="pdpa-redact" hidden>
+                <div class="pdpa-stage" id="pdpaStage" hidden>
+                  <div class="pdpa-stage__head">
+                    <span>ลากคลุมบนรูปเพื่อปิดข้อมูลลับ (<b id="pdpaBoxCount">0</b> จุด)</span>
+                    <div class="pdpa-stage__btns">
+                      <button type="button" class="btn btn--ghost btn--sm" id="pdpaUndoBtn">↩️ ย้อนกลับ</button>
+                      <button type="button" class="btn btn--ghost btn--sm danger" id="pdpaClearBtn">ล้างกรอบ</button>
+                    </div>
+                  </div>
+                  <div class="pdpa-canvas-wrap">
+                    <canvas id="pdpaPreviewCanvas"></canvas>
+                  </div>
+                  <div class="pdpa-file-bar" id="pdpaFileBar" hidden></div>
+                </div>
+
+                <div class="field">
+                  <label for="pdpaMode">รูปแบบการปกปิดจุดลับ</label>
+                  <select id="pdpaMode" class="select">
+                    <option value="blur" selected>🌫️ เบลอเนียน (Blur — อ่านไม่ออก 100%)</option>
+                    <option value="pixel">🟩 พิกเซลเซ็นเซอร์ (Pixelate / Mosaic)</option>
+                    <option value="black">⬛ คาดดำทึบ (Black Redact)</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label for="pdpaStrength">ความเข้มการเบลอ / ขนาดพิกเซล (<span id="pdpaStrengthVal">16</span>)</label>
+                  <input type="range" id="pdpaStrength" min="6" max="36" value="16" class="range" />
+                </div>
+
+                <div class="field">
+                  <label for="pdpaStampPreset">ข้อความรับรองสำเนา / ลายน้ำ PDPA</label>
+                  <select id="pdpaStampPreset" class="select">
+                    <option value="">(ไม่ใส่ข้อความคาดลายน้ำ)</option>
+                    <option value="สำเนาถูกต้อง ใช้เพื่อสมัครงานเท่านั้น" selected>สำเนาถูกต้อง ใช้เพื่อสมัครงานเท่านั้น</option>
+                    <option value="สำเนาถูกต้อง ใช้เพื่อเปิดบัญชีธนาคารเท่านั้น">สำเนาถูกต้อง ใช้เพื่อเปิดบัญชีธนาคารเท่านั้น</option>
+                    <option value="สำเนาถูกต้อง ใช้เพื่อยื่นสินเชื่อเท่านั้น">สำเนาถูกต้อง ใช้เพื่อยื่นสินเชื่อเท่านั้น</option>
+                    <option value="สำเนาถูกต้อง ใช้เพื่อยืนยันตัวตนเท่านั้น">สำเนาถูกต้อง ใช้เพื่อยืนยันตัวตนเท่านั้น</option>
+                    <option value="custom">✏️ กำหนดข้อความเอง...</option>
+                  </select>
+                </div>
+
+                <div class="field" id="pdpaStampCustomWrap">
+                  <label for="pdpaStampText">ข้อความที่ต้องการคาด</label>
+                  <input type="text" id="pdpaStampText" class="input" value="สำเนาถูกต้อง ใช้เพื่อสมัครงานเท่านั้น" placeholder="พิมพ์ข้อความรับรองสำเนา..." />
+                </div>
+
+                <div class="field-row">
+                  <div class="field">
+                    <label for="pdpaStampColor">สีข้อความ</label>
+                    <select id="pdpaStampColor" class="select">
+                      <option value="#1d4ed8" selected>น้ำเงินปากกา</option>
+                      <option value="#dc2626">แดง (เตือนลับ)</option>
+                      <option value="#111827">ดำทางการ</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="pdpaFormat">ไฟล์ที่ส่งออก</label>
+                    <select id="pdpaFormat" class="select">
+                      <option value="png" selected>PNG (คมชัดสูงสุด)</option>
+                      <option value="jpg">JPG (ไฟล์เล็ก)</option>
+                      <option value="pdf">PDF (พร้อมส่ง/พิมพ์)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label class="check compat-check">
+                    <input type="checkbox" id="pdpaIncludeDate" checked />
+                    <span>เติมวันที่ปัจจุบันต่อท้ายข้อความอัตโนมัติ</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- 14. แผงตั้งค่า: รวมสลิป / ใบเสร็จเป็น PDF รายเดือน (receipt-pack) -->
+              <div class="tool-panel" data-panel="receipt-pack" hidden>
+                <div class="field">
+                  <label for="rpTitle">หัวเรื่องเอกสาร (แสดงบนหัวกระดาษ PDF)</label>
+                  <input type="text" id="rpTitle" class="input" value="สรุปสลิป / ใบเสร็จรับเงิน" placeholder="เช่น สรุปค่าใช้จ่าย เดือน พ.ย. 2569" />
+                </div>
+
+                <div class="field-row">
+                  <div class="field">
+                    <label for="rpPerPage">จำนวนสลิปต่อหน้า A4</label>
+                    <select id="rpPerPage" class="select">
+                      <option value="4" selected>4 รูป / หน้า (2×2 แนะนำ)</option>
+                      <option value="6">6 รูป / หน้า (2×3 ประหยัด)</option>
+                      <option value="2">2 รูป / หน้า (1×2 ชัดมาก)</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="rpSort">เรียงลำดับสลิป</label>
+                    <select id="rpSort" class="select">
+                      <option value="queue" selected>ตามลำดับที่เลือก</option>
+                      <option value="date-asc">วันที่เก่า → ใหม่</option>
+                      <option value="date-desc">วันที่ใหม่ → เก่า</option>
+                      <option value="name-asc">ตามชื่อไฟล์ (ก–ฮ / A–Z)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label class="check compat-check">
+                    <input type="checkbox" id="rpShowLabels" checked />
+                    <span>แสดงลำดับ ชื่อไฟล์ และวันที่ใต้แต่ละสลิป</span>
+                  </label>
+                </div>
+                <div class="field">
+                  <label class="check compat-check">
+                    <input type="checkbox" id="rpShowPageNums" checked />
+                    <span>แสดงเลขหน้า (หน้า 1 / N) ที่ท้ายกระดาษ</span>
+                  </label>
+                </div>
+              </div>
+
               <div class="cost-preview" id="costPreview" hidden>
                 <span id="costPreviewLabel">โหมดมาตรฐานใช้งานฟรี</span>
                 <span class="cost-preview__badge" id="costPreviewBadge">ฟรี 0 <span class="hc-coin"></span></span>
@@ -1311,6 +1430,7 @@
             <a href="?tool=pdf-merge">รวม & แยกหน้า PDF</a>
             <a href="?tool=pdf-to-image">PDF เป็นรูปภาพ</a>
             <a href="?tool=image-to-pdf">รูปภาพเป็น PDF</a>
+            <a href="?tool=receipt-pack">รวมสลิปเป็น PDF รายเดือน</a>
           </div>
 
           <div class="site-footer__col">
@@ -1326,6 +1446,7 @@
             <h4>รูปภาพ & บริการ</h4>
             <a href="?tool=image-compress">บีบอัดรูปภาพ</a>
             <a href="?tool=image-convert">แปลงรูป (รองรับ iPhone HEIC)</a>
+            <a href="?tool=pdpa-redact">เบลอจุดลับ & คาดดำ PDPA</a>
             <button type="button" class="site-footer__linkbtn" onclick="document.getElementById('coinWalletBtn')?.click()"><span class="hc-coin"></span> แพ็กเกจ HugCoin</button>
             <button type="button" class="site-footer__linkbtn" onclick="document.getElementById('authGuestBtn')?.click()">👤 เข้าสู่ระบบ / สมัครสมาชิก</button>
           </div>
@@ -1430,6 +1551,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script type="module" src="js/app.js?v=20261125-2"></script>
+  <script type="module" src="js/app.js?v=20261125-4"></script>
 </body>
 </html>

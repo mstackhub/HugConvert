@@ -1430,3 +1430,61 @@ body.is-member .hub-strip {
   .dropzone { padding: 28px 16px; }
   .input, .select, .textarea-input { font-size: 16px; } /* กัน iOS zoom */
 }
+
+/* ===== PDPA Redact & Blur Interactive Stage ===== */
+.pdpa-stage {
+  margin-bottom: 14px;
+  padding: 12px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px solid var(--line);
+}
+.pdpa-stage__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.pdpa-stage__btns { display: flex; gap: 6px; }
+.pdpa-canvas-wrap {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+  background: #e2e8f0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+#pdpaPreviewCanvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  cursor: crosshair;
+  touch-action: none;
+}
+.pdpa-file-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.pdpa-file-chip {
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.pdpa-file-chip.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}

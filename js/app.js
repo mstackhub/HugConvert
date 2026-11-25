@@ -14,6 +14,9 @@ import {
   unlockPdf, watermarkPdf, drawWatermarkOnCtx, renderPdfPageCanvas,
 } from './pdf-tools.js';
 import {
+  loadRedactorImage, renderRedactionsOnCanvas, exportPdpaRedactedFile, buildReceiptPackPdf,
+} from './thai-tools.js';
+import {
   COIN_PACKAGES, DAILY_BONUS_COINS, FREE_DAILY_CAP, SEO_CONTENT,
   loadWallet, canClaimDaily, claimDailyBonus, redeemCoupon,
   addCoinsFromPurchase, spendCoins, calculateJobCost, hasUnlimitedPass, getVipTier, syncWalletFromCloud,
@@ -76,6 +79,13 @@ const TOOLS = [
     settingsTitle: 'ตั้งค่าแปลงรูปภาพเป็น PDF', actionLabel: '📄 เริ่มสร้างไฟล์ PDF', suffix: '_document',
     tags: 'รูปเป็น pdf รวมรูปเป็น pdf jpg heic to pdf',
   },
+  {
+    id: 'receipt-pack', icon: '🧾', label: 'รวมสลิปเป็น PDF รายเดือน', kind: 'image-pdf', cat: 'pdf', panel: 'receipt-pack',
+    catLabel: 'PDF · ไทยนิยม',
+    desc: 'จัดเรียงสลิปโอนเงิน / ใบเสร็จหลายใบลงหน้า A4 (2, 4, 6 รูป/หน้า) พร้อมหัวเรื่องและเลขหน้าสำหรับส่งบัญชี',
+    settingsTitle: 'ตั้งค่ารวมสลิป & ใบเสร็จเป็น PDF', actionLabel: '🧾 สร้าง PDF รวมสลิป', suffix: '_receipt_pack',
+    tags: 'รวมสลิป ใบเสร็จ เบิกค่าใช้จ่าย บัญชี pdf a4 receipt pack',
+  },
   { group: 'วิดีโอ (Video)' },
   {
     id: 'video-compress', icon: '🎬', label: 'บีบอัดวิดีโอ', kind: 'video', cat: 'video', panel: 'video-compress',
@@ -119,6 +129,13 @@ const TOOLS = [
     desc: 'แปลงรูปถ่าย iPhone (.HEIC) หรือ .JFIF / WebP / PNG ให้เป็น JPG หรือ WebP ในคลิกเดียว',
     settingsTitle: 'ตั้งค่าการแปลงไฟล์รูปภาพ', actionLabel: '🔁 เริ่มแปลงไฟล์รูปภาพ', suffix: '_converted',
     tags: 'แปลงรูป heic เป็น jpg jfif เป็น png webp ไอโฟน',
+  },
+  {
+    id: 'pdpa-redact', icon: '🛡️', label: 'เบลอจุดลับ & คาดดำ PDPA', kind: 'image', cat: 'image', panel: 'pdpa-redact',
+    catLabel: 'Image · PDPA',
+    desc: 'ลากกรอบเบลอ พิกเซล หรือคาดดำเลขบัตรประชาชน/สลิป พร้อมข้อความ "ใช้เพื่อ...เท่านั้น" ในเครื่อง 100%',
+    settingsTitle: 'ปกปิดข้อมูลลับ PDPA', actionLabel: '🛡️ บันทึกไฟล์ปลอดภัย (PDPA)', suffix: '_pdpa',
+    tags: 'เบลอบัตรประชาชน เบลอสลิป คาดดำ pdpa สำเนาถูกต้อง redact blur',
   },
   {
     id: 'audio-extract', icon: '🎵', label: 'แยก & บีบอัดเสียง MP3', kind: 'audio', cat: 'audio', panel: 'audio-extract',
@@ -690,6 +707,8 @@ const settingIds = [
   'pmMode', 'pmRange',
   'p2iFormat', 'p2iScale', 'p2iRange',
   'i2pMerge', 'i2pSize', 'i2pOrient', 'i2pMargin',
+  'pdpaMode', 'pdpaStrength', 'pdpaStampPreset', 'pdpaStampText', 'pdpaStampColor', 'pdpaFormat', 'pdpaIncludeDate',
+  'rpTitle', 'rpPerPage', 'rpSort', 'rpShowLabels', 'rpShowPageNums',
 ];
 
 function readSettings() {
@@ -767,6 +786,20 @@ function readSettings() {
     i2pSize: $('#i2pSize').value,
     i2pOrient: $('#i2pOrient').value,
     i2pMargin: Number($('#i2pMargin').value) || 0,
+    // pdpa-redact
+    pdpaMode: $('#pdpaMode')?.value || 'blur',
+    pdpaStrength: Number($('#pdpaStrength')?.value) || 16,
+    pdpaStampPreset: $('#pdpaStampPreset')?.value ?? '',
+    pdpaStampText: $('#pdpaStampText')?.value || '',
+    pdpaStampColor: $('#pdpaStampColor')?.value || '#1d4ed8',
+    pdpaFormat: $('#pdpaFormat')?.value || 'png',
+    pdpaIncludeDate: $('#pdpaIncludeDate')?.checked ?? true,
+    // receipt-pack
+    rpTitle: $('#rpTitle')?.value || '',
+    rpPerPage: Number($('#rpPerPage')?.value) || 4,
+    rpSort: $('#rpSort')?.value || 'queue',
+    rpShowLabels: $('#rpShowLabels')?.checked ?? true,
+    rpShowPageNums: $('#rpShowPageNums')?.checked ?? true,
   };
 }
 
@@ -894,6 +927,22 @@ function computeItemPlan(it, s) {
       advice: [s.i2pMerge === 'single' ? 'รวมรูปนี้เข้าในไฟล์ PDF เล่มเดียวกัน' : 'แปลงรูปนี้เป็น 1 ไฟล์ PDF'],
     };
   }
+  if (tool.id === 'receipt-pack') {
+    return {
+      ext: 'pdf', width: it.meta.width, height: it.meta.height,
+      estBytes: it.file.size * 0.75, rating: 'excellent',
+      advice: [`จัดลงหน้า A4 (${s.rpPerPage} สลิป/หน้า)`],
+    };
+  }
+  if (tool.id === 'pdpa-redact') {
+    const ext = s.pdpaFormat || 'png';
+    const boxCount = (it.redactions || []).length;
+    return {
+      ext, width: it.meta.width, height: it.meta.height,
+      estBytes: it.file.size * 0.9, rating: 'excellent',
+      advice: [boxCount > 0 ? `ปกปิด ${boxCount} จุดลับ (${s.pdpaMode})` : 'ลากกรอบบนภาพตัวอย่างเพื่อปกปิดข้อมูลลับ'],
+    };
+  }
   return null;
 }
 
@@ -921,6 +970,13 @@ function onSettingsChange() {
   $$('[data-psshow]').forEach((el) => (el.hidden = el.dataset.psshow !== s.psMode));
   $('#psWmOpacityLabel').textContent = `${s.psWmOpacity}%`;
   renderWatermarkPreview();
+
+  // pdpa-redact
+  if ($('#pdpaStrengthVal')) $('#pdpaStrengthVal').textContent = String(s.pdpaStrength);
+  if ($('#pdpaStampCustomWrap')) {
+    $('#pdpaStampCustomWrap').hidden = s.pdpaStampPreset === '';
+  }
+  renderPdpaStage();
 
   // pdf-edit
   $('#edStrokeLabel').textContent = `${s.edStrokeSize} px`;
@@ -1338,6 +1394,186 @@ async function renderWatermarkPreview() {
     }
   }
 }
+
+// ---------------- PDPA Redact & Blur Interactive Canvas ----------------
+const pdpaState = {
+  activeItemId: null,
+  loadedItemId: null,
+  loaded: null,
+  drawing: null, // { startX, startY, currX, currY }
+};
+
+$('#pdpaStampPreset')?.addEventListener('change', (e) => {
+  const val = e.target.value;
+  if (val && val !== 'custom') {
+    $('#pdpaStampText').value = val;
+  } else if (!val) {
+    $('#pdpaStampText').value = '';
+  }
+  onSettingsChange();
+});
+
+async function renderPdpaStage() {
+  const stage = $('#pdpaStage');
+  const canvas = $('#pdpaPreviewCanvas');
+  if (!stage || !canvas) return;
+
+  const isPdpa = currentTool().id === 'pdpa-redact';
+  const items = getItems();
+  if (!isPdpa || !items.length) {
+    stage.hidden = true;
+    return;
+  }
+  stage.hidden = false;
+
+  let activeItem = items.find((x) => x.id === pdpaState.activeItemId) || items[0];
+  pdpaState.activeItemId = activeItem.id;
+  if (!Array.isArray(activeItem.redactions)) activeItem.redactions = [];
+
+  // แสดงแถบสลับรูปกรณีอัปโหลดหลายรูป
+  const fileBar = $('#pdpaFileBar');
+  if (fileBar) {
+    fileBar.hidden = items.length <= 1;
+    fileBar.innerHTML = '';
+    if (items.length > 1) {
+      items.forEach((it, idx) => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = `pdpa-file-chip ${it.id === activeItem.id ? 'active' : ''}`;
+        chip.textContent = `${idx + 1}. ${it.name}`;
+        chip.onclick = () => {
+          pdpaState.activeItemId = it.id;
+          renderPdpaStage();
+        };
+        fileBar.appendChild(chip);
+      });
+    }
+  }
+
+  if (pdpaState.loadedItemId !== activeItem.id) {
+    pdpaState.loaded?.cleanup?.();
+    pdpaState.loaded = null;
+    pdpaState.loadedItemId = activeItem.id;
+    try {
+      pdpaState.loaded = await loadRedactorImage(activeItem.file);
+    } catch (err) {
+      console.warn(err);
+      return;
+    }
+  }
+
+  const loaded = pdpaState.loaded;
+  if (!loaded) return;
+
+  const maxW = 540;
+  const scale = Math.min(1, maxW / loaded.width);
+  const cw = Math.max(120, Math.round(loaded.width * scale));
+  const ch = Math.max(120, Math.round(loaded.height * scale));
+  if (canvas.width !== cw || canvas.height !== ch) {
+    canvas.width = cw;
+    canvas.height = ch;
+  }
+
+  const s = readSettings();
+  const ctx = canvas.getContext('2d');
+  renderRedactionsOnCanvas(ctx, loaded.img, cw, ch, activeItem.redactions, {
+    stampText: s.pdpaStampText,
+    stampColor: s.pdpaStampColor,
+    includeDate: s.pdpaIncludeDate,
+  });
+
+  // วาดกรอบปะกำลังลากถ้ามี
+  if (pdpaState.drawing) {
+    const d = pdpaState.drawing;
+    const x = Math.min(d.startX, d.currX) * cw;
+    const y = Math.min(d.startY, d.currY) * ch;
+    const w = Math.abs(d.currX - d.startX) * cw;
+    const h = Math.abs(d.currY - d.startY) * ch;
+    ctx.save();
+    ctx.strokeStyle = '#4f46e5';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 4]);
+    ctx.fillStyle = 'rgba(79, 70, 229, 0.18)';
+    ctx.fillRect(x, y, w, h);
+    ctx.strokeRect(x, y, w, h);
+    ctx.restore();
+  }
+
+  if ($('#pdpaBoxCount')) {
+    $('#pdpaBoxCount').textContent = String(activeItem.redactions.length);
+  }
+}
+
+(function bindPdpaCanvasEvents() {
+  const canvas = $('#pdpaPreviewCanvas');
+  if (!canvas) return;
+  const getNorm = (e) => {
+    const r = canvas.getBoundingClientRect();
+    return {
+      x: Math.max(0, Math.min(1, (e.clientX - r.left) / Math.max(1, r.width))),
+      y: Math.max(0, Math.min(1, (e.clientY - r.top) / Math.max(1, r.height))),
+    };
+  };
+
+  canvas.addEventListener('pointerdown', (e) => {
+    if (currentTool().id !== 'pdpa-redact') return;
+    canvas.setPointerCapture(e.pointerId);
+    const pt = getNorm(e);
+    pdpaState.drawing = { startX: pt.x, startY: pt.y, currX: pt.x, currY: pt.y };
+    renderPdpaStage();
+  });
+
+  canvas.addEventListener('pointermove', (e) => {
+    if (!pdpaState.drawing) return;
+    const pt = getNorm(e);
+    pdpaState.drawing.currX = pt.x;
+    pdpaState.drawing.currY = pt.y;
+    renderPdpaStage();
+  });
+
+  const finishDraw = () => {
+    if (!pdpaState.drawing) return;
+    const d = pdpaState.drawing;
+    pdpaState.drawing = null;
+    const x = Math.min(d.startX, d.currX);
+    const y = Math.min(d.startY, d.currY);
+    const w = Math.abs(d.currX - d.startX);
+    const h = Math.abs(d.currY - d.startY);
+    const item = getItems().find((it) => it.id === pdpaState.activeItemId);
+    if (item && w >= 0.015 && h >= 0.015) {
+      const s = readSettings();
+      if (!Array.isArray(item.redactions)) item.redactions = [];
+      item.redactions.push({ x, y, w, h, mode: s.pdpaMode, strength: s.pdpaStrength });
+      if (item.status === 'done') item.status = 'ready';
+      item.plan = computeItemPlan(item, s);
+      updateCard(item);
+    }
+    renderPdpaStage();
+  };
+
+  canvas.addEventListener('pointerup', finishDraw);
+  canvas.addEventListener('pointercancel', finishDraw);
+})();
+
+$('#pdpaUndoBtn')?.addEventListener('click', () => {
+  const item = getItems().find((it) => it.id === pdpaState.activeItemId);
+  if (!item || !item.redactions?.length) return;
+  item.redactions.pop();
+  if (item.status === 'done') item.status = 'ready';
+  item.plan = computeItemPlan(item, readSettings());
+  updateCard(item);
+  renderPdpaStage();
+});
+
+$('#pdpaClearBtn')?.addEventListener('click', () => {
+  const item = getItems().find((it) => it.id === pdpaState.activeItemId);
+  if (!item) return;
+  item.redactions = [];
+  if (item.status === 'done') item.status = 'ready';
+  item.plan = computeItemPlan(item, readSettings());
+  updateCard(item);
+  renderPdpaStage();
+});
 
 function setEditorTool(toolName) {
   state.editor.tool = toolName;
@@ -2138,6 +2374,7 @@ function refreshUI() {
       ? `🔄 ประมวลผลใหม่ (${runnableCount} ไฟล์${costSuffix})`
       : `${tool.actionLabel}${runnableCount && tool.id !== 'pdf-edit' ? ` (${runnableCount} ไฟล์${costSuffix})` : costSuffix}`;
   $('#cancelBtn').hidden = !state.running;
+  renderPdpaStage();
 
   const selected = done.filter((it) => it.selected);
   $('#downloadCard').hidden = done.length === 0;
@@ -2291,6 +2528,14 @@ async function executeToolOnItem(it, tool, settings, callbacks) {
     }, (p) => callbacks.onProgress(p, 1, 1));
     return { blob: res.blob, ext: 'pdf', note: 'แปลงเป็น PDF 1 หน้า' };
   }
+  if (tool.id === 'pdpa-redact') {
+    return await exportPdpaRedactedFile(it.file, it.redactions || [], {
+      stampText: settings.pdpaStampText,
+      stampColor: settings.pdpaStampColor,
+      includeDate: settings.pdpaIncludeDate,
+      format: settings.pdpaFormat,
+    }, (p) => callbacks.onProgress(p, 1, 1));
+  }
   throw new Error('ไม่รู้จักเครื่องมือนี้');
 }
 
@@ -2371,6 +2616,30 @@ $('#startBtn').onclick = async () => {
         it.note = idx === 0
           ? `สร้าง PDF รวม ${res.pageCount} หน้า เรียบร้อยแล้ว`
           : 'ถูกรวมอยู่ในไฟล์ PDF แรกแล้ว';
+        it.status = 'done';
+        it.selected = idx === 0;
+        updateCard(it);
+      });
+    }
+    // กรณีพิเศษ 3: รวมสลิป / ใบเสร็จหลายใบลงหน้า A4 เป็น PDF รายเดือน (receipt-pack)
+    else if (tool.id === 'receipt-pack') {
+      $('#overallText').textContent = `กำลังจัดเรียงสลิป ${queue.length} ใบลงหน้า A4…`;
+      const res = await buildReceiptPackPdf(queue, {
+        title: settings.rpTitle,
+        perPage: settings.rpPerPage,
+        sort: settings.rpSort,
+        showLabels: settings.rpShowLabels,
+        showPageNums: settings.rpShowPageNums,
+      }, (p) => {
+        $('#overallBar').style.width = `${p * 100}%`;
+        $('#overallPct').textContent = `${Math.round(p * 100)}%`;
+      });
+      queue.forEach((it, idx) => {
+        it.result = res.blob;
+        it.resultExt = 'pdf';
+        it.note = idx === 0
+          ? `รวมสลิป ${res.itemCount} รายการ (${res.pageCount} หน้า A4) สำเร็จ`
+          : 'ถูกรวมอยู่ในไฟล์ PDF สลิปแรกแล้ว';
         it.status = 'done';
         it.selected = idx === 0;
         updateCard(it);

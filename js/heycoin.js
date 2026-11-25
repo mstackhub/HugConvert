@@ -372,6 +372,12 @@ export function calculateJobCost(toolId, count, s) {
   if (toolId === 'audio-extract' && s.aeFormat === 'mp3') {
     return applyVipCost(1 * count, 'แปลงและแยกเสียง MP3');
   }
+  if (toolId === 'pdpa-redact') {
+    return applyVipCost(1 * count, 'เบลอ/คาดดำข้อมูลลับ PDPA');
+  }
+  if (toolId === 'receipt-pack') {
+    return applyVipCost(2, `รวมสลิป ${count} รายการเป็น PDF`);
+  }
 
   return { cost: 0, reason: 'ใช้งานฟรี' };
 }
