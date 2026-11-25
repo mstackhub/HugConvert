@@ -2815,19 +2815,6 @@ $('#ddOpenHistoryBtn')?.addEventListener('click', () => {
   navigateToTool('history');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
-$('#ddOpenHuggedBtn')?.addEventListener('click', () => {
-  $('#profileDropdown').hidden = true;
-  hubActiveCat = 'hugged';
-  $$('#hubCatTabs .hub-tab').forEach((b) => b.classList.toggle('active', b.dataset.hubcat === 'hugged'));
-  if (state.toolId !== 'home') {
-    navigateToTool('home');
-  } else {
-    renderHubCards();
-  }
-  requestAnimationFrame(() => {
-    $('#hubCatTabs')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
-});
 
 $('#ddLogoutBtn').onclick = async () => {
   $('#profileDropdown').hidden = true;
