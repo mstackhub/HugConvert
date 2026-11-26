@@ -229,3 +229,18 @@ create index if not exists idx_tool_usage_tool
   on public.tool_usage (tool_id, created_at desc);
 
 alter table public.tool_usage enable row level security;
+
+-- 9. มอบสิทธิ์การเข้าถึงตารางและฟังก์ชัน (จำเป็นสำหรับ Supabase เวอร์ชันใหม่)
+grant usage on schema public to anon, authenticated, service_role;
+
+grant all on table public.wallets to service_role;
+grant all on table public.coin_transactions to service_role;
+grant all on table public.tool_usage to service_role;
+grant usage, select on all sequences in schema public to service_role;
+
+grant select on table public.wallets to authenticated;
+grant select on table public.coin_transactions to authenticated;
+
+grant execute on function public.claim_daily_bonus() to authenticated, service_role;
+grant execute on function public.spend_heycoins(numeric, text) to authenticated, service_role;
+grant execute on function public.credit_opn_purchase(uuid, integer, integer, text, text) to service_role;
