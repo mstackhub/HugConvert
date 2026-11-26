@@ -37,6 +37,33 @@ export default async function handler(req, res) {
     const { sbUrl, sbServiceKey } = auth;
     const headers = getSupabaseServiceHeaders(sbServiceKey);
 
+    const targetUserId = String(req.query?.userId || '').trim();
+    if (targetUserId) {
+      const [uTxRes, uUsageRes] = await Promise.all([
+        fetch(`${sbUrl}/rest/v1/coin_transactions?user_id=eq.${encodeURIComponent(targetUserId)}&select=*&order=created_at.desc&limit=200`, { headers }),
+        fetch(`${sbUrl}/rest/v1/tool_usage?user_id=eq.${encodeURIComponent(targetUserId)}&select=tool_id,file_count,coins_spent,created_at&order=created_at.desc&limit=200`, { headers }),
+      ]);
+      const uTx = uTxRes.ok ? await uTxRes.json() : [];
+      const uUsage = uUsageRes.ok ? await uUsageRes.json() : [];
+      return res.status(200).json({
+        ok: true,
+        transactions: uTx.map((t) => ({
+          id: t.id,
+          userId: t.user_id,
+          delta: Number(t.delta) || 0,
+          label: t.label,
+          paymentRef: t.payment_ref || '',
+          createdAt: t.created_at,
+        })),
+        toolUsage: uUsage.map((r) => ({
+          toolId: r.tool_id,
+          fileCount: Number(r.file_count) || 1,
+          coinsSpent: Number(r.coins_spent) || 0,
+          createdAt: r.created_at,
+        })),
+      });
+    }
+
     const range = String(req.query?.range || '30d');
     const isoStart = getRangeIsoStart(range);
     const usageFilter = isoStart ? `&created_at=gte.${encodeURIComponent(isoStart)}` : '';
@@ -139,6 +166,7 @@ export default async function handler(req, res) {
 
     const recentTx = txRows.slice(0, 60).map((t) => ({
       id: t.id,
+      userId: t.user_id,
       email: emailMap.get(t.user_id) || t.user_id,
       delta: Number(t.delta) || 0,
       label: t.label,
