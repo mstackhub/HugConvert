@@ -3596,19 +3596,23 @@ $('#qrConfirmSimBtn').onclick = () => {
 (async function init() {
   buildNav();
   renderAuthUI();
-  renderCoinHeader();
-  await initAuth();
-  renderAuthUI();
-  renderCoinHeader();
-  if (!isSupported()) {
-    $('#unsupported').hidden = false;
-  } else {
-    try { state.support = await detectSupport(); } catch (e) { console.warn(e); }
-  }
+  renderWalletBadge();
   buildCodecSelect();
   restoreSettings();
   checkInAppBrowser();
   route();
+  await initAuth();
+  renderAuthUI();
+  renderWalletBadge();
+  if (!isSupported()) {
+    $('#unsupported').hidden = false;
+  } else {
+    try {
+      state.support = await detectSupport();
+      buildCodecSelect();
+      refreshUI();
+    } catch (e) { console.warn(e); }
+  }
 })();
 
 function checkInAppBrowser() {
