@@ -30,25 +30,49 @@ export default async function handler(req, res) {
     const wRes = await fetch(`${sbUrl}/rest/v1/wallets?user_id=eq.${encodeURIComponent(userId)}&select=*`, { headers });
     const rows = wRes.ok ? await wRes.json() : [];
     const wallet = rows[0];
-    if (!wallet) return res.status(404).json({ error: 'ไม่พบกระเป๋าเหรียญของผู้ใช้นี้' });
 
-    const newBalance = Math.max(0, Math.round(((Number(wallet.balance) || 0) + delta) * 10) / 10);
-    const patch = {
-      balance: newBalance,
-      updated_at: new Date().toISOString(),
-    };
-    if (days > 0) {
-      const baseMs = Math.max(Date.now(), wallet.unlimited_until ? new Date(wallet.unlimited_until).getTime() : 0);
-      patch.unlimited_until = new Date(baseMs + days * 86400 * 1000).toISOString();
-    }
+    let newBalance = 0;
+    if (!wallet) {
+      // สร้างกระเป๋าใน Supabase ให้อัตโนมัติหากยังไม่มี (เช่น สมัครก่อนรัน Trigger)
+      newBalance = Math.max(0, Math.round((15 + delta) * 10) / 10);
+      const walletCode = `HC-${Math.random().toString(36).slice(2, 6).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+      const insertBody = {
+        user_id: userId,
+        wallet_code: walletCode,
+        balance: newBalance,
+        lifetime_topup: 0,
+        updated_at: new Date().toISOString(),
+      };
+      if (days > 0) {
+        insertBody.unlimited_until = new Date(Date.now() + days * 86400 * 1000).toISOString();
+      }
+      const insRes = await fetch(`${sbUrl}/rest/v1/wallets`, {
+        method: 'POST',
+        headers: { ...headers, Prefer: 'return=representation' },
+        body: JSON.stringify(insertBody),
+      });
+      if (!insRes.ok) {
+        return res.status(500).json({ error: await insRes.text() });
+      }
+    } else {
+      newBalance = Math.max(0, Math.round(((Number(wallet.balance) || 0) + delta) * 10) / 10);
+      const patch = {
+        balance: newBalance,
+        updated_at: new Date().toISOString(),
+      };
+      if (days > 0) {
+        const baseMs = Math.max(Date.now(), wallet.unlimited_until ? new Date(wallet.unlimited_until).getTime() : 0);
+        patch.unlimited_until = new Date(baseMs + days * 86400 * 1000).toISOString();
+      }
 
-    const upRes = await fetch(`${sbUrl}/rest/v1/wallets?user_id=eq.${encodeURIComponent(userId)}`, {
-      method: 'PATCH',
-      headers,
-      body: JSON.stringify(patch),
-    });
-    if (!upRes.ok) {
-      return res.status(500).json({ error: await upRes.text() });
+      const upRes = await fetch(`${sbUrl}/rest/v1/wallets?user_id=eq.${encodeURIComponent(userId)}`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify(patch),
+      });
+      if (!upRes.ok) {
+        return res.status(500).json({ error: await upRes.text() });
+      }
     }
 
     const note = String(reason || '').trim() || (days > 0 ? `มอบ Unlimited Pass ${days} วัน` : 'ปรับยอดเหรียญโดย Admin');

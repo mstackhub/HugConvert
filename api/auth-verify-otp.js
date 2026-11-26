@@ -45,6 +45,26 @@ export default async function handler(req, res) {
       return res.status(createRes.status || 400).json({ error: msg || 'สร้างบัญชีไม่สำเร็จ' });
     }
 
+    // สร้างกระเป๋าเหรียญเริ่มต้น (+15 HugCoins) หาก Trigger ยังไม่ได้สร้าง
+    if (data?.id) {
+      const walletCode = `HC-${Math.random().toString(36).slice(2, 6).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+      await fetch(`${sbUrl}/rest/v1/wallets?on_conflict=user_id`, {
+        method: 'POST',
+        headers: {
+          apikey: sbServiceKey,
+          Authorization: `Bearer ${sbServiceKey}`,
+          'Content-Type': 'application/json',
+          Prefer: 'resolution=ignore-duplicates',
+        },
+        body: JSON.stringify({
+          user_id: data.id,
+          wallet_code: walletCode,
+          balance: 15,
+          lifetime_topup: 0,
+        }),
+      }).catch(() => {});
+    }
+
     return res.status(200).json({ ok: true, email: payload.email, userId: data.id });
   } catch (err) {
     return res.status(500).json({ error: err.message });

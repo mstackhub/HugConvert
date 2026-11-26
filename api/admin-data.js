@@ -60,6 +60,28 @@ export default async function handler(req, res) {
     const walletMap = new Map(wallets.map((w) => [w.user_id, w]));
     const emailMap = new Map(authUsers.map((u) => [u.id, u.email]));
 
+    // สร้างกระเป๋าเริ่มต้น (+15 HugCoins) ให้ผู้ใช้ที่ยังไม่มีแถวในตาราง wallets (เช่น สมัครก่อนสร้าง Trigger)
+    if (walletsRes.ok) {
+      const missingUsers = authUsers.filter((u) => !walletMap.has(u.id));
+      if (missingUsers.length > 0) {
+        const newRows = missingUsers.map((u) => ({
+          user_id: u.id,
+          wallet_code: `HC-${Math.random().toString(36).slice(2, 6).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
+          balance: 15,
+          lifetime_topup: 0,
+        }));
+        const insRes = await fetch(`${sbUrl}/rest/v1/wallets?on_conflict=user_id`, {
+          method: 'POST',
+          headers: { ...headers, Prefer: 'resolution=ignore-duplicates,return=representation' },
+          body: JSON.stringify(newRows),
+        });
+        if (insRes.ok) {
+          const inserted = await insRes.json().catch(() => []);
+          inserted.forEach((row) => walletMap.set(row.user_id, row));
+        }
+      }
+    }
+
     const nowMs = Date.now();
     const tierCounts = { member: 0, silver: 0, gold: 0, platinum: 0 };
     let totalCoinsBalance = 0;
