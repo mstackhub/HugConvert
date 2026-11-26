@@ -1,3 +1,4 @@
+import { getSupabaseServiceHeaders } from './_admin-auth.js';
 // ============================================================
 //  api/_opn-credit.js — Shared Helper สำหรับ Opn Payments (Omise) + Supabase
 //  ตรวจสอบ Charge จาก Opn โดยตรง (กันปลอม Webhook) และเติมเหรียญแบบ Idempotent (ไม่เติมซ้ำ)

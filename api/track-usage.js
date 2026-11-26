@@ -1,7 +1,7 @@
 // ============================================================
 //  api/track-usage.js — บันทึกสถิติการใช้งานเครื่องมือ (Tool Usage Analytics)
 // ============================================================
-import { getSupabaseAdminConfig } from './_admin-auth.js';
+import { getSupabaseAdminConfig, getSupabaseServiceHeaders } from './_admin-auth.js';
 
 const VALID_TOOLS = new Set([
   'pdf-edit', 'pdf-compress', 'pdf-security', 'pdf-merge', 'pdf-to-image', 'image-to-pdf',

@@ -1,7 +1,7 @@
 // ============================================================
 //  api/admin-data.js — ดึงข้อมูลภาพรวม CRM, สถิติเครื่องมือยอดฮิต และธุรกรรมสำหรับ Admin
 // ============================================================
-import { verifyAdmin } from './_admin-auth.js';
+import { verifyAdmin, getSupabaseServiceHeaders } from './_admin-auth.js';
 
 function getTierName(lifetime) {
   const n = Number(lifetime) || 0;
@@ -35,10 +35,7 @@ export default async function handler(req, res) {
     if (!auth.ok) return res.status(auth.status).json({ error: auth.error });
 
     const { sbUrl, sbServiceKey } = auth;
-    const headers = {
-      apikey: sbServiceKey,
-      Authorization: `Bearer ${sbServiceKey}`,
-    };
+    const headers = getSupabaseServiceHeaders(sbServiceKey);
 
     const range = String(req.query?.range || '30d');
     const isoStart = getRangeIsoStart(range);

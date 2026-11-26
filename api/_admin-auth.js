@@ -15,6 +15,14 @@ export function getSupabaseAdminConfig() {
   return { sbUrl, sbServiceKey };
 }
 
+export function getSupabaseServiceHeaders(sbServiceKey, extra = {}) {
+  const h = { apikey: sbServiceKey, ...extra };
+  if (String(sbServiceKey || "").startsWith("eyJ")) {
+    h.Authorization = `Bearer ${sbServiceKey}`;
+  }
+  return h;
+}
+
 export function getAdminCredentials() {
   return {
     username: process.env.ADMIN_USER || 'adminHugConvert',

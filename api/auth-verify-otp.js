@@ -2,7 +2,7 @@
 //  api/auth-verify-otp.js — ตรวจรหัส OTP 6 หลักและสร้างบัญชีลง Supabase
 // ============================================================
 import { verifyOtpPayload } from './auth-send-otp.js';
-import { getSupabaseAdminConfig, safeEqual } from './_admin-auth.js';
+import { getSupabaseAdminConfig, getSupabaseServiceHeaders, safeEqual } from './_admin-auth.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -50,12 +50,7 @@ export default async function handler(req, res) {
       const walletCode = `HC-${Math.random().toString(36).slice(2, 6).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
       await fetch(`${sbUrl}/rest/v1/wallets?on_conflict=user_id`, {
         method: 'POST',
-        headers: {
-          apikey: sbServiceKey,
-          Authorization: `Bearer ${sbServiceKey}`,
-          'Content-Type': 'application/json',
-          Prefer: 'resolution=ignore-duplicates',
-        },
+        headers: getSupabaseServiceHeaders(sbServiceKey, { 'Content-Type': 'application/json', Prefer: 'resolution=ignore-duplicates' }),
         body: JSON.stringify({
           user_id: data.id,
           wallet_code: walletCode,

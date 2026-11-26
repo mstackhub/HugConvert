@@ -1,7 +1,7 @@
 // ============================================================
 //  api/admin-adjust.js — ให้สิทธิ์ Admin เติม/ปรับเหรียญ หรือมอบ Unlimited Pass ให้ลูกค้า
 // ============================================================
-import { verifyAdmin } from './_admin-auth.js';
+import { verifyAdmin, getSupabaseServiceHeaders } from './_admin-auth.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -21,11 +21,7 @@ export default async function handler(req, res) {
     }
 
     const { sbUrl, sbServiceKey } = auth;
-    const headers = {
-      apikey: sbServiceKey,
-      Authorization: `Bearer ${sbServiceKey}`,
-      'Content-Type': 'application/json',
-    };
+    const headers = getSupabaseServiceHeaders(sbServiceKey, { 'Content-Type': 'application/json' });
 
     const wRes = await fetch(`${sbUrl}/rest/v1/wallets?user_id=eq.${encodeURIComponent(userId)}&select=*`, { headers });
     const rows = wRes.ok ? await wRes.json() : [];
