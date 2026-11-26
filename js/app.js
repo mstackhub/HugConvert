@@ -3238,8 +3238,10 @@ function renderCoinModal() {
   if (w.isGuest) {
     $('#walletIdText').textContent = 'สถานะ: ผู้เยี่ยมชม (Guest)';
   } else if (isPass) {
-    const expDate = new Date(w.unlimitedUntil).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
-    $('#walletIdText').textContent = `Wallet ID: ${w.walletId} · 👑 Unlimited ถึง ${expDate}`;
+    const expD = new Date(w.unlimitedUntil);
+    const expDate = expD.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+    const expTime = expD.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+    $('#walletIdText').textContent = `Wallet ID: ${w.walletId} · 👑 Unlimited ถึง ${expDate} เวลา ${expTime} น.`;
   } else {
     $('#walletIdText').textContent = `Wallet ID: ${w.walletId}`;
   }
