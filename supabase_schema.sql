@@ -43,10 +43,12 @@ create unique index if not exists idx_coin_tx_payment_ref
 alter table public.wallets enable row level security;
 alter table public.coin_transactions enable row level security;
 
+drop policy if exists "Users can view own wallet" on public.wallets;
 create policy "Users can view own wallet"
   on public.wallets for select
   using (auth.uid() = user_id);
 
+drop policy if exists "Users can view own transactions" on public.coin_transactions;
 create policy "Users can view own transactions"
   on public.coin_transactions for select
   using (auth.uid() = user_id);
