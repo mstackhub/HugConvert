@@ -255,7 +255,13 @@
 
         if (res.ok && parsed) {
           data = parsed;
-          $('#adminErrorBanner').hidden = true;
+          if (data.schemaWarning) {
+            $('#adminErrorBanner').hidden = false;
+            $('#adminErrorBanner').style.cssText = '';
+            $('#adminErrorBanner').textContent = `⚠️ ${data.schemaWarning}`;
+          } else {
+            $('#adminErrorBanner').hidden = true;
+          }
         } else if (isLocal && !parsed) {
           // Localhost static server: แสดงข้อมูลตัวอย่างเพื่อให้ดูหน้าตา Dashboard ได้
           $('#adminErrorBanner').hidden = false;

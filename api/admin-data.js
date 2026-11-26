@@ -57,6 +57,14 @@ export default async function handler(req, res) {
     const txRows = txRes.ok ? await txRes.json() : [];
     const usageRows = usageRes.ok ? await usageRes.json() : [];
 
+    const missingTables = [];
+    if (!walletsRes.ok) missingTables.push(`wallets (${walletsRes.status})`);
+    if (!txRes.ok) missingTables.push(`coin_transactions (${txRes.status})`);
+    if (!usageRes.ok) missingTables.push(`tool_usage (${usageRes.status})`);
+    const schemaWarning = missingTables.length
+      ? `ยังไม่ได้สร้างตารางใน Supabase: ${missingTables.join(', ')} — กรุณานำไฟล์ supabase_schema.sql ไป Run ใน Supabase SQL Editor`
+      : '';
+
     const walletMap = new Map(wallets.map((w) => [w.user_id, w]));
     const emailMap = new Map(authUsers.map((u) => [u.id, u.email]));
 
@@ -157,6 +165,7 @@ export default async function handler(req, res) {
       topTools,
       users,
       recentTx,
+      schemaWarning,
     });
   } catch (err) {
     return res.status(500).json({ error: err.message });
