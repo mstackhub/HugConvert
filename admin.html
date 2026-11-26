@@ -211,6 +211,7 @@
   <script type="module">
     const ADMIN_TOKEN_KEY = 'hc.admin.token.v1';
     const ADMIN_USER_KEY = 'hc.admin.user.v1';
+    const ADMIN_CACHE_KEY = 'hc.admin.dashcache.v1';
     const getAdminToken = () => sessionStorage.getItem(ADMIN_TOKEN_KEY) || '';
     const getAdminUser = () => sessionStorage.getItem(ADMIN_USER_KEY) || '';
 
@@ -240,6 +241,12 @@
     let activeDetailUser = null;
     let activeAdjUser = null;
 
+    function renderDashboardData(data) {
+      if (!data) return;
+      try { sessionStorage.setItem(ADMIN_CACHE_KEY, JSON.stringify(data)); } catch {}
+      renderDashboardData(data);
+    }
+
     async function loadDashboard() {
       const token = getAdminToken();
       const adminName = getAdminUser();
@@ -252,8 +259,23 @@
         return;
       }
       $('#adminLoginCard').hidden = true;
+      $('#adminDashContent').hidden = false;
       $('#adminLogoutBtn').hidden = false;
       $('#adminEmailLabel').textContent = adminName || 'adminHugConvert';
+
+      // แสดงข้อมูลจากแคชทันทีตอน Refresh เพื่อไม่ให้หน้าขาวระหว่างรอ API
+      let hadCache = false;
+      try {
+        const cachedRaw = sessionStorage.getItem(ADMIN_CACHE_KEY);
+        if (cachedRaw) {
+          renderDashboardData(JSON.parse(cachedRaw));
+          hadCache = true;
+        }
+      } catch {}
+      if (!hadCache) {
+        $('#topToolsBody').innerHTML = '<tr><td colspan="6" class="muted" style="text-align:center;padding:20px;">⏳ กำลังโหลดข้อมูลจากระบบ…</td></tr>';
+        $('#adminUsersBody').innerHTML = '<tr><td colspan="6" class="muted" style="text-align:center;padding:20px;">⏳ กำลังโหลดรายชื่อลูกค้า…</td></tr>';
+      }
 
       const range = $('#adminRangeSelect').value;
       const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
@@ -309,6 +331,7 @@
         } else if (res.status === 401) {
           sessionStorage.removeItem(ADMIN_TOKEN_KEY);
           sessionStorage.removeItem(ADMIN_USER_KEY);
+          sessionStorage.removeItem(ADMIN_CACHE_KEY);
           loadDashboard();
           return;
         } else {
@@ -567,6 +590,7 @@
     $('#adminLogoutBtn').onclick = async () => {
       sessionStorage.removeItem(ADMIN_TOKEN_KEY);
       sessionStorage.removeItem(ADMIN_USER_KEY);
+          sessionStorage.removeItem(ADMIN_CACHE_KEY);
       loadDashboard();
     };
 
