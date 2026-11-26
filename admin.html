@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="/css/style.css?v=20261125-5" />
   <style>
     .admin-wrap { max-width: 1140px; margin: 0 auto; padding: 24px 20px 64px; }
     .admin-kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 20px; }
@@ -45,7 +45,7 @@
 
   <main class="admin-wrap">
     <!-- Login Gate -->
-    <div class="card admin-login-box" id="adminLoginCard" hidden>
+    <div class="card admin-login-box" id="adminLoginCard">
       <h2 style="margin:0 0 6px;">เข้าสู่ระบบหลังบ้าน Admin</h2>
       <p class="muted" style="margin:0 0 16px;">กรอกชื่อผู้ใช้และรหัสผ่านผู้ดูแลระบบ HugConvert</p>
       <div class="auth-feedback err" id="adminLoginErr" hidden></div>
@@ -209,12 +209,14 @@
       'pdf-merge': '📑 รวม & แยกหน้า PDF',
       'pdf-to-image': '📸 PDF เป็นรูปภาพ',
       'image-to-pdf': '📄 รูปภาพเป็น PDF',
+      'receipt-pack': '🧾 รวมสลิปเป็น PDF รายเดือน',
       'video-compress': '🎬 บีบอัดวิดีโอ',
       'video-convert': '🔄 แปลงไฟล์วิดีโอ',
       'video-trim': '✂️ ตัดวิดีโอ',
       'video-to-gif': '🎞️ วิดีโอเป็น GIF',
       'image-compress': '🖼️ บีบอัดรูปภาพ',
       'image-convert': '🔁 แปลงรูป (HEIC)',
+      'pdpa-redact': '🛡️ เบลอจุดลับ & คาดดำ PDPA',
       'audio-extract': '🎵 แยก & บีบอัดเสียง MP3',
     };
 
@@ -287,7 +289,7 @@
         } else if (res.status === 401) {
           sessionStorage.removeItem(ADMIN_TOKEN_KEY);
           sessionStorage.removeItem(ADMIN_USER_KEY);
-          await loadDashboard();
+          loadDashboard();
           return;
         } else {
           $('#adminDashContent').hidden = true;
@@ -304,70 +306,85 @@
         return;
       }
 
-      $('#adminDashContent').hidden = false;
+      try {
+        $('#adminDashContent').hidden = false;
 
-      const s = data.summary;
-      $('#kpiUsers').textContent = s.totalUsers.toLocaleString();
-      $('#kpiPass').textContent = `VIP Pass ใช้งาน: ${s.activePassCount} คน`;
-      $('#kpiLifetime').textContent = `${s.totalLifetimeTopup.toLocaleString()} HugCoins`;
-      $('#kpiTiers').textContent = `Silver ${s.tierCounts.silver} · Gold ${s.tierCounts.gold} · Platinum ${s.tierCounts.platinum}`;
-      $('#kpiRuns').textContent = `${s.totalRuns.toLocaleString()} ครั้ง`;
-      $('#kpiFiles').textContent = `รวม ${s.totalFiles.toLocaleString()} ไฟล์`;
-      $('#kpiBalance').textContent = `${s.totalCoinsBalance.toLocaleString()} HugCoins`;
+        const s = data?.summary || {};
+        const tc = s.tierCounts || {};
+        $('#kpiUsers').textContent = Number(s.totalUsers || 0).toLocaleString();
+        $('#kpiPass').textContent = `VIP Pass ใช้งาน: ${Number(s.activePassCount || 0)} คน`;
+        $('#kpiLifetime').textContent = `${Number(s.totalLifetimeTopup || 0).toLocaleString()} HugCoins`;
+        $('#kpiTiers').textContent = `Silver ${tc.silver || 0} · Gold ${tc.gold || 0} · Platinum ${tc.platinum || 0}`;
+        $('#kpiRuns').textContent = `${Number(s.totalRuns || 0).toLocaleString()} ครั้ง`;
+        $('#kpiFiles').textContent = `รวม ${Number(s.totalFiles || 0).toLocaleString()} ไฟล์`;
+        $('#kpiBalance').textContent = `${Number(s.totalCoinsBalance || 0).toLocaleString()} HugCoins`;
 
-      // Render Top Tools
-      const maxRuns = Math.max(1, ...(data.topTools || []).map((t) => t.runs));
-      $('#topToolsBody').innerHTML = (data.topTools || []).length
-        ? data.topTools.map((t, i) => {
-            const pct = s.totalRuns ? Math.round((t.runs / s.totalRuns) * 100) : 0;
-            const barW = Math.round((t.runs / maxRuns) * 100);
-            return `
-              <tr>
-                <td><b>#${i + 1}</b></td>
-                <td><b>${esc(TOOL_LABELS[t.toolId] || t.toolId)}</b></td>
-                <td>${t.runs.toLocaleString()} ครั้ง</td>
-                <td>${t.files.toLocaleString()} ไฟล์</td>
-                <td>${t.coinsSpent} HugCoins</td>
-                <td><span class="tool-bar-bg"><span class="tool-bar-fill" style="width:${barW}%"></span></span>${pct}%</td>
-              </tr>
-            `;
-          }).join('')
-        : '<tr><td colspan="6" class="muted" style="text-align:center;padding:20px;">ยังไม่มีข้อมูลการใช้งานในช่วงเวลานี้</td></tr>';
+        // Render Top Tools
+        const topTools = data?.topTools || [];
+        const maxRuns = Math.max(1, ...topTools.map((t) => Number(t.runs) || 0));
+        $('#topToolsBody').innerHTML = topTools.length
+          ? topTools.map((t, i) => {
+              const runs = Number(t.runs) || 0;
+              const files = Number(t.files) || 0;
+              const pct = s.totalRuns ? Math.round((runs / s.totalRuns) * 100) : 0;
+              const barW = Math.round((runs / maxRuns) * 100);
+              return `
+                <tr>
+                  <td><b>#${i + 1}</b></td>
+                  <td><b>${esc(TOOL_LABELS[t.toolId] || t.toolId)}</b></td>
+                  <td>${runs.toLocaleString()} ครั้ง</td>
+                  <td>${files.toLocaleString()} ไฟล์</td>
+                  <td>${Number(t.coinsSpent || 0)} HugCoins</td>
+                  <td><span class="tool-bar-bg"><span class="tool-bar-fill" style="width:${barW}%"></span></span>${pct}%</td>
+                </tr>
+              `;
+            }).join('')
+          : '<tr><td colspan="6" class="muted" style="text-align:center;padding:20px;">ยังไม่มีข้อมูลการใช้งานในช่วงเวลานี้</td></tr>';
 
-      cachedUsers = data.users || [];
-      renderUsersTable();
+        cachedUsers = data?.users || [];
+        renderUsersTable();
 
-      $('#adminTxBody').innerHTML = (data.recentTx || []).map((t) => {
-        const d = new Date(t.createdAt);
-        const dt = `${d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })} ${d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}`;
-        const cls = t.delta > 0 ? 'coin-plus' : t.delta < 0 ? 'coin-minus' : 'coin-pass';
-        const amt = t.delta === 0 ? 'VIP Pass' : `${t.delta > 0 ? '+' : ''}${t.delta}`;
-        return `
-          <tr>
-            <td>${esc(t.email)}</td>
-            <td>${esc(t.label)}</td>
-            <td class="muted">${dt}</td>
-            <td class="${cls}" style="text-align:right;font-weight:700;">${amt}</td>
-          </tr>
-        `;
-      }).join('');
+        $('#adminTxBody').innerHTML = (data?.recentTx || []).map((t) => {
+          const d = new Date(t.createdAt || Date.now());
+          const dt = `${d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })} ${d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}`;
+          const delta = Number(t.delta) || 0;
+          const cls = delta > 0 ? 'coin-plus' : delta < 0 ? 'coin-minus' : 'coin-pass';
+          const amt = delta === 0 ? 'VIP Pass' : `${delta > 0 ? '+' : ''}${delta}`;
+          return `
+            <tr>
+              <td>${esc(t.email)}</td>
+              <td>${esc(t.label)}</td>
+              <td class="muted">${dt}</td>
+              <td class="${cls}" style="text-align:right;font-weight:700;">${amt}</td>
+            </tr>
+          `;
+        }).join('');
+      } catch (renderErr) {
+        $('#adminDashContent').hidden = true;
+        $('#adminErrorBanner').hidden = false;
+        $('#adminErrorBanner').style.cssText = '';
+        $('#adminErrorBanner').textContent = `⚠️ แสดงผลข้อมูลไม่สำเร็จ: ${renderErr.message}`;
+      }
     }
 
     function renderUsersTable() {
       const q = ($('#adminUserSearch').value || '').trim().toLowerCase();
       const filtered = cachedUsers.filter((u) =>
-        !q || u.email.toLowerCase().includes(q) || u.walletCode.toLowerCase().includes(q) || u.name.toLowerCase().includes(q)
+        !q ||
+        (u.email || '').toLowerCase().includes(q) ||
+        (u.walletCode || '').toLowerCase().includes(q) ||
+        (u.name || '').toLowerCase().includes(q)
       );
       $('#adminUsersBody').innerHTML = filtered.length
         ? filtered.map((u) => `
             <tr>
               <td><b>${esc(u.email)}</b>${u.name ? `<div class="muted" style="font-size:12px">${esc(u.name)}</div>` : ''}</td>
-              <td><code>${esc(u.walletCode)}</code></td>
-              <td><span class="hist-tier-pill">${esc(u.tier)}</span></td>
-              <td><b>${u.balance}</b> HugCoins</td>
-              <td>${u.lifetimeTopup.toLocaleString()} HugCoins</td>
+              <td><code>${esc(u.walletCode || '-')}</code></td>
+              <td><span class="hist-tier-pill">${esc(u.tier || 'Member')}</span></td>
+              <td><b>${Number(u.balance ?? 0)}</b> HugCoins</td>
+              <td>${Number(u.lifetimeTopup || 0).toLocaleString()} HugCoins</td>
               <td style="text-align:right">
-                <button type="button" class="btn btn--sm btn--outline" data-adj="${u.id}">+ เติม / Pass</button>
+                <button type="button" class="btn btn--sm btn--outline" data-adj="${esc(u.id)}">+ เติม / Pass</button>
               </td>
             </tr>
           `).join('')
@@ -404,7 +421,7 @@
       const data = await res.json();
       if (!res.ok) return alert(data.error || 'เกิดข้อผิดพลาด');
       $('#adjustModal').hidden = true;
-      await loadDashboard();
+      loadDashboard();
     });
 
     $('#adminLoginForm').addEventListener('submit', async (e) => {
@@ -428,14 +445,14 @@
         if (res.ok && data?.token) {
           sessionStorage.setItem(ADMIN_TOKEN_KEY, data.token);
           sessionStorage.setItem(ADMIN_USER_KEY, data.username || username);
-          await loadDashboard();
+          loadDashboard();
           return;
         }
         if (isLocal && !data) {
           if (username === 'adminHugConvert' && password === 'HugConvert1234') {
             sessionStorage.setItem(ADMIN_TOKEN_KEY, 'local_demo_token');
             sessionStorage.setItem(ADMIN_USER_KEY, username);
-            await loadDashboard();
+            loadDashboard();
             return;
           }
           fb.hidden = false;
@@ -453,10 +470,10 @@
     $('#adminLogoutBtn').onclick = async () => {
       sessionStorage.removeItem(ADMIN_TOKEN_KEY);
       sessionStorage.removeItem(ADMIN_USER_KEY);
-      await loadDashboard();
+      loadDashboard();
     };
 
-    await loadDashboard();
+    loadDashboard();
   </script>
 </body>
 </html>
