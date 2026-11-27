@@ -352,6 +352,21 @@ function updateSeoForTool(tool) {
   }
 }
 
+
+function getToolLimitsText(tool) {
+  if (!tool || tool.kind === 'home' || tool.kind === 'history' || tool.kind === 'topup') return '';
+  if (tool.kind === 'video') {
+    return 'รองรับ MP4, MOV, WebM, MKV · สูงสุด 20 ไฟล์/รอบ · แนะนำไม่เกิน 500 MB/ไฟล์ (มือถือ 200 MB เพื่อกัน RAM เต็ม)';
+  }
+  if (tool.kind === 'audio') {
+    return 'รองรับ MP3, M4A, WAV, MP4, MOV · สูงสุด 20 ไฟล์/รอบ · แนะนำไม่เกิน 300 MB/ไฟล์';
+  }
+  if (tool.kind === 'pdf') {
+    return 'รองรับ PDF · สูงสุด 20 ไฟล์/รอบ · แนะนำไม่เกิน 100 MB/ไฟล์';
+  }
+  return 'รองรับ JPG, PNG, WebP, HEIC · สูงสุด 20 ไฟล์/รอบ · แนะนำไม่เกิน 50 MB/ไฟล์';
+}
+
 function route() {
   if (state.running) {
     toast('กรุณารอให้ประมวลผลเสร็จหรือกดหยุดก่อนเปลี่ยนเมนู');
@@ -602,6 +617,16 @@ $('#hubCatTabs')?.addEventListener('click', (e) => {
 });
 $('#hubSearchInput')?.addEventListener('input', renderHubCards);
 $('#hubOpenCoinBtn')?.addEventListener('click', () => openCoinModal());
+document.addEventListener('click', (e) => {
+  const link = e.target.closest('a[href="#pricingSection"]');
+  if (!link) return;
+  e.preventDefault();
+  if (state.toolId !== 'home') navigateToTool('home');
+  requestAnimationFrame(() => {
+    document.getElementById('pricingSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+
 $('#topPricingLink')?.addEventListener('click', (e) => {
   e.preventDefault();
   if (state.toolId !== 'home') navigateToTool('home');
@@ -2986,6 +3011,7 @@ function setAuthMode(mode, infoMsg = '') {
 }
 
 function openAuthModal(mode = 'signin', infoMsg = '') {
+  window.__lastModalTrigger = document.activeElement;
   setAuthMode(mode, infoMsg);
   $('#authModal').hidden = false;
   setTimeout(() => (mode === 'signup' ? $('#authName') : $('#authEmail'))?.focus(), 60);
@@ -3646,7 +3672,12 @@ function checkInAppBrowser() {
   const btn = $('#themeToggleBtn');
   const applyTheme = (theme) => {
     document.documentElement.setAttribute('data-theme', theme);
-    if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+    const isDark = theme === 'dark';
+    if (btn) {
+      btn.textContent = isDark ? '☀️' : '🌙';
+      btn.setAttribute('aria-pressed', String(isDark));
+      btn.title = isDark ? 'ธีมปัจจุบัน: มืด (คลิกเพื่อสลับสว่าง)' : 'ธีมปัจจุบัน: สว่าง (คลิกเพื่อสลับมืด)';
+    }
   };
   const saved = localStorage.getItem(THEME_KEY);
   const sysDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
@@ -3663,8 +3694,8 @@ function checkInAppBrowser() {
     const authModal = $('#authModal');
     const coinModal = $('#coinModal');
     const pd = $('#profileDropdown');
-    if (authModal && !authModal.hidden) { authModal.hidden = true; return; }
-    if (coinModal && !coinModal.hidden) { coinModal.hidden = true; return; }
+    if (authModal && !authModal.hidden) { authModal.hidden = true; window.__lastModalTrigger?.focus?.(); return; }
+    if (coinModal && !coinModal.hidden) { coinModal.hidden = true; window.__lastModalTrigger?.focus?.(); return; }
     if (pd && !pd.hidden) { pd.hidden = true; $('#userMenuBtn')?.setAttribute('aria-expanded', 'false'); }
   });
 
