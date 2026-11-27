@@ -6,7 +6,7 @@
   <title>นโยบายการคืนเงิน (Refund Policy) — HugConvert</title>
   <meta name="description" content="เงื่อนไขการขอคืนเงินสำหรับแพ็กเกจ HugCoin และ Unlimited Pass บน HugConvert" />
   <link rel="canonical" href="https://hugconvert.vercel.app/refund.html" />
-  <link rel="stylesheet" href="/css/style.css?v=20261127-1" />
+  <link rel="stylesheet" href="/css/style.css?v=20261127-7" />
   <style>
     .legal-wrap { max-width: 820px; margin: 28px auto 64px; padding: 0 18px; }
     .legal-card { padding: 28px 30px; line-height: 1.75; }
@@ -68,8 +68,51 @@
       </div>
 
       <div class="topbar__actions">
-        <button type="button" class="icon-btn theme-toggle-btn" id="subThemeToggleBtn" aria-label="สลับโหมดสว่าง/มืด" title="สลับธีมสว่าง / มืด">🌙</button>
-        <a href="/?tool=topup" class="btn btn--sm btn--primary">💳 กระเป๋า &amp; เติมเหรียญ</a>
+        <button type="button" class="icon-btn theme-toggle-btn" id="themeToggleBtn" aria-label="สลับโหมดสว่าง/มืด" title="สลับธีมสว่าง / มืด">🌙</button>
+        <button type="button" class="coin-pill" id="coinWalletBtn" title="กระเป๋าเหรียญ HugCoin &amp; โบนัสรายวัน">
+          <span class="coin-pill__icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" fill="url(#hugCoinGradSub)" stroke="#d97706" stroke-width="1.5"/>
+              <circle cx="12" cy="12" r="6.8" stroke="#fef3c7" stroke-width="1.1" stroke-opacity="0.75"/>
+              <path d="M9.2 7.8v8.4M14.8 7.8v8.4M9.2 12h5.6" stroke="#78350f" stroke-width="2" stroke-linecap="round"/>
+              <defs>
+                <linearGradient id="hugCoinGradSub" x1="3" y1="3" x2="21" y2="21" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#fde047"/>
+                  <stop offset="55%" stop-color="#f59e0b"/>
+                  <stop offset="100%" stop-color="#d97706"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </span>
+          <span class="coin-pill__bal"><b id="coinBalanceText">0</b> <span class="coin-pill__unit">HugCoins</span></span>
+          <span class="coin-pill__add" id="coinPillAction">+ เติมเหรียญ</span>
+        </button>
+
+        <button type="button" class="btn btn--outline auth-trigger-btn" id="authGuestBtn">
+          <span aria-hidden="true">👤</span>
+          <span class="auth-trigger-btn__label">เข้าสู่ระบบ</span>
+          <span class="auth-bonus-tag">+15 <span class="hc-coin" aria-hidden="true"></span></span>
+        </button>
+
+        <div class="user-menu" id="userMenuWrap" hidden>
+          <button type="button" class="user-pill" id="userMenuBtn" aria-expanded="false">
+            <span class="user-avatar" id="userAvatar" aria-hidden="true"></span>
+            <span class="user-name" id="userNameText"></span>
+            <span class="user-caret">▾</span>
+          </button>
+          <div class="user-dropdown card" id="profileDropdown" hidden>
+            <div class="user-dropdown__head">
+              <div class="user-dropdown__name" id="ddUserName"></div>
+              <div class="user-dropdown__email" id="ddUserEmail"></div>
+              <div class="user-dropdown__wallet">
+                <span id="ddWalletId"></span>
+              </div>
+            </div>
+            <button type="button" class="user-dropdown__item" id="ddOpenCoinBtn"><span class="hc-coin" aria-hidden="true"></span> กระเป๋า HugCoin &amp; เติมเหรียญ</button>
+            <button type="button" class="user-dropdown__item" id="ddOpenHistoryBtn">📜 ประวัติรายการ HugCoin</button>
+            <button type="button" class="user-dropdown__item danger" id="ddLogoutBtn">🚪 ออกจากระบบ</button>
+          </div>
+        </div>
       </div>
     </div>
   </header>
@@ -97,21 +140,6 @@
       </nav>
     </article>
   </main>
-  <script>
-    (function(){
-      var b = document.getElementById("subThemeToggleBtn");
-      function sync(){
-        var isDark = document.documentElement.getAttribute("data-theme") === "dark";
-        if (b) { b.textContent = isDark ? "☀️" : "🌙"; b.setAttribute("aria-pressed", String(isDark)); }
-      }
-      sync();
-      if (b) b.addEventListener("click", function(){
-        var next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
-        localStorage.setItem("hc.theme.v1", next);
-        document.documentElement.setAttribute("data-theme", next);
-        sync();
-      });
-    })();
-  </script>
+  <script type="module" src="/js/subpage-nav.js?v=20261127-1"></script>
 </body>
 </html>
