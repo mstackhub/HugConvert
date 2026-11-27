@@ -332,25 +332,74 @@ export async function loginWithGoogle(demoEmail = 'demo.user@gmail.com', demoNam
   };
 }
 
-/** ขอรีเซ็ตรหัสผ่าน */
+/** ขอรีเซ็ตรหัสผ่านด้วยรหัส OTP 6 หลักทางอีเมล */
 export async function requestPasswordReset(email) {
   const cleanEmail = String(email || '').trim().toLowerCase();
   if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
     return { ok: false, msg: 'กรุณากรอกอีเมลที่ลงทะเบียนไว้' };
   }
-  const sb = await getSupabase();
-  if (sb) {
-    const { error } = await sb.auth.resetPasswordForEmail(cleanEmail, {
-      redirectTo: window.location.origin + window.location.pathname,
-    });
-    if (error) return { ok: false, msg: error.message };
-    return { ok: true, msg: `ส่งลิงก์ตั้งรหัสผ่านใหม่ไปที่ ${cleanEmail} แล้ว กรุณาตรวจสอบกล่องจดหมาย` };
+  if (isCloudAuthConfigured()) {
+    try {
+      const res = await fetch('/api/auth-send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'reset', email: cleanEmail }),
+      });
+      const data = await res.json().catch(() => null);
+      if (data && res.ok && data.otpToken) {
+        return {
+          ok: true,
+          otpRequired: true,
+          otpToken: data.otpToken,
+          msg: `ส่งรหัส OTP 6 หลักไปที่ ${cleanEmail} แล้ว กรุณานำรหัสมากรอกพร้อมตั้งรหัสผ่านใหม่ (เช็กในโฟลเดอร์ Spam ด้วยนะครับ)`,
+        };
+      }
+      if (data?.error) return { ok: false, msg: data.error };
+    } catch { /* fallback */ }
   }
 
   const users = loadLocalUsers();
   const found = users.find((u) => u.email === cleanEmail);
   if (!found) return { ok: false, msg: 'ไม่พบอีเมลนี้ในระบบ' };
-  return { ok: true, msg: `(โหมดทดสอบ) ระบบจำลองการส่งลิงก์รีเซ็ตรหัสผ่านไปที่ ${cleanEmail} เรียบร้อยแล้ว` };
+  return {
+    ok: true,
+    otpRequired: true,
+    otpToken: 'local_reset:' + cleanEmail,
+    msg: `(โหมดทดสอบ) กรอกรหัส 123456 เพื่อตั้งรหัสผ่านใหม่สำหรับ ${cleanEmail}`,
+  };
+}
+
+/** ยืนยันรหัส OTP 6 หลักและตั้งรหัสผ่านใหม่ */
+export async function confirmPasswordReset({ otpToken, code, email, newPassword }) {
+  const cleanEmail = String(email || '').trim().toLowerCase();
+  const cleanCode = String(code || '').trim();
+  if (!/^\d{6}$/.test(cleanCode)) {
+    return { ok: false, msg: 'กรุณากรอกรหัส OTP ตัวเลข 6 หลักให้ถูกต้อง' };
+  }
+  if (!newPassword || String(newPassword).length < 6) {
+    return { ok: false, msg: 'รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร' };
+  }
+
+  if (String(otpToken || '').startsWith('local_reset:')) {
+    if (cleanCode !== '123456') return { ok: false, msg: '(โหมดทดสอบ) กรุณากรอกรหัส 123456' };
+    const users = loadLocalUsers();
+    const u = users.find((x) => x.email === cleanEmail);
+    if (!u) return { ok: false, msg: 'ไม่พบอีเมลนี้ในระบบ' };
+    u.passwordHash = await hashPassword(newPassword);
+    saveLocalUsers(users);
+    return { ok: true, msg: '✅ ตั้งรหัสผ่านใหม่สำเร็จ! เข้าสู่ระบบด้วยรหัสผ่านใหม่ได้เลยครับ' };
+  }
+
+  const res = await fetch('/api/auth-verify-otp', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ otpToken, code: cleanCode, password: newPassword }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    return { ok: false, msg: data.error || 'ตั้งรหัสผ่านใหม่ไม่สำเร็จ' };
+  }
+  return { ok: true, msg: '✅ ตั้งรหัสผ่านใหม่สำเร็จ! เข้าสู่ระบบด้วยรหัสผ่านใหม่ได้เลยครับ' };
 }
 
 /** ออกจากระบบ */

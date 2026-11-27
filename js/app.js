@@ -23,7 +23,7 @@ import {
 } from './heycoin.js';
 import {
   initAuth, getCurrentUser, onAuthStateChange,
-  sendSignUpOtp, verifySignUpOtp, loginWithEmail, requestPasswordReset, logoutUser,
+  sendSignUpOtp, verifySignUpOtp, loginWithEmail, requestPasswordReset, confirmPasswordReset, logoutUser,
 } from './auth.js';
 import { renderLandingAds } from './ads.js';
 
@@ -2960,6 +2960,9 @@ function setAuthMode(mode, infoMsg = '') {
   $('#authTabs').hidden = mode === 'reset';
   $('#authNameField').hidden = mode !== 'signup';
   $('#authPasswordField').hidden = mode === 'reset';
+  $('#authPassword').required = mode !== 'reset';
+  const pwLbl = document.querySelector('label[for="authPassword"]');
+  if (pwLbl) pwLbl.textContent = 'รหัสผ่าน (Password)';
   $('#authOtpField').hidden = true;
   clearOtpBoxes();
   $('#forgotPwLink').hidden = mode !== 'signin';
@@ -2977,8 +2980,9 @@ function setAuthMode(mode, infoMsg = '') {
     $('#authPassword').setAttribute('autocomplete', 'new-password');
   } else {
     $('#authModalTitle').textContent = 'รีเซ็ตรหัสผ่าน';
-    $('#authModalSub').textContent = 'กรอกอีเมลของคุณเพื่อรับลิงก์ตั้งรหัสผ่านใหม่';
-    $('#authSubmitBtn').textContent = 'ส่งลิงก์รีเซ็ตรหัสผ่าน';
+    $('#authModalSub').textContent = 'กรอกอีเมลของคุณเพื่อรับรหัส OTP 6 หลักทางอีเมล';
+    $('#authSubmitBtn').textContent = 'ส่งรหัส OTP รีเซ็ตรหัสผ่าน';
+    $('#authPassword').setAttribute('autocomplete', 'new-password');
   }
   showAuthFeedback(infoMsg, Boolean(infoMsg));
 }
@@ -3052,11 +3056,13 @@ $$('#authOtpBoxes .otp-box').forEach((box, idx, boxes) => {
 
 $('#resendOtpBtn')?.addEventListener('click', async () => {
   clearOtpBoxes();
-  const res = await sendSignUpOtp({
-    name: $('#authName').value,
-    email: $('#authEmail').value,
-    password: $('#authPassword').value,
-  });
+  const res = currentAuthMode === 'reset'
+    ? await requestPasswordReset($('#authEmail').value)
+    : await sendSignUpOtp({
+        name: $('#authName').value,
+        email: $('#authEmail').value,
+        password: $('#authPassword').value,
+      });
   if (res.otpToken) pendingOtpToken = res.otpToken;
   showAuthFeedback(res.msg, res.ok);
   $('#authOtpBox0')?.focus();
@@ -3072,8 +3078,45 @@ $('#authForm').addEventListener('submit', async (e) => {
 
   try {
     if (currentAuthMode === 'reset') {
-      const res = await requestPasswordReset(email);
-      showAuthFeedback(res.msg, res.ok);
+      if (!pendingOtpToken) {
+        const res = await requestPasswordReset(email);
+        if (!res.ok) {
+          showAuthFeedback(res.msg, false);
+          return;
+        }
+        if (res.otpRequired && res.otpToken) {
+          pendingOtpToken = res.otpToken;
+          clearOtpBoxes();
+          $('#authOtpField').hidden = false;
+          $('#authPasswordField').hidden = false;
+          $('#authPassword').required = true;
+          $('#authPassword').value = '';
+          const pwLbl = document.querySelector('label[for="authPassword"]');
+          if (pwLbl) pwLbl.textContent = 'ตั้งรหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร)';
+          $('#authSubmitBtn').textContent = 'ยืนยันตั้งรหัสผ่านใหม่';
+          showAuthFeedback(res.msg, true);
+          $('#authOtpBox0')?.focus();
+          return;
+        }
+        showAuthFeedback(res.msg, res.ok);
+        return;
+      }
+
+      const res = await confirmPasswordReset({
+        otpToken: pendingOtpToken,
+        code: $('#authOtpCode').value,
+        email,
+        newPassword: password,
+      });
+      if (!res.ok) {
+        showAuthFeedback(res.msg, false);
+        return;
+      }
+      pendingOtpToken = '';
+      $('#authPassword').value = '';
+      setAuthMode('signin', res.msg);
+      $('#authEmail').value = email;
+      $('#authPassword')?.focus();
       return;
     }
 
