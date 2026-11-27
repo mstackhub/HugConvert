@@ -28,18 +28,5 @@
         }
       ]
     }
-  ],
-  "redirects": [
-    {
-      "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "hugconvert.vercel.app"
-        }
-      ],
-      "destination": "https://heyconvert.vercel.app/:path*",
-      "permanent": true
-    }
   ]
 }

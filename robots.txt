@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://heyconvert.vercel.app/sitemap.xml
+Sitemap: https://hugconvert.vercel.app/sitemap.xml
