@@ -617,20 +617,6 @@ $('#hubCatTabs')?.addEventListener('click', (e) => {
 });
 $('#hubSearchInput')?.addEventListener('input', renderHubCards);
 $('#hubOpenCoinBtn')?.addEventListener('click', () => openCoinModal());
-document.addEventListener('click', (e) => {
-  const link = e.target.closest('a[href="#pricingSection"]');
-  if (!link) return;
-  e.preventDefault();
-  if (state.toolId !== 'home') navigateToTool('home');
-  requestAnimationFrame(() => {
-    document.getElementById('pricingSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
-});
-
-  });
-});
-});
-
 // Smart Auto-Detect Dropzone บนหน้าแรก
 const smartDz = $('#smartDropzone');
 const smartInput = $('#smartFileInput');
