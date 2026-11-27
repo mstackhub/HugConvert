@@ -129,7 +129,7 @@
             <h2>👥 รายชื่อลูกค้า & จัดการเหรียญ (CRM)</h2>
             <p class="muted" style="margin:2px 0 0;">ค้นหาด้วยอีเมลหรือ Wallet ID เพื่อดูระดับ VIP หรือเติมเหรียญให้ลูกค้า</p>
           </div>
-          <input type="search" id="adminUserSearch" class="input" style="max-width:280px;" placeholder="ค้นหาอีเมล หรือ HC-..." />
+          <input type="search" id="adminUserSearch" name="admin-user-filter" class="input" autocomplete="off" data-lpignore="true" data-1p-ignore="true" readonly onfocus="this.removeAttribute('readonly')" style="max-width:280px;" placeholder="ค้นหาอีเมล หรือ HC-..." />
         </div>
         <div class="admin-table-wrap" style="max-height:380px;overflow-y:auto;">
           <table class="admin-table">

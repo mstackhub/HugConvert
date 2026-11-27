@@ -305,7 +305,7 @@
             <button type="button" class="hub-tab" data-hubcat="audio">เสียง MP3</button>
           </div>
           <div class="hub-search">
-            <input type="search" id="hubSearchInput" class="input" placeholder="ค้นหาเครื่องมือ เช่น บัตรประชาชน, HEIC, 10MB..." />
+            <input type="search" id="hubSearchInput" name="hub-tool-filter" class="input" autocomplete="off" data-lpignore="true" data-1p-ignore="true" readonly onfocus="this.removeAttribute('readonly')" placeholder="ค้นหาเครื่องมือ เช่น บัตรประชาชน, HEIC, 10MB..." />
           </div>
         </div>
 
@@ -1528,6 +1528,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script type="module" src="js/app.js?v=20261127-4"></script>
+  <script type="module" src="js/app.js?v=20261127-5"></script>
 </body>
 </html>

@@ -3598,6 +3598,7 @@ $('#qrConfirmSimBtn').onclick = () => {
 
 // ---------------- Init ----------------
 (async function init() {
+  if ($('#hubSearchInput')) $('#hubSearchInput').value = '';
   buildNav();
   renderAuthUI();
   renderWalletBadge();
