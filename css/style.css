@@ -134,7 +134,7 @@ code {
 .topnav__menu a.active { background: var(--primary-soft); color: var(--primary); font-weight: 600; }
 
 /* ===== Main ===== */
-.main { max-width: 1140px; margin: 0 auto; padding: 24px 24px 64px; }
+.main { max-width: 1140px; margin: 0 auto; padding: 32px 24px 80px; }
 .workspace-head {
   display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
   margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--line);
@@ -938,10 +938,10 @@ input[type="range"] { width: 100%; accent-color: var(--primary); }
 .coin-pass { color: #b45309; font-weight: 700; }
 
 /* ===== Clean Home Landing Hub (แบบที่ 2: Clean Top-Nav + Compact Cards) ===== */
-.home-hub { display: flex; flex-direction: column; gap: 20px; }
+.home-hub { display: flex; flex-direction: column; gap: 36px; }
 .hub-strip {
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px;
-  padding: 36px 34px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px;
+  padding: 44px 36px;
   background: linear-gradient(135deg, #ffffff 0%, #f5f7ff 100%);
 }
 .hub-strip__info { width: 100%; max-width: 760px; text-align: center; }
@@ -1255,7 +1255,7 @@ body.is-member .hub-strip {
 }
 
 .seo-article {
-  margin-top: 24px; padding: 24px 26px;
+  margin-top: 40px; padding: 32px 30px;
   background: var(--surface); border-radius: var(--radius);
   border: 1px solid var(--line); box-shadow: none;
 }
@@ -1305,7 +1305,7 @@ body.is-member .hub-strip {
 .site-footer {
   background: var(--surface);
   border-top: 1px solid var(--line);
-  margin-top: 24px;
+  margin-top: 48px;
 }
 .site-footer__inner {
   max-width: 1140px;
