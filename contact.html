@@ -16,15 +16,60 @@
     .legal-nav { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 14px; }
     .legal-nav a.active { font-weight: 700; color: var(--primary); }
   </style>
+  <script>try{var t=localStorage.getItem("hc.theme.v1");if(t)document.documentElement.setAttribute("data-theme",t);else if(window.matchMedia&&window.matchMedia("(prefers-color-scheme:dark)").matches)document.documentElement.setAttribute("data-theme","dark");}catch(e){}</script>
 </head>
 <body>
   <header class="topbar">
     <div class="topbar__inner">
       <div class="topbar__left">
-        <a href="/" class="brand-link"><div class="logo">HC</div><span class="brand__name">HugConvert</span></a>
+        <a href="/" class="brand-link" title="กลับหน้าแรก HugConvert">
+          <div class="logo">HC</div>
+          <span class="brand__name">HugConvert</span>
+        </a>
+
+        <nav class="topnav" aria-label="เมนูหลัก">
+          <a href="/" class="topnav__link ">ทั้งหมด</a>
+
+          <div class="topnav__drop">
+            <button type="button" class="topnav__link topnav__btn" aria-haspopup="true">เอกสาร PDF <span class="topnav__caret" aria-hidden="true">▾</span></button>
+            <div class="topnav__menu">
+              <a href="/?tool=pdf-edit">✏️ แก้ไข &amp; กรอกฟอร์ม PDF</a>
+              <a href="/?tool=pdf-compress">📉 บีบอัดไฟล์ PDF</a>
+              <a href="/?tool=pdf-security">🔐 ปลดล็อก &amp; ลายน้ำ PDF</a>
+              <a href="/?tool=pdf-merge">📑 รวม &amp; แยกหน้า PDF</a>
+              <a href="/?tool=pdf-to-image">📸 PDF เป็นรูปภาพ</a>
+              <a href="/?tool=image-to-pdf">📄 รูปภาพเป็น PDF</a>
+              <a href="/?tool=receipt-pack">🧾 รวมสลิปเป็น PDF รายเดือน</a>
+            </div>
+          </div>
+
+          <div class="topnav__drop">
+            <button type="button" class="topnav__link topnav__btn" aria-haspopup="true">วิดีโอ <span class="topnav__caret" aria-hidden="true">▾</span></button>
+            <div class="topnav__menu">
+              <a href="/?tool=video-compress">🎬 บีบอัดวิดีโอ</a>
+              <a href="/?tool=video-convert">🔄 แปลงไฟล์วิดีโอ</a>
+              <a href="/?tool=video-trim">✂️ ตัดวิดีโอ</a>
+              <a href="/?tool=video-to-gif">🎞️ วิดีโอเป็น GIF</a>
+            </div>
+          </div>
+
+          <div class="topnav__drop">
+            <button type="button" class="topnav__link topnav__btn" aria-haspopup="true">รูปภาพ &amp; เสียง <span class="topnav__caret" aria-hidden="true">▾</span></button>
+            <div class="topnav__menu">
+              <a href="/?tool=image-compress">🖼️ บีบอัดรูปภาพ</a>
+              <a href="/?tool=image-convert">🔁 แปลงรูป (รองรับ HEIC)</a>
+              <a href="/?tool=pdpa-redact">🛡️ เบลอจุดลับ &amp; คาดดำ PDPA</a>
+              <a href="/?tool=audio-extract">🎵 แยก &amp; บีบอัดเสียง MP3</a>
+            </div>
+          </div>
+
+          <a href="/pricing.html" class="topnav__link ">ราคา</a>
+        </nav>
       </div>
+
       <div class="topbar__actions">
-        <a href="/" class="btn btn--sm btn--outline">← กลับหน้าหลัก</a>
+        <button type="button" class="icon-btn theme-toggle-btn" id="subThemeToggleBtn" aria-label="สลับโหมดสว่าง/มืด" title="สลับธีมสว่าง / มืด">🌙</button>
+        <a href="/?tool=topup" class="btn btn--sm btn--primary">💳 กระเป๋า &amp; เติมเหรียญ</a>
       </div>
     </div>
   </header>
@@ -52,5 +97,21 @@
       </nav>
     </article>
   </main>
+  <script>
+    (function(){
+      var b = document.getElementById("subThemeToggleBtn");
+      function sync(){
+        var isDark = document.documentElement.getAttribute("data-theme") === "dark";
+        if (b) { b.textContent = isDark ? "☀️" : "🌙"; b.setAttribute("aria-pressed", String(isDark)); }
+      }
+      sync();
+      if (b) b.addEventListener("click", function(){
+        var next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+        localStorage.setItem("hc.theme.v1", next);
+        document.documentElement.setAttribute("data-theme", next);
+        sync();
+      });
+    })();
+  </script>
 </body>
 </html>
