@@ -1578,3 +1578,68 @@ html[data-theme="dark"] .hub-strip {
   font-size: 12.5px;
   color: var(--muted);
 }
+
+html[data-theme="dark"] .topnav__link { color: var(--text-2); }
+html[data-theme="dark"] .topnav__link:hover,
+html[data-theme="dark"] .topnav__link.active {
+  background: rgba(99, 102, 241, 0.22);
+  color: #c7d2fe;
+}
+html[data-theme="dark"] .hub-tab {
+  background: var(--surface);
+  color: var(--text-2);
+  border-color: var(--line);
+}
+html[data-theme="dark"] .hub-tab:hover {
+  border-color: #6366f1;
+  color: var(--text);
+}
+html[data-theme="dark"] .hub-tab.active {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+}
+html[data-theme="dark"] .coin-pill,
+html[data-theme="dark"] .auth-trigger-btn,
+html[data-theme="dark"] .user-pill,
+html[data-theme="dark"] .btn--outline {
+  background: var(--surface-2);
+  border-color: var(--line);
+  color: var(--text);
+}
+html[data-theme="dark"] .coin-pill:hover,
+html[data-theme="dark"] .auth-trigger-btn:hover {
+  background: #273449;
+  border-color: #6366f1;
+}
+html[data-theme="dark"] .coin-pill__bal { color: var(--text-2); }
+html[data-theme="dark"] .coin-pill__bal b { color: #fbbf24; }
+html[data-theme="dark"] .coin-pill__add {
+  background: var(--primary);
+  color: #ffffff;
+}
+html[data-theme="dark"] .why-item {
+  background: var(--surface-2);
+  border-color: var(--line);
+}
+html[data-theme="dark"] .why-item__badge {
+  background: rgba(99, 102, 241, 0.22);
+  color: #c7d2fe;
+}
+html[data-theme="dark"] .why-item__badge.ok,
+html[data-theme="dark"] .hub-strip__badge {
+  background: rgba(16, 185, 129, 0.18);
+  color: #6ee7b7;
+  border-color: rgba(16, 185, 129, 0.35);
+}
+html[data-theme="dark"] .site-footer {
+  background: var(--surface);
+  border-top-color: var(--line);
+}
+html[data-theme="dark"] .dropzone,
+html[data-theme="dark"] .seo-faq {
+  background: var(--surface-2);
+  border-color: var(--line);
+}
+html[data-theme="dark"] .btn--ghost { color: var(--text-2); }
+html[data-theme="dark"] .btn--ghost:hover { background: var(--surface-2); color: var(--text); }
