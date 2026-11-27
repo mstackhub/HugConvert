@@ -74,7 +74,20 @@ function initThemeToggle() {
     dd.hidden = !dd.hidden;
     $('#userMenuBtn')?.setAttribute('aria-expanded', String(!dd.hidden));
   });
+  document.querySelectorAll('.topnav__btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const drop = btn.closest('.topnav__drop');
+      const wasOpen = drop?.classList.contains('open');
+      document.querySelectorAll('.topnav__drop.open').forEach((d) => d.classList.remove('open'));
+      if (drop && !wasOpen) drop.classList.add('open');
+    });
+  });
+
   document.addEventListener('click', (e) => {
+    if (!e.target.closest('.topnav__drop')) {
+      document.querySelectorAll('.topnav__drop.open').forEach((d) => d.classList.remove('open'));
+    }
     const wrap = $('#userMenuWrap');
     const dd = $('#profileDropdown');
     if (dd && !dd.hidden && wrap && !wrap.contains(e.target)) {
