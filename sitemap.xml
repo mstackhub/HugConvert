@@ -1,17 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://mstackhub.github.io/HugConvert/</loc><priority>1.0</priority></url>
-  <url><loc>https://mstackhub.github.io/HugConvert/?tool=pdf-edit</loc><priority>0.95</priority></url>
-  <url><loc>https://mstackhub.github.io/HugConvert/?tool=pdf-compress</loc><priority>0.95</priority></url>
-  <url><loc>https://mstackhub.github.io/HugConvert/?tool=pdf-security</loc><priority>0.95</priority></url>
-  <url><loc>https://mstackhub.github.io/HugConvert/?tool=video-compress</loc><priority>0.95</priority></url>
-  <url><loc>https://mstackhub.github.io/HugConvert/?tool=image-convert</loc><priority>0.90</priority></url>
-  <url><loc>https://mstackhub.github.io/HugConvert/?tool=image-compress</loc><priority>0.90</priority></url>
-  <url><loc>https://mstackhub.github.io/HugConvert/?tool=pdf-merge</loc><priority>0.90</priority></url>
-  <url><loc>https://mstackhub.github.io/HugConvert/?tool=pdf-to-image</loc><priority>0.85</priority></url>
-  <url><loc>https://mstackhub.github.io/HugConvert/?tool=image-to-pdf</loc><priority>0.85</priority></url>
-  <url><loc>https://mstackhub.github.io/HugConvert/?tool=video-convert</loc><priority>0.85</priority></url>
-  <url><loc>https://mstackhub.github.io/HugConvert/?tool=video-trim</loc><priority>0.80</priority></url>
-  <url><loc>https://mstackhub.github.io/HugConvert/?tool=video-to-gif</loc><priority>0.80</priority></url>
-  <url><loc>https://mstackhub.github.io/HugConvert/?tool=audio-extract</loc><priority>0.80</priority></url>
+  <url><loc>https://heyconvert.vercel.app/</loc><priority>1.0</priority></url>
+  <url><loc>https://heyconvert.vercel.app/?tool=pdf-edit</loc><priority>0.95</priority></url>
+  <url><loc>https://heyconvert.vercel.app/?tool=pdf-compress</loc><priority>0.95</priority></url>
+  <url><loc>https://heyconvert.vercel.app/?tool=pdf-security</loc><priority>0.95</priority></url>
+  <url><loc>https://heyconvert.vercel.app/?tool=pdpa-redact</loc><priority>0.95</priority></url>
+  <url><loc>https://heyconvert.vercel.app/?tool=receipt-pack</loc><priority>0.90</priority></url>
+  <url><loc>https://heyconvert.vercel.app/?tool=video-compress</loc><priority>0.95</priority></url>
+  <url><loc>https://heyconvert.vercel.app/?tool=image-convert</loc><priority>0.90</priority></url>
+  <url><loc>https://heyconvert.vercel.app/?tool=image-compress</loc><priority>0.90</priority></url>
+  <url><loc>https://heyconvert.vercel.app/?tool=pdf-merge</loc><priority>0.90</priority></url>
+  <url><loc>https://heyconvert.vercel.app/?tool=pdf-to-image</loc><priority>0.85</priority></url>
+  <url><loc>https://heyconvert.vercel.app/?tool=image-to-pdf</loc><priority>0.85</priority></url>
+  <url><loc>https://heyconvert.vercel.app/?tool=video-convert</loc><priority>0.85</priority></url>
+  <url><loc>https://heyconvert.vercel.app/?tool=video-trim</loc><priority>0.80</priority></url>
+  <url><loc>https://heyconvert.vercel.app/?tool=video-to-gif</loc><priority>0.80</priority></url>
+  <url><loc>https://heyconvert.vercel.app/?tool=audio-extract</loc><priority>0.80</priority></url>
+  <url><loc>https://heyconvert.vercel.app/privacy.html</loc><priority>0.40</priority></url>
+  <url><loc>https://heyconvert.vercel.app/terms.html</loc><priority>0.40</priority></url>
+  <url><loc>https://heyconvert.vercel.app/refund.html</loc><priority>0.40</priority></url>
+  <url><loc>https://heyconvert.vercel.app/contact.html</loc><priority>0.40</priority></url>
 </urlset>

@@ -263,13 +263,16 @@ function updateSeoForTool(tool) {
   const ogTitle = $('#ogTitle');
   const ogDesc = $('#ogDesc');
   const canonical = $('#canonicalLink');
+  const ogUrl = $('#ogUrl');
   if (metaDesc) metaDesc.setAttribute('content', seo.intro);
   if (metaKw) metaKw.setAttribute('content', seo.keywords);
   if (ogTitle) ogTitle.setAttribute('content', seo.title);
   if (ogDesc) ogDesc.setAttribute('content', seo.intro);
   const baseUrl = `${location.origin}${location.pathname}`;
   if (canonical) {
-    canonical.setAttribute('href', tool.id === 'home' ? baseUrl : `${baseUrl}?tool=${tool.id}`);
+    const targetUrl = tool.id === 'home' ? baseUrl : `${baseUrl}?tool=${tool.id}`;
+    canonical.setAttribute('href', targetUrl);
+    if (ogUrl) ogUrl.setAttribute('content', targetUrl);
   }
 
   const h2 = $('#seoH2');
@@ -3636,3 +3639,36 @@ function checkInAppBrowser() {
     banner.hidden = true;
   });
 }
+
+// ---------------- Dark Mode, Esc Modal Close & PWA ----------------
+(function initThemeAndA11y() {
+  const THEME_KEY = 'hc.theme.v1';
+  const btn = $('#themeToggleBtn');
+  const applyTheme = (theme) => {
+    document.documentElement.setAttribute('data-theme', theme);
+    if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+  };
+  const saved = localStorage.getItem(THEME_KEY);
+  const sysDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+  applyTheme(saved || (sysDark ? 'dark' : 'light'));
+
+  btn?.addEventListener('click', () => {
+    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    localStorage.setItem(THEME_KEY, next);
+    applyTheme(next);
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const authModal = $('#authModal');
+    const coinModal = $('#coinModal');
+    const pd = $('#profileDropdown');
+    if (authModal && !authModal.hidden) { authModal.hidden = true; return; }
+    if (coinModal && !coinModal.hidden) { coinModal.hidden = true; return; }
+    if (pd && !pd.hidden) { pd.hidden = true; $('#userMenuBtn')?.setAttribute('aria-expanded', 'false'); }
+  });
+
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
+})();
