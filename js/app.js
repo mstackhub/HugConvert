@@ -511,12 +511,14 @@ let pendingSmartPdfFiles = null;
 
 function getHuggedKey() {
   const user = getCurrentUser();
-  return `hc.hugged.${user?.id || 'guest'}`;
+  return user?.id ? `hc.hugged.${user.id}` : '';
 }
 
 function getHuggedIds() {
+  const key = getHuggedKey();
+  if (!key) return [];
   try {
-    const arr = JSON.parse(localStorage.getItem(getHuggedKey()) || '[]');
+    const arr = JSON.parse(localStorage.getItem(key) || '[]');
     return Array.isArray(arr) ? arr : [];
   } catch {
     return [];
@@ -524,6 +526,11 @@ function getHuggedIds() {
 }
 
 function toggleHugTool(toolId) {
+  const key = getHuggedKey();
+  if (!key) {
+    openAuthModal('signin', 'กรุณาเข้าสู่ระบบเพื่อบันทึกเครื่องมือที่คุณ Hug ไว้ในบัญชีของคุณ');
+    return;
+  }
   const ids = getHuggedIds();
   const idx = ids.indexOf(toolId);
   if (idx >= 0) {
@@ -533,11 +540,16 @@ function toggleHugTool(toolId) {
     ids.unshift(toolId);
     toast('❤️ เพิ่มในเครื่องมือที่คุณ Hug แล้ว');
   }
-  localStorage.setItem(getHuggedKey(), JSON.stringify(ids));
+  localStorage.setItem(key, JSON.stringify(ids));
   renderHubCards();
 }
 
-function renderToolCardHtml(t, isHugged) {
+function renderToolCardHtml(t, isHugged, canHug = false) {
+  const favHtml = canHug
+    ? `<button type="button" class="tool-fav-btn ${isHugged ? 'active' : ''}" data-hug="${t.id}" title="${isHugged ? 'เลิกถูกใจ' : 'ถูกใจ (เพิ่มในเครื่องมือที่คุณ Hug)'}" aria-label="ถูกใจเครื่องมือนี้">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="${isHugged ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+      </button>`
+    : '';
   return `
     <a class="tool-card" href="?tool=${t.id}" data-cat="${t.cat}">
       <span class="tool-card__icon">${t.icon}</span>
@@ -545,16 +557,22 @@ function renderToolCardHtml(t, isHugged) {
         <div class="tool-card__title">${esc(t.label)}</div>
         <div class="tool-card__desc">${esc(t.desc)}</div>
       </div>
-      <button type="button" class="tool-fav-btn ${isHugged ? 'active' : ''}" data-hug="${t.id}" title="${isHugged ? 'เลิกถูกใจ' : 'ถูกใจ (เพิ่มในเครื่องมือที่คุณ Hug)'}" aria-label="ถูกใจเครื่องมือนี้">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="${isHugged ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
-      </button>
+      ${favHtml}
     </a>
   `;
 }
 
 function renderHubCards() {
+  const isLoggedIn = !!getCurrentUser();
+  const tabHugged = $('#hubTabHugged');
+  if (tabHugged) tabHugged.hidden = !isLoggedIn;
+  if (!isLoggedIn && hubActiveCat === 'hugged') {
+    hubActiveCat = 'all';
+    $('#hubCatTabs .hub-tab').forEach((b) => b.classList.toggle('active', b.dataset.hubcat === 'all'));
+  }
+
   const q = ($('#hubSearchInput')?.value || '').trim().toLowerCase();
-  const huggedIds = getHuggedIds();
+  const huggedIds = isLoggedIn ? getHuggedIds() : [];
   const huggedSet = new Set(huggedIds);
 
   const countEl = $('#huggedTabCount');
@@ -571,7 +589,7 @@ function renderHubCards() {
     huggedSec.hidden = !showHuggedTop;
     if (showHuggedTop) {
       $('#huggedCountLabel').textContent = `${huggedTools.length} เครื่องมือ`;
-      huggedGrid.innerHTML = huggedTools.map((t) => renderToolCardHtml(t, true)).join('');
+      huggedGrid.innerHTML = huggedTools.map((t) => renderToolCardHtml(t, true, isLoggedIn)).join('');
     }
   }
 
@@ -597,7 +615,7 @@ function renderHubCards() {
       : '<div class="card" style="padding:28px;text-align:center;grid-column:1/-1"><span class="muted">ไม่พบเครื่องมือที่ค้นหา ลองพิมพ์คำอื่นดูนะครับ</span></div>';
     return;
   }
-  grid.innerHTML = list.map((t) => renderToolCardHtml(t, huggedSet.has(t.id))).join('');
+  grid.innerHTML = list.map((t) => renderToolCardHtml(t, huggedSet.has(t.id), isLoggedIn)).join('');
 }
 
 $('#homeHubSection')?.addEventListener('click', (e) => {
@@ -2905,6 +2923,7 @@ function renderAuthUI() {
 
   document.body.classList.toggle('is-member', !!user);
   document.documentElement.classList.remove('is-member-boot');
+  renderHubCards();
 
   if (!user) {
     guestBtn.hidden = false;
