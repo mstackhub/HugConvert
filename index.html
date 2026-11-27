@@ -105,11 +105,11 @@
         <a class="nav__item" href="?tool=video-convert" data-id="video-convert"><span class="nav__icon" aria-hidden="true">🔄</span><span>แปลงไฟล์วิดีโอ</span></a>
         <a class="nav__item" href="?tool=video-trim" data-id="video-trim"><span class="nav__icon" aria-hidden="true">✂️</span><span>ตัดวิดีโอ</span></a>
         <a class="nav__item" href="?tool=video-to-gif" data-id="video-to-gif"><span class="nav__icon" aria-hidden="true">🎞️</span><span>วิดีโอเป็น GIF</span></a>
-        <div class="nav__group">รูปภาพ & เสียง</div>
+        <div class="nav__group">รูปภาพ</div>
         <a class="nav__item" href="?tool=image-compress" data-id="image-compress"><span class="nav__icon" aria-hidden="true">🖼️</span><span>บีบอัดรูปภาพ</span></a>
         <a class="nav__item" href="?tool=image-convert" data-id="image-convert"><span class="nav__icon" aria-hidden="true">🔁</span><span>แปลงรูป (รองรับ HEIC)</span></a>
         <a class="nav__item" href="?tool=pdpa-redact" data-id="pdpa-redact"><span class="nav__icon" aria-hidden="true">🛡️</span><span>เบลอจุดลับ & คาดดำ PDPA</span></a>
-        <a class="nav__item" href="?tool=audio-extract" data-id="audio-extract"><span class="nav__icon" aria-hidden="true">🎵</span><span>แยก & บีบอัดเสียง MP3</span></a>
+        <a class="nav__item" hidden href="?tool=audio-extract" data-id="audio-extract"><span class="nav__icon" aria-hidden="true">🎵</span><span>แยก & บีบอัดเสียง MP3</span></a>
       </nav>
 
       <div class="sidebar__foot">
@@ -157,12 +157,12 @@
             </div>
 
             <div class="topnav__drop">
-              <button type="button" class="topnav__link topnav__btn" aria-haspopup="true">รูปภาพ & เสียง <span class="topnav__caret" aria-hidden="true">▾</span></button>
+              <button type="button" class="topnav__link topnav__btn" aria-haspopup="true">รูปภาพ <span class="topnav__caret" aria-hidden="true">▾</span></button>
               <div class="topnav__menu">
                 <a href="?tool=image-compress" data-id="image-compress">🖼️ บีบอัดรูปภาพ</a>
                 <a href="?tool=image-convert" data-id="image-convert">🔁 แปลงรูป (รองรับ HEIC)</a>
                 <a href="?tool=pdpa-redact" data-id="pdpa-redact">🛡️ เบลอจุดลับ & คาดดำ PDPA</a>
-                <a href="?tool=audio-extract" data-id="audio-extract">🎵 แยก & บีบอัดเสียง MP3</a>
+                <a href="?tool=audio-extract" data-id="audio-extract" hidden>🎵 แยก & บีบอัดเสียง MP3</a>
               </div>
             </div>
 
@@ -267,7 +267,7 @@
           <div class="smart-dropzone" id="smartDropzone" role="button" tabindex="0">
             <input type="file" id="smartFileInput" accept="video/*,image/*,audio/*,application/pdf,.pdf,.heic,.heif,.jfif,.mkv,.mov,.webm,.mp4,.mp3,.wav,.m4a" multiple hidden />
             <div class="smart-dropzone__btn">+ เลือกไฟล์จากเครื่อง</div>
-            <div class="smart-dropzone__types">หรือลาก PDF · MP4 · JPG/HEIC · MP3 มาวางที่นี่</div>
+            <div class="smart-dropzone__types">หรือลาก PDF · MP4 · JPG/HEIC มาวางที่นี่</div>
             <div class="smart-dropzone__privacy" style="margin-top:6px;font-size:12.5px;color:var(--muted);">🔒 ไฟล์ของคุณไม่ถูกส่งออกจากอุปกรณ์ · ประมวลผลในเบราว์เซอร์ทั้งหมด</div>
           </div>
         </div>
@@ -296,12 +296,12 @@
         <!-- แถบค้นหาและตัวกรองหมวดหมู่ -->
         <div class="hub-filter-bar">
           <div class="hub-tabs" id="hubCatTabs">
-            <button type="button" class="hub-tab active" data-hubcat="all">ทั้งหมด (15)</button>
+            <button type="button" class="hub-tab active" data-hubcat="all">ทั้งหมด (14)</button>
             <button type="button" class="hub-tab" data-hubcat="hugged" id="hubTabHugged">❤️ ที่ Hug ไว้ (<span id="huggedTabCount">0</span>)</button>
             <button type="button" class="hub-tab" data-hubcat="pdf">PDF</button>
             <button type="button" class="hub-tab" data-hubcat="video">วิดีโอ</button>
             <button type="button" class="hub-tab" data-hubcat="image">รูปภาพ & HEIC</button>
-            <button type="button" class="hub-tab" data-hubcat="audio">เสียง MP3</button>
+            <button type="button" class="hub-tab" data-hubcat="audio" hidden>เสียง MP3</button>
           </div>
           <div class="hub-search">
             <input type="search" id="hubSearchInput" name="hub-tool-filter" class="input" autocomplete="off" data-lpignore="true" data-1p-ignore="true" readonly onfocus="this.removeAttribute('readonly')" placeholder="ค้นหาเครื่องมือ เช่น บัตรประชาชน, HEIC, 10MB..." />
@@ -1406,11 +1406,11 @@
           </div>
 
           <div class="site-footer__col">
-            <h4>รูปภาพ & เสียง</h4>
+            <h4>รูปภาพ</h4>
             <a href="?tool=image-compress">บีบอัดรูปภาพ</a>
             <a href="?tool=image-convert">แปลงรูป (รองรับ HEIC)</a>
             <a href="?tool=pdpa-redact">เบลอจุดลับ & คาดดำ PDPA</a>
-            <a href="?tool=audio-extract">แยก & บีบอัดเสียง MP3</a>
+            <a href="?tool=audio-extract" hidden>แยก & บีบอัดเสียง MP3</a>
           </div>
 
           <div class="site-footer__col">
@@ -1527,6 +1527,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script type="module" src="js/app.js?v=20261127-9"></script>
+  <script type="module" src="js/app.js?v=20261127-10"></script>
 </body>
 </html>

@@ -138,7 +138,7 @@ const TOOLS = [
     tags: 'เบลอบัตรประชาชน เบลอสลิป คาดดำ pdpa สำเนาถูกต้อง redact blur',
   },
   {
-    id: 'audio-extract', icon: '🎵', label: 'แยก & บีบอัดเสียง MP3', kind: 'audio', cat: 'audio', panel: 'audio-extract',
+    id: 'audio-extract', hidden: true, icon: '🎵', label: 'แยก & บีบอัดเสียง MP3', kind: 'audio', cat: 'audio', panel: 'audio-extract',
     catLabel: 'Audio',
     desc: 'แยกเสียง MP3 ออกจากวิดีโอ หรือบีบอัด/แปลงไฟล์เสียงอัดประชุม (.M4A / .WAV → .MP3)',
     settingsTitle: 'ตั้งค่าแยกและแปลงไฟล์เสียง', actionLabel: '🎵 เริ่มแปลงไฟล์เสียง', suffix: '_audio',
@@ -594,7 +594,7 @@ function renderHubCards() {
   }
 
   const list = TOOLS.filter((t) => {
-    if (!t.id || t.id === 'home' || t.id === 'history' || t.id === 'topup') return false;
+    if (!t.id || t.hidden || t.id === 'home' || t.id === 'history' || t.id === 'topup') return false;
     if (hubActiveCat === 'hugged') {
       if (!huggedSet.has(t.id)) return false;
     } else if (hubActiveCat !== 'all' && t.cat !== hubActiveCat) {
@@ -672,7 +672,7 @@ function handleSmartFiles(fileList) {
     return;
   }
   if (f.type.startsWith('audio/') || /\.(mp3|wav|m4a|aac|ogg|flac)$/i.test(name)) {
-    navigateToTool('audio-extract');
+    toast('ฟีเจอร์เกี่ยวกับไฟล์เสียงกำลังปิดปรับปรุงชั่วคราวครับ'); return;
     addFiles(arr);
     return;
   }
