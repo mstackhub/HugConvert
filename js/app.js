@@ -3739,3 +3739,111 @@ function checkInAppBrowser() {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
   }
 })();
+
+// ---------------- Simple Setting Tooltips (?) ----------------
+(function initSettingTooltips() {
+  const TIPS = {
+    codec: "ตัวเข้ารหัสวิดีโอ: H.264 เปิดได้ทุกเครื่อง (ฟรี) ส่วน H.265/AV1/GPU บีบได้เล็กกว่าและเร็วกว่า (โหมด Pro)",
+    method: "เลือกวิธีบีบอัด: กำหนดขนาด MB เป๊ะ (เช่น ส่ง LINE/Discord) หรือปรับ % / คุณภาพคงที่",
+    targetMB: "ระบุขนาดไฟล์ปลายทางที่ต้องการ เช่น 10 MB (Discord ฟรี) หรือ 25 MB (อีเมล)",
+    percent: "ย่อขนาดไฟล์ลงตามเปอร์เซ็นต์ที่เลือก เช่น 40% จะลดไฟล์เหลือประมาณ 4 ใน 10 ของเดิม",
+    quality: "ระดับความคมชัดของภาพ ยิ่งสูงภาพยิ่งชัดแต่ขนาดไฟล์จะใหญ่ขึ้น",
+    maxMbps: "เพดานความละเอียดข้อมูลต่อวินาที (Bitrate) ค่ายิ่งสูงภาพยิ่งคมชัดขณะเคลื่อนไหวเร็ว",
+    resMode: "ปรับขนาดความกว้าง×สูงของวิดีโอ: ลดความละเอียดจาก 4K เป็น 1080p/720p ช่วยให้ไฟล์เล็กลงมากโดยภาพยังชัด",
+    compatOld: "บังคับใช้ H.264 + AAC มาตรฐาน เพื่อเปิดเล่นได้บนทีวี รุ่นเก่า และมือถือทุกรุ่น",
+    fps: "จำนวนภาพต่อวินาที: 30 fps ลื่นไหลมาตรฐาน, 24 fps ประหยัดพื้นที่ขึ้น",
+    audio: "คุณภาพเสียงในวิดีโอ: 128 kbps ชัดมาตรฐาน, ปิดเสียง (Mute) ช่วยลดขนาดไฟล์เพิ่ม",
+    vcFormat: "MP4 เปิดได้ทุกเครื่อง (แนะนำ) ส่วน WebM เหมาะสำหรับอัปโหลดขึ้นเว็บ",
+    vtStart: "ระบุวินาทีเริ่มต้นของช่วงคลิปที่ต้องการตัด",
+    vtEnd: "ระบุวินาทีสิ้นสุด (ใส่ 0 เพื่อตัดจนจบคลิป)",
+    vgWidth: "ความกว้างของภาพ GIF (px) ยิ่งกว้างไฟล์ GIF ยิ่งใหญ่ แนะนำ 360–480 px",
+    vgFps: "ความลื่นไหลของ GIF (เฟรม/วินาที) แนะนำ 10–15 fps กำลังสวยและไฟล์ไม่บวม",
+    vgColors: "จำนวนสีในภาพ GIF ยิ่งเยอะสียิ่งเนียนแต่ขนาดไฟล์จะใหญ่ขึ้น",
+    imgFormat: "JPG ไฟล์เล็กเหมาะกับรูปถ่าย, PNG คมชัดรองรับพื้นหลังใส, WebP เล็กสุดเหมาะกับทำเว็บ",
+    imgMethod: "กำหนดขนาด KB เป๊ะ (เช่น สมัครงานไม่เกิน 100KB) หรือปรับคุณภาพ % เอง",
+    imgTargetKB: "ขนาดไฟล์สูงสุด (KB) เช่น 100 KB สำหรับอัปโหลดรูปสมัครงาน/ราชการ",
+    imgMaxDim: "ย่อความกว้าง/สูงสูงสุดของรูป ช่วยลดขนาดไฟล์ได้เร็วมากสำหรับรูปถ่ายจากมือถือ",
+    pcMethod: "เลือกว่าจะลดขนาด PDF เป็น % หรือกำหนดเป้าหมายเป็น MB เป๊ะ",
+    pcTargetMB: "ขนาด PDF เป้าหมาย (MB) เช่น 2 MB สำหรับยื่นเอกสารออนไลน์",
+    pcQuality: "ความคมชัดของภาพใน PDF ยิ่งต่ำไฟล์ยิ่งเล็ก แนะนำระดับกลางสำหรับอ่านทั่วไป",
+    pcGrayscale: "แปลงหน้าเอกสารสีเป็นขาว-ดำ ช่วยลดขนาดไฟล์เอกสารสแกนได้มาก",
+    psMode: "คาดลายน้ำข้อความทับทุกหน้า หรือถอดรหัสผ่านจากไฟล์ PDF ที่คุณทราบรหัสอยู่แล้ว",
+    psWmText: "ข้อความที่จะพิมพ์คาดเฉียงบนเอกสาร เช่น สำเนาถูกต้อง ใช้เพื่อสมัครงานเท่านั้น",
+    psWmOpacity: "ความเข้มจางของลายน้ำ ยิ่งน้อยยิ่งโปร่งใสอ่านเนื้อหาด้านหลังง่าย (แนะนำ 25–35%)",
+    pmMode: "รวมหลายไฟล์ PDF เป็นเล่มเดียว หรือดึงเฉพาะบางหน้าออกจากไฟล์เดิม",
+    pmRange: "ระบุหน้าที่ต้องการ เช่น 1-3, 5 (เว้นว่างไว้หากต้องการทั้งหมดทุกหน้า)",
+    p2iFormat: "เลือกรูปแบบไฟล์ภาพผลลัพธ์ (JPG ไฟล์เล็ก, PNG คมสุด)",
+    p2iScale: "ความละเอียดของภาพ: 150 DPI พอดีส่งแชท, 200 DPI ชัดอ่านง่าย, 300 DPI คมสำหรับพิมพ์",
+    i2pMerge: "รวมทุกรูปเป็น PDF เล่มเดียว หรือแยกเป็นไฟล์ละ 1 รูป",
+    i2pSize: "ขนาดหน้ากระดาษของ PDF (A4 มาตรฐาน หรือพอดีตามขนาดรูปจริง)",
+    i2pMargin: "ขอบขาวรอบรูปภาพบนหน้ากระดาษ (หน่วย pt)",
+    pdpaMode: "เลือกวิธีปิดบังจุดลับ: เบลอเนียน, พิกเซลสี่เหลี่ยม หรือคาดดำทึบถาวร",
+    pdpaStrength: "ความแรงในการเบลอหรือขนาดช่องพิกเซล ยิ่งสูงยิ่งอ่านข้อมูลเดิมไม่ออก",
+    pdpaStampPreset: "เลือกข้อความรับรองสำเนาสำเร็จรูป หรือเลือกกำหนดข้อความเอง",
+    rpPerPage: "จำนวนรูปสลิปต่อหน้ากระดาษ A4 (4 รูป/หน้า กำลังอ่านชัด)",
+    rpSort: "จัดลำดับสลิปใน PDF ตามคิวที่เลือก วันที่ถ่าย หรือชื่อไฟล์"
+  };
+
+  let pop = null;
+  let activeBtn = null;
+
+  function hideTip() {
+    if (pop) pop.hidden = true;
+    if (activeBtn) { activeBtn.classList.remove("is-open"); activeBtn = null; }
+  }
+
+  function showTip(btn) {
+    if (!pop) {
+      pop = document.createElement("div");
+      pop.className = "tip-popover";
+      pop.setAttribute("role", "tooltip");
+      pop.hidden = true;
+      document.body.appendChild(pop);
+    }
+    pop.textContent = btn.dataset.tip || "";
+    pop.hidden = false;
+    activeBtn?.classList.remove("is-open");
+    activeBtn = btn;
+    btn.classList.add("is-open");
+
+    const r = btn.getBoundingClientRect();
+    const pr = pop.getBoundingClientRect();
+    let left = r.left + r.width / 2 - pr.width / 2;
+    left = Math.max(10, Math.min(window.innerWidth - pr.width - 10, left));
+    let top = r.top - pr.height - 8;
+    if (top < 10) top = r.bottom + 8;
+    pop.style.left = `${Math.round(left)}px`;
+    pop.style.top = `${Math.round(top)}px`;
+  }
+
+  Object.entries(TIPS).forEach(([id, text]) => {
+    const lbl = document.querySelector(`label[for="${id}"]`);
+    if (!lbl || lbl.querySelector(".tip-btn")) return;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "tip-btn";
+    btn.textContent = "?";
+    btn.dataset.tip = text;
+    btn.setAttribute("aria-label", `คำอธิบาย: ${text}`);
+    lbl.appendChild(btn);
+
+    btn.addEventListener("mouseenter", () => showTip(btn));
+    btn.addEventListener("mouseleave", () => hideTip());
+    btn.addEventListener("focus", () => showTip(btn));
+    btn.addEventListener("blur", () => hideTip());
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (activeBtn === btn && pop && !pop.hidden) hideTip();
+      else showTip(btn);
+    });
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".tip-btn")) hideTip();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") hideTip();
+  });
+  window.addEventListener("scroll", hideTip, { passive: true });
+})();
